@@ -1,66 +1,98 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SineAI Hub
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 🚀 A Centralized Ecosystem for the Next Generation of AI Filmmakers
 
-## About Laravel
+SineAI Hub is the official web platform for the **SineAI Guild of Western Visayas**. It is a modern, full-stack application designed to be the definitive home for AI filmmakers in the region. The platform provides a unified space for our community to connect, showcase their work, and access AI-powered tools to accelerate their creative process.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Key Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+This project is being developed in phases. The long-term vision includes:
 
-## Learning Laravel
+*   **Community Hub:** An interactive, real-time chatroom for members to collaborate, share techniques, and network.
+*   **Creator Portfolios:** A dedicated space for registered filmmakers to upload, manage, and showcase their AI-assisted films.
+*   **AI Pre-production Assistant ("Spark"):** An integrated chatbot designed to help with scriptwriting, mood boarding, and production planning.
+*   **Featured Showcase:** A curated landing page that highlights the best and most innovative stories from our community.
+*   **"Aetherium Fragments" Mini-Game:** A lightweight discovery game to foster daily engagement and community building.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 🛠️ Technology Stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+SineAI Hub is built with a modern, scalable, and professional technology stack designed for rapid development and long-term maintainability.
 
-## Laravel Sponsors
+*   **Backend:** **[Laravel](https://laravel.com/)** - A powerful PHP framework providing a secure and organized RESTful API.
+*   **Frontend:** **[React.js](https://react.dev/)** - A leading JavaScript library for building dynamic and interactive user interfaces.
+*   **The Bridge:** **[Inertia.js](https://inertiajs.com/)** - Creates a seamless, single-page application experience.
+*   **Database & BaaS:** **[Supabase](https://supabase.com/)** - A PostgreSQL-based backend-as-a-service providing our database, user authentication, file storage, and real-time capabilities.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+---
 
-### Premium Partners
+## 📋 Project Status
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+*   **Current Phase:** Phase 1 - The Core Foundation (MVP)
+*   **Next Milestone:** Implement Creator Portfolio functionality (database schema, file uploads, and frontend display).
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## ⚙️ Getting Started (Development Setup)
 
-## Code of Conduct
+These are the instructions to set up the project on a local development machine.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Prerequisites
 
-## Security Vulnerabilities
+*   PHP (version compatible with Laravel 9/10)
+*   [Composer](https://getcomposer.org/)
+*   [Node.js & NPM](https://nodejs.org/en)
+*   A Supabase account
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Installation & Setup
 
-## License
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/J-Akiru5/sineai-hub.git
+    cd sineai-hub
+    ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+2.  **Install PHP dependencies:**
+    ```bash
+    composer install
+    ```
+
+3.  **Install JavaScript dependencies:**
+    ```bash
+    npm install
+    ```
+
+4.  **Set up the environment file:**
+    *   Create a copy of the example environment file:
+        ```bash
+        cp .env.example .env
+        ```
+    *   Generate a new application key:
+        ```bash
+        php artisan key:generate
+        ```
+    *   Open the `.env` file and configure your Supabase database credentials (`DB_HOST`, `DB_PASSWORD`, etc.) using the **Connection Pooler** settings.
+
+5.  **Run the database migrations:**
+    *   This will create all the necessary tables in your Supabase database.
+        ```bash
+        php artisan migrate
+        ```
+
+6.  **Start the development servers:**
+    *   In your first terminal, start the Vite server:
+        ```bash
+        npm run dev
+        ```
+    *   In a second terminal, start the Laravel server:
+        ```bash
+        php artisan serve
+        ```
+
+You can now access the application at `http://127.0.0.1:8000`.
+
+---
+*This project is managed by Jeff Martinez.*
