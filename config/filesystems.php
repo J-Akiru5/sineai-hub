@@ -56,6 +56,14 @@ return [
             'throw' => false,
         ],
 
+        'supabase' => [
+            'driver' => 'supabase',
+            'url' => env('SUPABASE_URL'),
+            'endpoint' => env('SUPABASE_URL'),
+            'key' => env('SUPABASE_KEY'),
+            'bucket' => env('SUPABASE_BUCKET', 'projects'),  
+        ],
+
     ],
 
     /*
