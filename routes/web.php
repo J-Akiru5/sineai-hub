@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -42,6 +43,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+
+    // Chat routes
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat');
+    Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.messages');
 });
 
 require __DIR__.'/auth.php';

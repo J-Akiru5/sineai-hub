@@ -33,6 +33,9 @@ export default function Authenticated(props) {
                                 <NavLink href={route('projects.index')} active={route().current('projects.index')}>
                                     Projects
                                 </NavLink>
+                                <NavLink href={route('chat')} active={route().current('chat')}>
+                                    Chat
+                                </NavLink>
                                 <NavLink href={route('projects.create')} active={route().current('projects.create')}>
                                     Upload
                                 </NavLink>
