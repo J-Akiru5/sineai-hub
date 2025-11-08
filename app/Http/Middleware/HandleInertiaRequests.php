@@ -34,6 +34,20 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Share translations for the current locale (loaded from resources/lang/{locale}.json)
+            'translations' => function () use ($request) {
+                $locale = session('locale', config('app.locale'));
+                $path = resource_path('lang/' . $locale . '.json');
+                if (file_exists($path)) {
+                    $contents = file_get_contents($path);
+                    $data = json_decode($contents, true);
+                    return $data ?: [];
+                }
+                return [];
+            },
+            'locale' => function () use ($request) {
+                return session('locale', config('app.locale'));
+            },
             'ziggy' => function () use ($request) {
                 return array_merge((new Ziggy)->toArray(), [
                     'location' => $request->url(),

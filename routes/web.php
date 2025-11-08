@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\HomeController;
+use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -21,14 +23,7 @@ Route::get('/phpinfo', function () {
     return phpinfo();
 });
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
@@ -47,6 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Chat routes
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
     Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.messages');
+
+// Language switch route (sets session locale)
+Route::post('/language', function (Request $request) {
+    $request->validate(['locale' => 'required|string']);
+    $locale = $request->locale;
+    session(['locale' => $locale]);
+    return back(303);
+})->name('language');
 });
 
 require __DIR__.'/auth.php';

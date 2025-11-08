@@ -1,5 +1,7 @@
 import './bootstrap';
 import '../css/app.css';
+import 'aos/dist/aos.css';
+import AOS from 'aos';
 
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
@@ -14,6 +16,14 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(<App {...props} />);
+
+        // Initialize AOS for scroll animations (matches nefa template usage)
+        try {
+            AOS.init({ duration: 700, once: true, disable: 'phone' });
+        } catch (e) {
+            // ignore if AOS isn't installed yet
+            // console.warn('AOS init failed', e);
+        }
     },
     progress: {
         color: '#4B5563',
