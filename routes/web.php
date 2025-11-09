@@ -48,6 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/ai/chat', [AiAssistantController::class, 'index'])->name('ai.assistant');
     // AI Assistant route
     Route::post('/ai/chat', [AiAssistantController::class, 'chat'])->name('ai.chat');
+    // Fetch full conversation history
+    Route::get('/ai/conversations/{conversation}', [AiAssistantController::class, 'show'])->name('ai.conversations.show');
 
 // Language switch route (sets session locale)
 Route::post('/language', function (Request $request) {

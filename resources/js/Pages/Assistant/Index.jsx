@@ -29,44 +29,111 @@ const MessageBubble = ({ sender, text }) => {
     );
 };
 
-export default function Index({ auth }) {
-    // State to hold the entire conversation history
-    const [conversation, setConversation] = useState([
-        { sender: 'ai', text: 'Hello! I am Spark, your creative assistant. How can I help you with your film project today?' }
-    ]);
+export default function Index({ auth, conversations: initialConversations = [] }) {
+    // Conversations list (sidebar)
+    const [conversations, setConversations] = useState(initialConversations || []);
+    // Active conversation messages shown in the main pane
+    const [activeConversation, setActiveConversation] = useState(() => {
+        const first = (initialConversations && initialConversations[0]) || null;
+        return first ? (first.messages || []).map(m => ({ sender: m.sender, text: m.body })) : [];
+    });
+    const [activeConversationId, setActiveConversationId] = useState(() => (initialConversations && initialConversations[0] ? initialConversations[0].id : null));
     // State to hold the user's current input
     const [prompt, setPrompt] = useState('');
     // State to manage the loading indicator
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
+    // input state
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!prompt.trim()) return; // Don't send empty messages
 
-        // 1. Optimistic UI update: Add user's message immediately
+        // 1. Optimistic UI update: Add user's message immediately to active conversation
         const userMessage = { sender: 'user', text: prompt };
-        setConversation(prev => [...prev, userMessage]);
+        setActiveConversation(prev => [...prev, userMessage]);
         setPrompt(''); // Clear the input field
         setIsLoading(true);
 
         try {
-            // 2. Make the API call to our Laravel backend
-            const response = await axios.post(route('ai.chat'), { prompt });
+            // 2. Make the API call to our Laravel backend and include the conversation id if present
+            const response = await axios.post(route('ai.chat'), { prompt, conversation_id: activeConversationId });
 
             // 3. Add the AI's response to the conversation
             const aiMessage = { sender: 'ai', text: response.data.reply };
-            setConversation(prev => [...prev, aiMessage]);
+            setActiveConversation(prev => [...prev, aiMessage]);
+
+            // If backend returned a full conversation object (newly created), use it as authoritative
+            if (response.data && response.data.conversation) {
+                const serverConv = response.data.conversation;
+                // normalize messages if needed and insert the server conversation at the top
+                setConversations(prev => [serverConv, ...prev.filter(c => c.id !== serverConv.id)]);
+                setActiveConversationId(serverConv.id);
+                setActiveConversation((serverConv.messages || []).map(m => ({ sender: m.sender, text: m.body })));
+            } else if (response.data && response.data.conversation_id) {
+                // backward-compatible fallback: update by id
+                if (!activeConversationId) {
+                    const newConv = {
+                        id: response.data.conversation_id,
+                        title: response.data.title || 'Untitled',
+                        messages: [
+                            { sender: 'user', body: prompt },
+                            { sender: 'ai', body: response.data.reply }
+                        ]
+                    };
+                    setConversations(prev => [newConv, ...prev]);
+                    setActiveConversationId(response.data.conversation_id);
+                    setActiveConversation(prev => [...prev, { sender: 'ai', text: response.data.reply }]);
+                } else {
+                    setConversations(prev => prev.map(c => c.id === response.data.conversation_id ? { ...c, messages: [...c.messages, { sender: 'ai', body: response.data.reply }] } : c));
+                }
+            }
 
         } catch (error) {
             console.error("Error communicating with the AI assistant:", error);
             const errorMessage = { sender: 'ai', text: 'Sorry, I am having trouble connecting right now. Please try again later.' };
-            setConversation(prev => [...prev, errorMessage]);
+            setActiveConversation(prev => [...prev, errorMessage]);
         } finally {
             // 4. Hide the loading indicator
             setIsLoading(false);
         }
     };
 
+    const handleMoodboardPrompt = () => {
+    const lastAiMessage = activeConversation.filter(m => m.sender === 'ai').pop();
+    if (lastAiMessage) {
+        const newPrompt = `Based on the following text, generate a list of descriptive keywords and visual styles suitable for creating images in a tool like Midjourney. Text: "${lastAiMessage.text}"`;
+        // This re-uses your existing handleSubmit logic!
+        // We just need to set the prompt and trigger it.
+        setPrompt(newPrompt);
+        // We can even submit it programmatically if we refactor handleSubmit slightly
+    }
+}
+
+    const selectConversation = async (conv) => {
+        // If conversation has an id, fetch full history from backend
+        if (!conv || !conv.id) {
+            setActiveConversation([]);
+            setActiveConversationId(null);
+            return;
+        }
+
+        setIsFetching(true);
+        try {
+            const res = await axios.get(route('ai.conversations.show', conv.id));
+            const msgs = (res.data.messages || []).map(m => ({ sender: m.sender, text: m.body }));
+            setActiveConversation(msgs);
+            setActiveConversationId(res.data.conversation.id);
+
+            // update title in the sidebar list if changed
+            setConversations(prev => prev.map(c => c.id === res.data.conversation.id ? { ...c, title: res.data.conversation.title || c.title, messages: c.messages } : c));
+        } catch (err) {
+            console.error('Failed to load conversation', err);
+            // optionally show a user-visible error
+        } finally {
+            setIsFetching(false);
+        }
+    };
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -76,35 +143,54 @@ export default function Index({ auth }) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col h-[70vh]">
-                        
-                        {/* Message Display Area */}
-                        <div className="flex-1 p-6 overflow-y-auto flex flex-col">
-                            {conversation.map((msg, index) => (
-                                <MessageBubble key={index} sender={msg.sender} text={msg.text} />
-                            ))}
-                            {isLoading && (
-                                <div className="self-start p-4 my-2 rounded-lg shadow bg-gray-200 text-gray-800">
-                                    Spark is thinking...
-                                </div>
-                            )}
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
+                        {/* Sidebar */}
+                        <div className="w-80 border-r dark:border-gray-700 p-4 overflow-y-auto">
+                            <button onClick={() => { setActiveConversation([]); setActiveConversationId(null); }} className="w-full mb-3 bg-blue-500 text-white py-2 rounded">+ New Conversation</button>
+                            <div className="space-y-2">
+                                {conversations.map((c) => (
+                                    <div key={c.id || Math.random()} className={`p-3 rounded cursor-pointer ${c.id === activeConversationId ? 'bg-gray-100 dark:bg-gray-900' : ''}`} onClick={() => selectConversation(c)}>
+                                        <div className="font-medium text-sm">{c.title || (c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 40) : 'Untitled')}</div>
+                                        <div className="text-xs text-gray-500">{c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 80) : ''}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* Input Form Area */}
-                        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-                            <form onSubmit={handleSubmit} className="flex gap-4">
-                                <input
-                                    type="text"
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder="Ask Spark for script ideas, a shot list, or a movie title..."
-                                    className="input flex-1 bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm"
-                                    disabled={isLoading}
-                                />
-                                <button type="submit" className="btn btn-primary bg-blue-500 text-white p-2 rounded-md" disabled={isLoading}>
-                                    Send
-                                </button>
-                            </form>
+                        {/* Main chat area */}
+                        <div className="flex-1 flex flex-col">
+                            <div className="flex-1 p-6 overflow-y-auto flex flex-col">
+                                {activeConversation.map((msg, index) => (
+                                    <MessageBubble key={index} sender={msg.sender} text={msg.text} />
+                                ))}
+                                {isLoading && (
+                                    <div className="self-start p-4 my-2 rounded-lg shadow bg-gray-200 text-gray-800">
+                                        Spark is thinking...
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Input Form Area */}
+                            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                                <form onSubmit={handleSubmit} className="flex gap-4">
+                                    <input
+                                        type="text"
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        placeholder="Ask Spark for script ideas, a shot list, or a movie title..."
+                                        className="input flex-1 bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm"
+                                        disabled={isLoading}
+                                    />
+                                    <button type="submit" className="btn btn-primary bg-red-500 text-white p-2 rounded-md" disabled={isLoading}>
+                                        Send
+                                    </button>
+                                    <button 
+                                     onClick={() => handleMoodboardPrompt()}
+                                        className="btn mb-2">
+                                      ✨ Generate Mood Board Ideas
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
