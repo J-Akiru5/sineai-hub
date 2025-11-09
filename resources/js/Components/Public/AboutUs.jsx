@@ -6,7 +6,7 @@ export default function AboutUs() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h2 className="text-3xl font-semibold text-gray-900 dark:text-gray-100">About the Guild</h2>
 
-                <div className="mt-4 max-w-3xl text-lg text-gray-700 dark:text-gray-300">
+                <div className="mt-4 max-w-3xl text-lg text-gray-700 dark:text-gray-300" data-aos="fade-right" data-aos-delay="0">
                     <p>
                         The SineAI Hub is a community of creators, engineers, and storytellers building AI-first tools and
                         workflows for content creation. We provide infrastructure, education, and collaboration spaces for
@@ -26,7 +26,7 @@ export default function AboutUs() {
                             </p>
                         </div>
 
-                        <div>
+                        <div data-aos="fade-left" data-aos-delay="120">
                             <ul className="space-y-4">
                                 <li className="flex items-start">
                                     <svg className="flex-shrink-0 h-6 w-6 text-green-500 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>

@@ -25,8 +25,8 @@ export default function MeetTheTeam() {
                 <div className="mt-8">
                     <h3 className="text-xl font-medium text-gray-800 dark:text-gray-100">Executive Officers</h3>
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {executives.map((p) => (
-                            <div key={p.name} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm text-center">
+                        {executives.map((p, idx) => (
+                            <div key={p.name} data-aos="fade-up" data-aos-delay={idx * 100} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm text-center">
                                 {/* replace src with real photo paths later */}
                                 <div className="w-full h-44 bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
                                     <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
@@ -42,8 +42,8 @@ export default function MeetTheTeam() {
                 <div className="mt-12">
                     <h3 className="text-xl font-medium text-gray-800 dark:text-gray-100">Directors</h3>
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {directors.map((p) => (
-                            <div key={p.name} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm text-center">
+                        {directors.map((p, idx) => (
+                            <div key={p.name} data-aos="fade-up" data-aos-delay={idx * 80} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm text-center">
                                 <div className="w-full h-44 bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
                                     <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
                                 </div>

@@ -19,7 +19,8 @@ createInertiaApp({
 
         // Initialize AOS for scroll animations (matches nefa template usage)
         try {
-            AOS.init({ duration: 700, once: true, disable: 'phone' });
+            // Unified animation rhythm: slightly longer duration, smooth easing, and offset to trigger a bit earlier
+            AOS.init({ duration: 800, easing: 'ease-out-cubic', once: true, disable: 'phone', offset: 120 });
         } catch (e) {
             // ignore if AOS isn't installed yet
             // console.warn('AOS init failed', e);

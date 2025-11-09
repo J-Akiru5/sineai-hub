@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AiAssistantController;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Chat routes
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
     Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.messages');
+
+    // AI Assistant route to display page
+    Route::get('/ai/chat', [AiAssistantController::class, 'index'])->name('ai.assistant');
+    // AI Assistant route
+    Route::post('/ai/chat', [AiAssistantController::class, 'chat'])->name('ai.chat');
 
 // Language switch route (sets session locale)
 Route::post('/language', function (Request $request) {

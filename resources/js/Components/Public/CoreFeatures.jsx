@@ -8,7 +8,7 @@ export default function CoreFeatures() {
 
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Card 1: Real-time Collaboration */}
-                    <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
+                    <div data-aos="fade-up" data-aos-delay="0" className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
                         <div className="flex items-center">
                             <div className="flex-shrink-0 bg-indigo-100 dark:bg-indigo-900 p-3 rounded-md">
                                 {/* chat bubbles icon */}
@@ -22,7 +22,7 @@ export default function CoreFeatures() {
                     </div>
 
                     {/* Card 2: Comprehensive Project Databases */}
-                    <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
+                    <div data-aos="fade-up" data-aos-delay="100" className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
                         <div className="flex items-center">
                             <div className="flex-shrink-0 bg-rose-100 dark:bg-rose-900 p-3 rounded-md">
                                 {/* film reel / database icon */}
@@ -36,7 +36,7 @@ export default function CoreFeatures() {
                     </div>
 
                     {/* Card 3: Integrated Open-Source AI Tools */}
-                    <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
+                    <div data-aos="fade-up" data-aos-delay="200" className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
                         <div className="flex items-center">
                             <div className="flex-shrink-0 bg-yellow-100 dark:bg-yellow-900 p-3 rounded-md">
                                 {/* robot / spark icon */}
