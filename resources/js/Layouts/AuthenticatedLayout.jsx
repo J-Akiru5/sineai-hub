@@ -41,6 +41,9 @@ export default function Authenticated(props) {
                                 <NavLink href={route('ai.assistant')} active={route().current('ai.assistant')}>
                                     Spark Assistant
                                 </NavLink>
+                                <NavLink href={route('scriptwriter.index')} active={route().current('scriptwriter.index')}>
+                                    Scriptwriter
+                                </NavLink>
                                 <NavLink href={route('projects.create')} active={route().current('projects.create')}>
                                     Upload
                                 </NavLink>

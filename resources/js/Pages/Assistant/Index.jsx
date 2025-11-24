@@ -45,19 +45,31 @@ export default function Index({ auth, conversations: initialConversations = [] }
     const [isFetching, setIsFetching] = useState(false);
     // input state
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!prompt.trim()) return; // Don't send empty messages
+    // handleSubmit supports being called with either an event (form submit)
+    // or a prompt string (programmatic invoke). When passed a string we use
+    // that as the prompt to send; otherwise we read from the `prompt` state.
+    const handleSubmit = async (eOrPrompt) => {
+        let promptToSend;
+        if (typeof eOrPrompt === 'string') {
+            promptToSend = eOrPrompt;
+        } else {
+            eOrPrompt?.preventDefault?.();
+            promptToSend = prompt;
+        }
+
+        if (!promptToSend || !promptToSend.trim()) return; // Don't send empty messages
 
         // 1. Optimistic UI update: Add user's message immediately to active conversation
-        const userMessage = { sender: 'user', text: prompt };
+        const userMessage = { sender: 'user', text: promptToSend };
         setActiveConversation(prev => [...prev, userMessage]);
-        setPrompt(''); // Clear the input field
+        // Clear the input field when user submitted manually; if programmatic we still
+        // clear to keep input tidy.
+        setPrompt('');
         setIsLoading(true);
 
         try {
             // 2. Make the API call to our Laravel backend and include the conversation id if present
-            const response = await axios.post(route('ai.chat'), { prompt, conversation_id: activeConversationId });
+            const response = await axios.post(route('ai.chat'), { prompt: promptToSend, conversation_id: activeConversationId });
 
             // 3. Add the AI's response to the conversation
             const aiMessage = { sender: 'ai', text: response.data.reply };
@@ -77,7 +89,7 @@ export default function Index({ auth, conversations: initialConversations = [] }
                         id: response.data.conversation_id,
                         title: response.data.title || 'Untitled',
                         messages: [
-                            { sender: 'user', body: prompt },
+                            { sender: 'user', body: promptToSend },
                             { sender: 'ai', body: response.data.reply }
                         ]
                     };
@@ -99,16 +111,15 @@ export default function Index({ auth, conversations: initialConversations = [] }
         }
     };
 
-    const handleMoodboardPrompt = () => {
-    const lastAiMessage = activeConversation.filter(m => m.sender === 'ai').pop();
-    if (lastAiMessage) {
-        const newPrompt = `Based on the following text, generate a list of descriptive keywords and visual styles suitable for creating images in a tool like Midjourney. Text: "${lastAiMessage.text}"`;
-        // This re-uses your existing handleSubmit logic!
-        // We just need to set the prompt and trigger it.
-        setPrompt(newPrompt);
-        // We can even submit it programmatically if we refactor handleSubmit slightly
-    }
-}
+    // Create a new, very specific moodboard prompt using the last AI message and
+    // invoke the existing submission flow.
+    const handleGenerateMoodboard = async () => {
+        const lastAiMessage = activeConversation.slice().reverse().find(m => m.sender === 'ai');
+        if (!lastAiMessage) return;
+        const newPrompt = `Based on the following film concept, generate a detailed list of visual keywords and stylistic prompts suitable for an AI image generator like Midjourney. Focus on camera angles, lighting, color palette, and overall mood. Concept: "${lastAiMessage.text}"`;
+        // Call the existing submit logic with the generated prompt so we reuse optimistic UI, network, and response handling.
+        await handleSubmit(newPrompt);
+    };
 
     const selectConversation = async (conv) => {
         // If conversation has an id, fetch full history from backend
@@ -184,11 +195,13 @@ export default function Index({ auth, conversations: initialConversations = [] }
                                     <button type="submit" className="btn btn-primary bg-red-500 text-white p-2 rounded-md" disabled={isLoading}>
                                         Send
                                     </button>
-                                    <button 
-                                     onClick={() => handleMoodboardPrompt()}
-                                        className="btn mb-2">
-                                      ✨ Generate Mood Board Ideas
-                                    </button>
+                                                                        <button
+                                                                                type="button"
+                                                                                onClick={handleGenerateMoodboard}
+                                                                                className="btn mb-2"
+                                                                        >
+                                                                                ✨ Generate Mood Board Ideas
+                                                                        </button>
                                 </form>
                             </div>
                         </div>
