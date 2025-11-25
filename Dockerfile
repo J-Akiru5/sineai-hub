@@ -1,10 +1,18 @@
 # Stage 1: Build the Frontend Assets (React/Vite)
 FROM node:20 as frontend
 WORKDIR /app
-COPY package*.json vite.config.js ./
+
+# Copy dependency definitions
+COPY package*.json ./
+
+# Install node dependencies
 RUN npm install
-COPY resources/ ./resources/
-COPY public/ ./public/
+
+# Copy ALL project files (Config files, resources, etc.)
+# The .dockerignore file will prevent node_modules from being copied
+COPY . .
+
+# Build the assets
 RUN npm run build
 
 # Stage 2: Build the Backend (Laravel)
