@@ -5,7 +5,6 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AiAssistantController;
-use App\Http\Controllers\ScriptwriterController;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -52,9 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Fetch full conversation history
     Route::get('/ai/conversations/{conversation}', [AiAssistantController::class, 'show'])->name('ai.conversations.show');
 
-    // Routes for the Scriptwriter Page
-    Route::get('/scriptwriter', [ScriptwriterController::class, 'index'])->name('scriptwriter.index');
-Route::post('/scriptwriter/assist', [ScriptwriterController::class, 'assist'])->name('scriptwriter.assist');
+    // (Scriptwriter removed)
 
 // Language switch route (sets session locale)
 Route::post('/language', function (Request $request) {
