@@ -20,3 +20,23 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Cinematic design utilities */
+.cta-primary {
+  @apply inline-flex items-center px-6 py-3 rounded-xl text-white bg-gradient-to-r from-sineai-red-700 to-sineai-red-600 shadow-lg transition transform;
+}
+.cta-primary:hover {
+  @apply scale-105;
+}
+
+.cta-secondary {
+  @apply inline-flex items-center px-5 py-3 rounded-xl border border-white/20 text-white bg-transparent hover:bg-white/10 transition;
+}
+
+.glass-card {
+  @apply rounded-lg bg-slate-900/50 backdrop-blur-md border border-white/10;
+}
+
+.glass-card-pad {
+  @apply p-4;
+}
