@@ -8,7 +8,7 @@ export default function ProjectCard({ project }) {
     return (
         <a
             href={project?.id ? `/projects/${project.id}` : '#'}
-            className="block rounded-lg bg-slate-800 border border-slate-700 overflow-hidden transform transition duration-200 ease-in-out hover:scale-105 hover:border-sky-400"
+            className="block rounded-lg bg-slate-900/50 backdrop-blur-md border border-white/10 overflow-hidden transform transition duration-200 ease-in-out hover:scale-[1.03]"
         >
             <div className="relative w-full pb-[56.25%] bg-slate-700">
                 {thumbnail ? (
@@ -37,7 +37,7 @@ export default function ProjectCard({ project }) {
 
             <div className="p-4">
                 <div className="text-white font-semibold text-lg truncate">{title}</div>
-                <div className="text-sky-400 text-sm mt-1">{creator}</div>
+                <div className="text-amber-500 text-sm mt-1">{creator}</div>
             </div>
         </a>
     );
