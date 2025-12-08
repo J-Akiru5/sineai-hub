@@ -24,6 +24,13 @@ Route::get('/phpinfo', function () {
     return phpinfo();
 });
 
+// Placeholder for legacy/removed Scriptwriter feature.
+// Some frontend code still references the named route `scriptwriter.index`.
+// Keep a lightweight redirect to avoid Ziggy errors when the route is referenced.
+Route::get('/scriptwriter', function () {
+    return redirect()->route('home');
+})->name('scriptwriter.index');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/dashboard', function () {

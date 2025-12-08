@@ -25,14 +25,14 @@ export default function Create({ auth }) {
     return (
         <AuthenticatedLayout
             auth={auth}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Upload New Project</h2>}
+            header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Upload New Project</h2>}
         >
             <Head title="Upload Project" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
+                    <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6 text-amber-100">
                             <form onSubmit={submit}>
                                 <div className="mb-4">
                                     <InputLabel htmlFor="title" value="Project Title" />
@@ -44,7 +44,7 @@ export default function Create({ auth }) {
                                         isFocused={true}
                                         onChange={(e) => setData('title', e.target.value)}
                                     />
-                                    <InputError message={errors.title} className="mt-2" />
+                                    <InputError message={errors.title} className="mt-2 text-amber-200/80" />
                                 </div>
 
                                 <div className="mb-4">
@@ -53,11 +53,11 @@ export default function Create({ auth }) {
                                         id="description"
                                         name="description"
                                         value={data.description}
-                                        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                        className="mt-1 block w-full bg-slate-800/30 border border-white/6 rounded-md text-amber-100 p-3"
                                         onChange={(e) => setData('description', e.target.value)}
                                         rows="4"
                                     ></textarea>
-                                    <InputError message={errors.description} className="mt-2" />
+                                    <InputError message={errors.description} className="mt-2 text-amber-200/80" />
                                 </div>
 
                                 <div className="mb-4">
@@ -66,22 +66,22 @@ export default function Create({ auth }) {
                                         id="video"
                                         type="file"
                                         name="video"
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full text-amber-200"
                                         onChange={(e) => setData('video', e.target.files[0])}
                                     />
-                                    <InputError message={errors.video} className="mt-2" />
+                                    <InputError message={errors.video} className="mt-2 text-amber-200/80" />
                                 </div>
                                 
                                 {progress && (
-                                    <div className="w-full bg-gray-200 rounded-full mb-4">
-                                        <div className="bg-blue-600 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style={{ width: `${progress.percentage}%` }}>
+                                    <div className="w-full bg-slate-800/20 rounded-full mb-4">
+                                        <div className="bg-amber-500 text-xs font-medium text-slate-900 text-center p-0.5 leading-none rounded-full" style={{ width: `${progress.percentage}%` }}>
                                             {progress.percentage}%
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="flex items-center justify-end mt-4">
-                                    <PrimaryButton className="ml-4" disabled={processing}>
+                                    <PrimaryButton className="ml-4 bg-gradient-to-r from-amber-400 to-amber-700 text-slate-900" disabled={processing}>
                                         Upload Project
                                     </PrimaryButton>
                                 </div>

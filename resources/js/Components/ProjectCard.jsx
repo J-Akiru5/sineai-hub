@@ -35,9 +35,9 @@ export default function ProjectCard({ project }) {
                 )}
             </div>
 
-            <div className="p-4">
-                <div className="text-white font-semibold text-lg truncate">{title}</div>
-                <div className="text-amber-500 text-sm mt-1">{creator}</div>
+            <div className="p-4 bg-slate-900/20">
+                <div className="text-amber-100 font-semibold text-lg truncate">{title}</div>
+                <div className="text-amber-300 text-sm mt-1">{creator}</div>
             </div>
         </a>
     );

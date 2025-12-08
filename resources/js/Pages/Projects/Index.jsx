@@ -13,16 +13,16 @@ export default function Index({ auth, projects }) {
     return (
       <AuthenticatedLayout
         auth={auth}
-        header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">{__('Projects Gallery')}</h2>}
+        header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">{__('Projects Gallery')}</h2>}
       >
             <Head title="Projects" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg">
+              <div className="p-6 text-amber-100">
                 {(!projects || projects.length === 0) ? (
-                  <div className="text-gray-700">{__('No projects have been uploaded yet. Be the first!')}</div>
+                  <div className="text-amber-200/80">{__('No projects have been uploaded yet. Be the first!')}</div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map((project) => (

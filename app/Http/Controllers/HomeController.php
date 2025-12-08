@@ -13,6 +13,7 @@ class HomeController extends Controller
      */
     public function index()
     {
+        // Serve the cinematic landing page at Home/Index
         return Inertia::render('Home/Index');
     }
 }

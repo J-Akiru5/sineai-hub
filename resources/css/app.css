@@ -40,3 +40,8 @@
 .glass-card-pad {
   @apply p-4;
 }
+/* small credit for hero background images */
+.hero-credit {
+  font-size: .75rem;
+  opacity: 0.75;
+}

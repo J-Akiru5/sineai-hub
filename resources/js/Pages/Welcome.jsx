@@ -1,112 +1,87 @@
 import { Link, Head } from '@inertiajs/react';
 
-/**
- * Cinematic, dark landing page — SineAI Hub
- * Applies the new deep-maroon and gold accent design system.
- */
 export default function Welcome(props) {
     return (
         <>
             <Head title="Welcome" />
 
-            <div className="relative min-h-screen bg-slate-950 text-white selection:bg-amber-500/30 selection:text-white">
-                {/* Atmospheric blurred blobs */}
-                <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 bg-red-900/20 rounded-full blur-3xl opacity-30" />
-                <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] bg-red-900/20 rounded-full blur-3xl opacity-25" />
+            <div className="min-h-screen relative overflow-hidden bg-slate-950">
 
-                <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
-                    <header className="flex items-center justify-between sticky top-6 z-30">
-                        <div className="flex items-center gap-3">
-                            <Link href="/" className="inline-flex items-baseline gap-1 text-white no-underline">
-                                <span className="text-2xl font-semibold tracking-tight">SineAI</span>
-                                <span className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-red-700 to-amber-500">Hub</span>
-                            </Link>
+                {/* Background cover image */}
+                <img src="/images/bg-library.jpg" alt="Library background" className="absolute inset-0 w-full h-full object-cover z-0" />
+
+                {/* Cinematic overlay to darken and add atmosphere */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-black/30 z-0" aria-hidden="true" />
+
+                {/* Top navbar (transparent) */}
+                <nav className="absolute top-0 left-0 w-full z-40 px-6 py-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="inline-flex items-center gap-3">
+                            <img src="/images/logo.png" alt="Guild Logo" className="w-12 h-auto" />
+                            <span className="text-sm text-amber-200/80 font-semibold tracking-wider hidden sm:inline">SineAI Guild</span>
+                        </Link>
+                    </div>
+
+                    <div className="hidden sm:flex items-center gap-6 text-sm text-amber-100/70">
+                        <a href="#story" className="hover:text-amber-200">Story</a>
+                        <a href="#features" className="hover:text-amber-200">Features</a>
+                        <a href="#media" className="hover:text-amber-200">Media</a>
+                        <a href="#community" className="hover:text-amber-200">Community</a>
+                    </div>
+                </nav>
+
+                {/* Hero (centered) */}
+                <header className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center">
+                    <div className="max-w-6xl">
+                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black uppercase tracking-widest leading-tight bg-clip-text text-transparent bg-gradient-to-b from-amber-100 via-amber-400 to-amber-700 drop-shadow-2xl">
+                            DIRECT YOUR VISION
+                            <br />
+                            WITH AI PRECISION
+                        </h1>
+
+                        <p className="mt-4 text-amber-500/80 tracking-[0.5em] text-sm md:text-base uppercase font-bold">
+                            THE GUILD OF CREATIVE MACHINES
+                        </p>
+                    </div>
+                </header>
+
+                {/* Spark character - two placements for responsive behavior */}
+                {/* Desktop / larger screens: bottom-right */}
+                <img src="/images/spark.gif" alt="Spark character" className="hidden md:block absolute bottom-12 right-16 z-25 h-[40vh] w-auto pointer-events-none animate-[bounce_6s_infinite]" />
+
+                {/* Mobile: bottom-center (overlaps glass UI slightly) */}
+                <img src="/images/spark.gif" alt="Spark character" className="md:hidden absolute bottom-8 left-1/2 transform -translate-x-1/2 z-25 h-[30vh] w-auto pointer-events-none animate-[bounce_6s_infinite]" />
+
+                {/* Bottom glass interface: desktop absolute corners, mobile stacked centered */}
+
+                {/* Desktop: only left glass card (no right card near Spark) */}
+                <div className="hidden md:block">
+                    <div className="absolute bottom-12 left-8 z-30">
+                        <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 p-6 rounded-lg max-w-sm">
+                            <h3 className="text-amber-100 font-semibold text-lg">Join the Guild</h3>
+                            <p className="mt-2 text-amber-200/80 text-sm">Collaborate with creatives and access premium models.</p>
+                            <div className="mt-4">
+                                <Link href={route('register')} className="inline-flex items-center px-4 py-2 rounded-md bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900 font-bold shadow-lg">Join the Guild</Link>
+                            </div>
                         </div>
-
-                        <div className="space-x-3">
-                            {props.auth?.user ? (
-                                <Link href={route('dashboard')} className="inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg shadow-red-900/30">Dashboard</Link>
-                            ) : (
-                                <>
-                                    <Link href={route('login')} className="inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg shadow-red-900/30">Log in</Link>
-                                    <Link href={route('register')} className="inline-flex items-center px-4 py-2 rounded-xl border border-white/20 text-white bg-transparent hover:bg-white/10">Register</Link>
-                                </>
-                            )}
-                        </div>
-                    </header>
-
-                    <main className="mt-20">
-                        {/* Hero */}
-                        <section className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                            <div>
-                                <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-white">Create cinematic scripts with AI — welcome to SineAI Hub</h1>
-                                <p className="mt-6 text-slate-400 text-lg max-w-xl">A premium AI-first platform built for writers, directors and creatives who want polished, cinematic output. Fast, private, and production-ready.</p>
-
-                                <div className="mt-8 flex items-center gap-4">
-                                    <Link href={route('register')} className="inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white shadow-lg shadow-red-900/30">Get Started</Link>
-                                    <Link href={route('ai.assistant')} className="inline-flex items-center px-5 py-3 rounded-xl border border-white/20 text-white bg-transparent hover:bg-white/5">Explore Assistant</Link>
-                                </div>
-
-                                <div className="mt-10 flex gap-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-12 w-12 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-500">★</div>
-                                        <div>
-                                            <div className="text-white font-semibold">Cinematic Output</div>
-                                            <div className="text-slate-400 text-sm">Export scene-ready scripts with structure and tone.</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-12 w-12 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-500">⚡</div>
-                                        <div>
-                                            <div className="text-white font-semibold">Fast Iteration</div>
-                                            <div className="text-slate-400 text-sm">Rapidly refine dialogue, action, and beats.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <div className="rounded-xl bg-slate-900/50 backdrop-blur-md border border-white/10 p-6">
-                                    <h3 className="text-xl font-semibold text-white">Live Preview</h3>
-                                    <p className="mt-3 text-slate-400 text-sm">Type or paste a scene and receive structured script suggestions instantly.</p>
-
-                                    <div className="mt-4 bg-gradient-to-br from-red-900/20 to-transparent p-4 rounded-lg">
-                                        <pre className="text-sm text-slate-300 leading-relaxed">INT. RED CARPET - NIGHT
-    A camera tracks the silhouette of an actor as flashbulbs pop. The crowd murmurs.</pre>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Feature grid */}
-                        <section className="mt-20">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {[
-                                    { title: 'Smart Rewrite', body: 'Polish lines for impact and pacing.' },
-                                    { title: 'Scene Composer', body: 'Structure scenes with beats and transitions.' },
-                                    { title: 'Character Lab', body: 'Deepen character voice and relationships.' },
-                                ].map((f) => (
-                                    <div key={f.title} className="p-6 rounded-lg bg-slate-900/50 backdrop-blur-md border border-white/10">
-                                        <h4 className="text-lg font-semibold text-white tracking-tight">{f.title}</h4>
-                                        <p className="mt-3 text-slate-400 text-sm">{f.body}</p>
-                                        <div className="mt-4">
-                                            <Link href="#" className="inline-flex items-center px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5">Learn more</Link>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Footer */}
-                        <footer className="mt-24">
-                            <div className="rounded-lg p-6 bg-slate-900/50 backdrop-blur-md border border-white/10 flex items-center justify-between">
-                                <div className="text-slate-400 text-sm">© {new Date().getFullYear()} SineAI Hub — Made for storytellers.</div>
-                                <div className="text-slate-400 text-sm">Laravel v{props.laravelVersion} (PHP v{props.phpVersion})</div>
-                            </div>
-                        </footer>
-                    </main>
+                    </div>
                 </div>
+
+                {/* Mobile stacked cards centered */}
+                <div className="md:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center gap-4 px-4 w-full max-w-sm">
+                    <div className="w-full bg-slate-900/40 backdrop-blur-xl border border-white/10 p-5 rounded-lg">
+                        <h3 className="text-amber-100 font-semibold">Join the Guild</h3>
+                        <p className="mt-1 text-amber-200/80 text-sm">Access premium models & community.</p>
+                        <div className="mt-3">
+                            <Link href={route('register')} className="inline-flex items-center px-4 py-2 rounded-md bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900 font-bold">Join</Link>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Small footer meta (kept subtle) */}
+                <footer className="absolute left-6 right-6 bottom-2 z-20 text-center text-xs text-slate-400/60">
+                    © {new Date().getFullYear()} SineAI Hub — Crafted with cinematic intent.
+                </footer>
             </div>
         </>
     );

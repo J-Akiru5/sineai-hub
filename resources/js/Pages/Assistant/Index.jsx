@@ -9,8 +9,8 @@ import axios from 'axios'; // We'll use axios for clean API calls
 const MessageBubble = ({ sender, text }) => {
     const isUser = sender === 'user';
     const bubbleClasses = isUser
-        ? 'bg-blue-500 text-white self-end'
-        : 'bg-gray-200 text-gray-800 self-start';
+        ? 'bg-amber-400 text-slate-900 self-end'
+        : 'bg-slate-800/30 text-amber-100 self-start';
     
     // Replace newline characters with <br> tags for proper formatting
     const formattedText = (text || '').split('\n').map((line, index) => (
@@ -148,21 +148,21 @@ export default function Index({ auth, conversations: initialConversations = [] }
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Spark AI Assistant</h2>}
+            header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Spark AI Assistant</h2>}
         >
             <Head title="Spark Assistant" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
+                    <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
                         {/* Sidebar */}
-                        <div className="w-80 border-r dark:border-gray-700 p-4 overflow-y-auto">
-                            <button onClick={() => { setActiveConversation([]); setActiveConversationId(null); }} className="w-full mb-3 bg-blue-500 text-white py-2 rounded">+ New Conversation</button>
+                        <div className="w-80 border-r border-white/6 p-4 overflow-y-auto">
+                            <button onClick={() => { setActiveConversation([]); setActiveConversationId(null); }} className="w-full mb-3 bg-gradient-to-r from-amber-400 to-amber-700 text-slate-900 py-2 rounded font-semibold">+ New Conversation</button>
                             <div className="space-y-2">
                                 {conversations.map((c) => (
-                                    <div key={c.id || Math.random()} className={`p-3 rounded cursor-pointer ${c.id === activeConversationId ? 'bg-gray-100 dark:bg-gray-900' : ''}`} onClick={() => selectConversation(c)}>
-                                        <div className="font-medium text-sm">{c.title || (c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 40) : 'Untitled')}</div>
-                                        <div className="text-xs text-gray-500">{c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 80) : ''}</div>
+                                    <div key={c.id || Math.random()} className={`p-3 rounded cursor-pointer ${c.id === activeConversationId ? 'bg-slate-800/60' : 'bg-slate-800/20'}`} onClick={() => selectConversation(c)}>
+                                        <div className="font-medium text-sm text-amber-100">{c.title || (c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 40) : 'Untitled')}</div>
+                                        <div className="text-xs text-amber-200/80">{c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 80) : ''}</div>
                                     </div>
                                 ))}
                             </div>
@@ -175,33 +175,33 @@ export default function Index({ auth, conversations: initialConversations = [] }
                                     <MessageBubble key={index} sender={msg.sender} text={msg.text} />
                                 ))}
                                 {isLoading && (
-                                    <div className="self-start p-4 my-2 rounded-lg shadow bg-gray-200 text-gray-800">
+                                    <div className="self-start p-4 my-2 rounded-lg shadow bg-slate-800/40 text-amber-100">
                                         Spark is thinking...
                                     </div>
                                 )}
                             </div>
 
                             {/* Input Form Area */}
-                            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                            <div className="p-6 border-t border-white/10">
                                 <form onSubmit={handleSubmit} className="flex gap-4">
                                     <input
                                         type="text"
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder="Ask Spark for script ideas, a shot list, or a movie title..."
-                                        className="input flex-1 bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-sm"
+                                        className="flex-1 bg-slate-800/30 border border-white/6 text-amber-100 placeholder:amber-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                                         disabled={isLoading}
                                     />
-                                    <button type="submit" className="btn btn-primary bg-red-500 text-white p-2 rounded-md" disabled={isLoading}>
+                                    <button type="submit" className="bg-gradient-to-r from-amber-400 to-amber-700 text-slate-900 px-4 py-2 rounded-md font-semibold" disabled={isLoading}>
                                         Send
                                     </button>
-                                                                        <button
-                                                                                type="button"
-                                                                                onClick={handleGenerateMoodboard}
-                                                                                className="btn mb-2"
-                                                                        >
-                                                                                ✨ Generate Mood Board Ideas
-                                                                        </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerateMoodboard}
+                                        className="ml-2 px-3 py-2 bg-slate-800/30 text-amber-200 rounded-md"
+                                    >
+                                        ✨ Generate Mood Board Ideas
+                                    </button>
                                 </form>
                             </div>
                         </div>

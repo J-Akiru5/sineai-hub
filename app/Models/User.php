@@ -43,6 +43,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
     /**
      * Get the projects for the user.
      */
@@ -50,6 +51,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Project::class);
     }
+
     /**
      * Get the conversations for the user.
      */
