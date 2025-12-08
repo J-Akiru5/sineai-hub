@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
 
 export default function SparkWidget() {
     const [isOpen, setIsOpen] = useState(false);
@@ -90,20 +89,19 @@ export default function SparkWidget() {
                                 <div className="text-slate-400 text-sm">Say hello to Spark — ask for brainstorming help, beats, or story ideas.</div>
                             )}
 
-                            {messages.map((m, idx) => {
-                                const html = DOMPurify.sanitize(marked.parse(m.text || ''));
-                                return (
-                                    <div key={idx} className={m.sender === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                                        <div className={
-                                            (m.sender === 'user'
-                                                ? 'bg-slate-700 text-slate-100 rounded-lg px-3 py-2 max-w-[75%]'
-                                                : 'bg-amber-600 text-slate-900 rounded-lg px-3 py-2 max-w-[75%]')
-                                        }>
-                                            <div className="text-sm prose prose-invert" dangerouslySetInnerHTML={{ __html: html }} />
+                            {messages.map((m, idx) => (
+                                <div key={idx} className={m.sender === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                                    <div className={
+                                        (m.sender === 'user'
+                                            ? 'bg-slate-800 text-white rounded-br-none rounded-lg px-3 py-2 max-w-[75%]'
+                                            : 'bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-bl-none rounded-lg px-3 py-2 max-w-[75%]')
+                                    }>
+                                        <div className="text-sm prose prose-invert">
+                                            <ReactMarkdown>{m.text || ''}</ReactMarkdown>
                                         </div>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            ))}
 
                             {isThinking && (
                                 <div className="text-slate-400 text-sm">Spark is thinking…</div>

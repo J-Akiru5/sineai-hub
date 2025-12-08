@@ -1,6 +1,7 @@
 // resources/js/Pages/Assistant/Index.jsx
 
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import axios from 'axios'; // We'll use axios for clean API calls
@@ -9,21 +10,15 @@ import axios from 'axios'; // We'll use axios for clean API calls
 const MessageBubble = ({ sender, text }) => {
     const isUser = sender === 'user';
     const bubbleClasses = isUser
-        ? 'bg-amber-400 text-slate-900 self-end'
-        : 'bg-slate-800/30 text-amber-100 self-start';
-    
-    // Replace newline characters with <br> tags for proper formatting
-    const formattedText = (text || '').split('\n').map((line, index) => (
-        <React.Fragment key={index}>
-            {line}
-            <br />
-        </React.Fragment>
-    ));
+        ? 'bg-slate-800 text-white rounded-br-none self-end'
+        : 'bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-bl-none self-start';
 
     return (
         <div className={`w-full flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-2xl p-4 my-2 rounded-lg shadow ${bubbleClasses}`}>
-                {formattedText}
+                <div className="prose prose-invert text-sm">
+                    <ReactMarkdown>{text || ''}</ReactMarkdown>
+                </div>
             </div>
         </div>
     );

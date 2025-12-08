@@ -24,27 +24,26 @@ export default function Authenticated(props) {
                 <div className="absolute -bottom-60 -right-56 w-[28rem] h-[28rem] bg-red-900/20 rounded-full blur-3xl opacity-25" />
             </div>
 
-            <nav className="absolute inset-x-0 top-0 z-50 bg-transparent">
-                {/* Left-most logo pinned to viewport edge with ~20px padding */}
-                <div className="absolute left-0 inset-y-0 flex items-center pl-5 pointer-events-auto z-50">
-                    <Link href="/" className="inline-flex items-center gap-3 no-underline">
-                        <img src="/images/logo.png" alt="SineAI Hub" className="h-9 w-auto rounded-sm shadow-sm" />
-                        <div className="hidden sm:block leading-tight">
-                            <div className="text-base font-semibold tracking-tight text-amber-100">SineAI</div>
-                            <div className="text-xs font-medium tracking-tight text-amber-300">Hub</div>
-                        </div>
-                    </Link>
-                </div>
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <nav className="fixed inset-x-0 top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
+                        <div className="flex items-center gap-4">
+                            <Link href="/" className="inline-flex items-center gap-3 no-underline">
+                                <img src="/images/logo.png" alt="SineAI Hub" className="h-10 w-auto rounded-sm shadow-sm" />
+                                <div className="hidden sm:block leading-tight">
+                                    <div className="text-base font-semibold tracking-tight text-amber-100">SineAI</div>
+                                    <div className="text-xs font-medium tracking-tight text-amber-300">Hub</div>
+                                </div>
+                            </Link>
+                        </div>
+
                         <div className="flex-1 flex items-center justify-center">
-                            <div className="hidden sm:flex sm:ml-6 space-x-8">
-                                <NavLink className="text-amber-200/90" href={route('dashboard')} active={route().current('dashboard')}>Dashboard</NavLink>
-                                <NavLink className="text-amber-200/90" href={route('projects.index')} active={route().current('projects.index')}>Projects</NavLink>
-                                <NavLink className="text-amber-200/90" href={route('chat')} active={route().current('chat')}>Chat</NavLink>
-                                <NavLink className="text-amber-200/90" href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</NavLink>
-                                <NavLink className="text-amber-200/90" href={route('projects.create')} active={route().current('projects.create')}>Upload</NavLink>
+                            <div className="hidden sm:flex space-x-8">
+                                <NavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</NavLink>
+                                <NavLink href={route('projects.index')} active={route().current('projects.index')}>Projects</NavLink>
+                                <NavLink href={route('chat')} active={route().current('chat')}>Chat</NavLink>
+                                <NavLink href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</NavLink>
+                                <NavLink href={route('projects.create')} active={route().current('projects.create')}>Upload</NavLink>
                             </div>
                         </div>
 
@@ -55,7 +54,7 @@ export default function Authenticated(props) {
                                         <span className="inline-flex rounded-full">
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full text-amber-100 bg-slate-900/30 hover:bg-white/5 focus:outline-none transition duration-150"
+                                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full text-white bg-slate-800/20 hover:bg-white/5 focus:outline-none transition duration-150"
                                             >
                                                 <span className="mr-2">{user.name ?? 'User'}</span>
                                                 <svg
@@ -85,7 +84,7 @@ export default function Authenticated(props) {
                         <div className="-mr-2 flex items-center sm:hidden">
                             <button
                                 onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
-                                className="inline-flex items-center justify-center p-2 rounded-md text-amber-100 hover:bg-white/5 focus:outline-none transition duration-150 ease-in-out"
+                                className="inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-white/5 focus:outline-none transition duration-150 ease-in-out"
                             >
                                 <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                     <path
@@ -108,7 +107,7 @@ export default function Authenticated(props) {
                     </div>
                 </div>
 
-                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-slate-950/80 backdrop-blur-md'}>
+                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-slate-900/80 backdrop-blur-md'}>
                     <div className="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</ResponsiveNavLink>
                     </div>
