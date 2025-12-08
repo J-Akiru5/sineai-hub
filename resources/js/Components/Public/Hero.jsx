@@ -62,7 +62,7 @@ export default function Hero() {
             </div>
 
             {/* Spark character - two placements for responsive behavior.
-                Ensure the spark sits above other layers using Tailwind's arbitrary z-index class (e.g. z-[99]). */}}
+                Ensure the spark sits above other layers using Tailwind's arbitrary z-index class (e.g. z-[99]). */}
             <img src="/images/spark.gif" alt="Spark character" className="hidden md:block absolute bottom-12 right-16 z-999 h-[40vh] w-auto pointer-events-none animate-[bounce_6s_infinite]" />
 
             {/* Mobile: bottom-center (overlaps glass UI slightly) */}

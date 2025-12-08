@@ -138,6 +138,37 @@ class AiAssistantController extends Controller
         ]);
     }
 
+    /**
+     * Public guest chat endpoint (stateless, does not require auth or save history)
+     */
+    public function guestChat(Request $request)
+    {
+        $request->validate(['prompt' => 'required|string']);
+
+        try {
+            $apiKey = env('GEMINI_API_KEY');
+            if (!$apiKey) {
+                return response()->json(['response' => "AI API key not configured."], 500);
+            }
+
+            $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post("{$endpoint}?key={$apiKey}", [
+                'contents' => [
+                    ['parts' => [['text' => $request->prompt]]]
+                ]
+            ]);
+
+            $aiText = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? "I'm having trouble connecting right now.";
+
+            return response()->json(['response' => $aiText]);
+        } catch (\Exception $e) {
+            \Log::error('Guest chat error: ' . $e->getMessage());
+            return response()->json(['response' => "Sorry, an error occurred."], 500);
+        }
+    }
+
     public function index()
     {
         // The frontend file is named `index.jsx` (lowercase) under Pages/Assistant,

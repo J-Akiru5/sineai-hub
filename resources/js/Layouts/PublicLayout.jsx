@@ -1,5 +1,6 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
+import SparkWidget from '@/Components/SparkWidget';
 
 export default function PublicLayout({ title = 'SineAI Hub', children }) {
     return (
@@ -42,6 +43,8 @@ export default function PublicLayout({ title = 'SineAI Hub', children }) {
             </header>
 
             <main>{children}</main>
+
+            <SparkWidget />
 
             <footer className="mt-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

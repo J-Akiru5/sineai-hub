@@ -33,6 +33,9 @@ Route::get('/scriptwriter', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Public AI Chat endpoint for guests (no auth)
+Route::post('/ai/guest-chat', [AiAssistantController::class, 'guestChat'])->name('ai.guest-chat');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
