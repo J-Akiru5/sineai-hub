@@ -69,10 +69,26 @@ class ProjectController extends Controller
         return Inertia::render('Projects/Create');
     }
 
+    /**
+     * Display a single project.
+     */
+    public function show(Project $project)
+    {
+        // eager load user relation for the frontend
+        $project->load('user');
+
+        return Inertia::render('Projects/Show', [
+            'project' => $project,
+        ]);
+    }
+
     public function index()
     {
        
-         $projects = Project::with('user')->latest()->get();
+        // Return projects as-is. The `video_url` and `thumbnail_url` stored
+        // in the database already contain the absolute Supabase links, so
+        // don't attempt to transform or re-generate them here.
+        $projects = Project::with('user')->latest()->get();
 
         return Inertia::render('Projects/Index', [
             'projects' => $projects,

@@ -90,13 +90,12 @@ export default function SparkWidget() {
                             )}
 
                             {messages.map((m, idx) => (
-                                <div key={idx} className={m.sender === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                                    <div className={
-                                        (m.sender === 'user'
-                                            ? 'bg-slate-800 text-white rounded-br-none rounded-lg px-3 py-2 max-w-[75%]'
-                                            : 'bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-bl-none rounded-lg px-3 py-2 max-w-[75%]')
+                                <div key={idx} className={(m.sender === 'user' ? 'self-end ' : 'self-start ') + 'flex w-full'}>
+                                    <div className={(m.sender === 'user'
+                                        ? 'bg-slate-800 text-white rounded-lg rounded-br-none border border-white/5 px-3 py-2 max-w-[75%]'
+                                        : 'bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-lg rounded-bl-none shadow-lg px-3 py-2 max-w-[75%]')
                                     }>
-                                        <div className="text-sm prose prose-invert">
+                                        <div className="prose prose-invert text-sm">
                                             <ReactMarkdown>{m.text || ''}</ReactMarkdown>
                                         </div>
                                     </div>
