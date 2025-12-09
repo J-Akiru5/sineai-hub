@@ -35,8 +35,7 @@ export default function Authenticated({ children, header, auth, user: userProp }
                         <div className="flex-1 flex items-center justify-center">
                             <div className="hidden sm:flex space-x-6">
                                 <NavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</NavLink>
-                                <NavLink href={route('projects.index')} active={route().current('projects.index')}>Projects</NavLink>
-                                <NavLink href={route('projects.show')} active={route().current('projects.show')}>Show</NavLink>
+                                <NavLink href={route('projects.index')} active={route().current('projects.*')}>Projects</NavLink>
                                 <NavLink href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</NavLink>
                                 <NavLink href={route('projects.create')} active={route().current('projects.create')}>Upload</NavLink>
                             </div>
@@ -104,7 +103,7 @@ export default function Authenticated({ children, header, auth, user: userProp }
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-slate-900/80 backdrop-blur-md'}>
                     <div className="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</ResponsiveNavLink>
-                        <ResponsiveNavLink href={route('projects.index')} active={route().current('projects.index')}>Projects</ResponsiveNavLink>
+                        <ResponsiveNavLink href={route('projects.index')} active={route().current('projects.*')}>Projects</ResponsiveNavLink>
                         <ResponsiveNavLink href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</ResponsiveNavLink>
                         <ResponsiveNavLink href={route('projects.create')} active={route().current('projects.create')}>Upload</ResponsiveNavLink>
                     </div>
