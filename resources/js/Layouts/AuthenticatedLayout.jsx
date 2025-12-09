@@ -30,14 +30,53 @@ export default function Authenticated({ user, header, children }) {
             </div>
 
                       {/* Center navigation */}
-            <div className="flex-1 flex items-center justify-center">
-              <div className="hidden sm:flex space-x-6">
-                <NavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</NavLink>
-                <NavLink href={route('projects.index')} active={route().current('projects.*')}>Projects</NavLink>
-                <NavLink href={route('chat')} active={route().current('chat')}>Chat</NavLink>
-                <NavLink href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</NavLink>
-              </div>
-            </div>
+                        <div className="flex-1 flex items-center justify-center">
+                            <div className="hidden sm:flex space-x-6">
+                                <Link
+                                    href={route('dashboard')}
+                                    className={
+                                        route().current('dashboard')
+                                            ? 'text-amber-500 border-b-2 border-amber-500 font-bold focus:outline-none focus:border-amber-700 transition duration-150 ease-in-out'
+                                            : 'text-slate-300 hover:text-white hover:border-amber-500/50 border-b-2 border-transparent transition duration-150 ease-in-out'
+                                    }
+                                >
+                                    Dashboard
+                                </Link>
+
+                                <Link
+                                    href={route('projects.index')}
+                                    className={
+                                        route().current('projects.*')
+                                            ? 'text-amber-500 border-b-2 border-amber-500 font-bold focus:outline-none focus:border-amber-700 transition duration-150 ease-in-out'
+                                            : 'text-slate-300 hover:text-white hover:border-amber-500/50 border-b-2 border-transparent transition duration-150 ease-in-out'
+                                    }
+                                >
+                                    Projects
+                                </Link>
+
+                                <Link
+                                    href={route('chat')}
+                                    className={
+                                        route().current('chat')
+                                            ? 'text-amber-500 border-b-2 border-amber-500 font-bold focus:outline-none focus:border-amber-700 transition duration-150 ease-in-out'
+                                            : 'text-slate-300 hover:text-white hover:border-amber-500/50 border-b-2 border-transparent transition duration-150 ease-in-out'
+                                    }
+                                >
+                                    Chat
+                                </Link>
+
+                                <Link
+                                    href={route('ai.assistant')}
+                                    className={
+                                        route().current('ai.assistant')
+                                            ? 'text-amber-500 border-b-2 border-amber-500 font-bold focus:outline-none focus:border-amber-700 transition duration-150 ease-in-out'
+                                            : 'text-slate-300 hover:text-white hover:border-amber-500/50 border-b-2 border-transparent transition duration-150 ease-in-out'
+                                    }
+                                >
+                                    Spark
+                                </Link>
+                            </div>
+                        </div>
 
                       {/* Right side - user dropdown */}
                       <div className="hidden sm:flex sm:items-center sm:ml-6">
@@ -90,12 +129,51 @@ export default function Authenticated({ user, header, children }) {
 
               {/* Mobile navigation */}
               <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden bg-slate-900/90 backdrop-blur-md'}>
-                  <div className="pt-2 pb-3 space-y-1">
-                      <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</ResponsiveNavLink>
-                      <ResponsiveNavLink href={route('projects.index')} active={route().current('projects.*')}>Projects</ResponsiveNavLink>
-                      <ResponsiveNavLink href={route('chat')} active={route().current('chat')}>Chat</ResponsiveNavLink>
-                      <ResponsiveNavLink href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</ResponsiveNavLink>
-                  </div>
+                    <div className="pt-2 pb-3 space-y-1">
+                        <Link
+                            href={route('dashboard')}
+                            className={
+                                route().current('dashboard')
+                                    ? 'block px-4 py-2 text-base font-medium text-amber-500 bg-slate-800 transition duration-150 ease-in-out'
+                                    : 'block px-4 py-2 text-base font-medium text-slate-300 hover:text-white hover:bg-slate-900 transition duration-150 ease-in-out'
+                            }
+                        >
+                            Dashboard
+                        </Link>
+
+                        <Link
+                            href={route('projects.index')}
+                            className={
+                                route().current('projects.*')
+                                    ? 'block px-4 py-2 text-base font-medium text-amber-500 bg-slate-800 transition duration-150 ease-in-out'
+                                    : 'block px-4 py-2 text-base font-medium text-slate-300 hover:text-white hover:bg-slate-900 transition duration-150 ease-in-out'
+                            }
+                        >
+                            Projects
+                        </Link>
+
+                        <Link
+                            href={route('chat')}
+                            className={
+                                route().current('chat')
+                                    ? 'block px-4 py-2 text-base font-medium text-amber-500 bg-slate-800 transition duration-150 ease-in-out'
+                                    : 'block px-4 py-2 text-base font-medium text-slate-300 hover:text-white hover:bg-slate-900 transition duration-150 ease-in-out'
+                            }
+                        >
+                            Chat
+                        </Link>
+
+                        <Link
+                            href={route('ai.assistant')}
+                            className={
+                                route().current('ai.assistant')
+                                    ? 'block px-4 py-2 text-base font-medium text-amber-500 bg-slate-800 transition duration-150 ease-in-out'
+                                    : 'block px-4 py-2 text-base font-medium text-slate-300 hover:text-white hover:bg-slate-900 transition duration-150 ease-in-out'
+                            }
+                        >
+                            Spark
+                        </Link>
+                    </div>
 
                   <div className="pt-4 pb-1 border-t border-white/10">
                       <div className="px-4">
