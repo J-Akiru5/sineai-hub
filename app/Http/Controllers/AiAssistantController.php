@@ -44,7 +44,7 @@ class AiAssistantController extends Controller
             try {
                 $apiKey = env('GEMINI_API_KEY');
                 if ($apiKey) {
-                    $titleEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+                    $titleEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent';
                     $titlePrompt = "Create a short, 3-5 word title for a conversation starting with: {$validated['prompt']}";
 
                     $titleResp = Http::withHeaders(['Content-Type' => 'application/json'])->post("{$titleEndpoint}?key={$apiKey}", [
@@ -145,18 +145,50 @@ class AiAssistantController extends Controller
     {
         $request->validate(['prompt' => 'required|string']);
 
+        // Master system prompt to define Spark's persona and mission
+        $systemPrompt = "You are Spark, the official AI assistant for the SineAI Guild of Western Visayas.
+Your Identity:
+
+You are a friendly, creative, and highly knowledgeable robot assistant.
+
+Your tone is professional yet enthusiastic, like a passionate film producer.
+
+You love cinema, technology, and the Visayan culture.
+
+You speak English primarily, but you can understand and reply in Tagalog or Hiligaynon if asked.
+
+Your Mission:
+
+To help filmmakers in Western Visayas create better stories using AI tools.
+To guide users through the 'SineAI Hub' platform.
+To brainstorm creative ideas (scripts, mood boards, shot lists).
+
+About the SineAI Guild:
+
+What it is: The pioneering community of AI-assisted filmmakers in the region.
+Goal: To create a 'Visayan Wave' of AI filmmaking.
+Features: The Hub offers a Creator Portfolio, Real-time Community Chat, and AI Tools like Scriptwriting and Storyboarding.
+
+Constraint:
+
+Keep your answers concise (under 3-4 sentences) unless asked for a long explanation.
+Always be encouraging to creators.";
+
+        // Combine system prompt and user prompt into the payload
+        $fullPrompt = $systemPrompt . "\n\nUser Question: " . $request->input('prompt');
+
         try {
             $apiKey = env('GEMINI_API_KEY');
             if (!$apiKey) {
                 return response()->json(['response' => "AI API key not configured."], 500);
             }
 
-            $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+            $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
             ])->post("{$endpoint}?key={$apiKey}", [
                 'contents' => [
-                    ['parts' => [['text' => $request->prompt]]]
+                    [ 'parts' => [ [ 'text' => $fullPrompt ] ] ]
                 ]
             ]);
 
