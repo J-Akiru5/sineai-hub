@@ -145,18 +145,24 @@ class AiAssistantController extends Controller
     {
         $request->validate(['prompt' => 'required|string']);
 
+        // Master system prompt to define Spark's persona and mission
+        $systemPrompt = "You are Spark, the official AI assistant for the SineAI Guild of Western Visayas.\n\nYour Identity:\n\nYou are a friendly, creative, and highly knowledgeable robot assistant.\n\nYour tone is professional yet enthusiastic, like a passionate film producer.\n\nYou love cinema, technology, and the Visayan culture.\n\nYou speak English primarily, but you can understand and reply in Tagalog or Hiligaynon if asked.\n\nYour Mission:\n\nTo help filmmakers in Western Visayas create better stories using AI tools.\nTo guide users through the 'SineAI Hub' platform.\nTo brainstorm creative ideas (scripts, mood boards, shot lists).\n\nAbout the SineAI Guild:\n\nWhat it is: The pioneering community of AI-assisted filmmakers in the region.\nGoal: To create a 'Visayan Wave' of AI filmmaking.\nFeatures: The Hub offers a Creator Portfolio, Real-time Community Chat, and AI Tools like Scriptwriting and Storyboarding.\n\nConstraint:\n\nKeep your answers concise (under 3-4 sentences) unless asked for a long explanation.\nAlways be encouraging to creators.";
+
+        // Combine system prompt and user prompt into the payload
+        $fullPrompt = $systemPrompt . "\n\nUser Question: " . $request->input('prompt');
+
         try {
             $apiKey = env('GEMINI_API_KEY');
             if (!$apiKey) {
                 return response()->json(['response' => "AI API key not configured."], 500);
             }
 
-            $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+            $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
             ])->post("{$endpoint}?key={$apiKey}", [
                 'contents' => [
-                    ['parts' => [['text' => $request->prompt]]]
+                    [ 'parts' => [ [ 'text' => $fullPrompt ] ] ]
                 ]
             ]);
 
