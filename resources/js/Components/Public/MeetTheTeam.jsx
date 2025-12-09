@@ -1,18 +1,18 @@
 import React from 'react';
 
 const executives = [
-    { name: 'Jeff Martinez', title: 'President', img: '/images/team/jeff-martinez.jpg' },
-    { name: 'Diether Jaye Catolin', title: 'Vice President', img: '/images/team/diether-jaye-catolin.jpg' },
-    { name: 'Xavier Jess Villanis', title: 'Secretary', img: '/images/team/xavier-jess-villanis.jpg' },
+    { name: 'Jeff Martinez', title: 'President', img: 'images/team/jeff.png' },
+    { name: 'Diether Jaye Catolin', title: 'Vice President', img: 'public/images/team/diether-jaye-catolin.jpg' },
+    { name: 'Xavier Jess Villanis', title: 'Secretary', img: 'public/images/team/xavier-jess-villanis.jpg' },
 ];
 
 const directors = [
-    { name: 'Kate Fernandez', title: 'Director of Communications', img: '/images/team/kate-fernandez.jpg' },
-    { name: 'Alisha Barcenal', title: 'Director of Programs', img: '/images/team/alisha-barcenal.jpg' },
-    { name: 'Krystal Laura Sangacena', title: 'Director of Creative Development', img: '/images/team/krystal-laura-sangacena.jpg' },
-    { name: 'Romer Jhon Falalimpa', title: 'Director of Cultural Heritage', img: '/images/team/romer-jhon-falalimpa.jpg' },
-    { name: 'Ariane Pearl Gegawin', title: 'Director of External Affairs', img: '/images/team/ariane-pearl-gegawin.jpg' },
-    { name: 'Christian Chavez', title: 'Director of Technology and Innovations', img: '/images/team/christian-chavez.jpg' },
+    { name: 'Kate Fernandez', title: 'Director of Communications', img: 'public/images/team/kate-fernandez.jpg' },
+    { name: 'Alisha Barcenal', title: 'Director of Programs', img: 'public/images/team/alisha-barcenal.jpg' },
+    { name: 'Krystal Laura Sangacena', title: 'Director of Creative Development', img: 'public/images/team/krystal-laura-sangacena.jpg' },
+    { name: 'Romer Jhon Falalimpa', title: 'Director of Cultural Heritage', img: 'public/images/team/romer-jhon-falalimpa.jpg' },
+    { name: 'Ariane Pearl Gegawin', title: 'Director of External Affairs', img: 'public/images/team/ariane-pearl-gegawin.jpg' },
+    { name: 'Christian Chavez', title: 'Director of Technology and Innovations', img: 'public/images/team/christian-chavez.jpg' },
 ];
 
 export default function MeetTheTeam() {
