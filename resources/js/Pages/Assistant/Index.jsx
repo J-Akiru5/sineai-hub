@@ -10,12 +10,12 @@ import axios from 'axios'; // We'll use axios for clean API calls
 const MessageBubble = ({ sender, text }) => {
     const isUser = sender === 'user';
     const bubbleClasses = isUser
-        ? 'bg-slate-800 text-white rounded-br-none self-end'
-        : 'bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-bl-none self-start';
+        ? 'bg-slate-800 text-white rounded-lg rounded-br-none self-end border border-white/5'
+        : 'bg-gradient-to-br from-amber-600 to-amber-800 text-white rounded-lg rounded-bl-none self-start shadow-lg';
 
     return (
-        <div className={`w-full flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-2xl p-4 my-2 rounded-lg shadow ${bubbleClasses}`}>
+        <div className={(isUser ? 'self-end ' : 'self-start ') + 'flex w-full'}>
+            <div className={bubbleClasses + ' px-4 py-3 max-w-2xl'}>
                 <div className="prose prose-invert text-sm">
                     <ReactMarkdown>{text || ''}</ReactMarkdown>
                 </div>

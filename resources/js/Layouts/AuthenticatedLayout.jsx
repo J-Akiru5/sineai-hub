@@ -39,11 +39,11 @@ export default function Authenticated(props) {
 
                         <div className="flex-1 flex items-center justify-center">
                             <div className="hidden sm:flex space-x-8">
-                                <NavLink href={route('dashboard')} active={route().current('dashboard')}>Dashboard</NavLink>
-                                <NavLink href={route('projects.index')} active={route().current('projects.index')}>Projects</NavLink>
-                                <NavLink href={route('chat')} active={route().current('chat')}>Chat</NavLink>
-                                <NavLink href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</NavLink>
-                                <NavLink href={route('projects.create')} active={route().current('projects.create')}>Upload</NavLink>
+                                <NavLink className="text-white" href={route('dashboard')} active={route().current('dashboard')}>Dashboard</NavLink>
+                                <NavLink className="text-white" href={route('projects.index')} active={route().current('projects.index')}>Projects</NavLink>
+                                <NavLink className="text-white" href={route('chat')} active={route().current('chat')}>Chat</NavLink>
+                                <NavLink className="text-white" href={route('ai.assistant')} active={route().current('ai.assistant')}>Spark</NavLink>
+                                <NavLink className="text-white" href={route('projects.create')} active={route().current('projects.create')}>Upload</NavLink>
                             </div>
                         </div>
 
@@ -51,10 +51,10 @@ export default function Authenticated(props) {
                             <div className="ml-3 relative">
                                 <Dropdown>
                                     <Dropdown.Trigger>
-                                        <span className="inline-flex rounded-full">
+                                        <span className="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full text-white bg-slate-800/20 hover:bg-white/5 focus:outline-none transition duration-150"
+                                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-white bg-slate-800/20 hover:bg-white/5 focus:outline-none transition duration-150"
                                             >
                                                 <span className="mr-2">{user.name ?? 'User'}</span>
                                                 <svg
