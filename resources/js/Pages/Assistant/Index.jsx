@@ -147,7 +147,7 @@ export default function Index({ auth, conversations: initialConversations = [] }
         >
             <Head title="Spark Assistant" />
 
-            <div className="py-12">
+            <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
                         {/* Sidebar */}
@@ -184,7 +184,7 @@ export default function Index({ auth, conversations: initialConversations = [] }
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder="Ask Spark for script ideas, a shot list, or a movie title..."
-                                        className="flex-1 bg-slate-800/30 border border-white/6 text-amber-100 placeholder:amber-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                                        className="flex-1 bg-slate-800/30 border border-white/6 text-amber-100 placeholder-amber-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                                         disabled={isLoading}
                                     />
                                     <button type="submit" className="bg-gradient-to-r from-amber-400 to-amber-700 text-slate-900 px-4 py-2 rounded-md font-semibold" disabled={isLoading}>

@@ -190,12 +190,12 @@ export default function Authenticated({ user, header, children }) {
           </nav>
 
           {header && (
-              <header className="bg-transparent pt-20">
-                  <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">{header}</div>
+              <header className="bg-transparent pt-6">
+                  <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">{header}</div>
               </header>
           )}
 
-            <main className="pt-20">{children}</main>
+          <main className="pt-6">{children}</main>
         </div>
     );
 }

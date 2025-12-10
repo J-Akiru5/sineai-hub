@@ -75,70 +75,83 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
     };
 
     return (
-        <AuthenticatedLayout auth={auth} header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Chat</h2>}>
+        <AuthenticatedLayout user={auth.user} header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Chat</h2>}>
             <Head title="Chat" />
 
             <div className="py-6">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-4 gap-6">
-                    <aside className="col-span-1 bg-white p-4 rounded shadow">
-                        <h3 className="font-semibold mb-3">Channels</h3>
-                        <ul>
-                            {channelList.map((c) => (
-                                <li key={c.id}>
-                                    <button
-                                        className={`w-full text-left py-2 px-3 rounded ${c.id === activeChannel ? 'bg-sky-100' : 'hover:bg-slate-50'}`}
-                                        onClick={() => {
-                                                    setActiveChannel(c.id);
-                                                    setMessages([]); // optionally clear while loading
-                                                }}
-                                    >
-                                        {c.name}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </aside>
-
-                    <section className="col-span-3 bg-white p-4 rounded shadow flex flex-col" style={{ minHeight: '60vh' }}>
-                        <div className="flex-1 overflow-auto mb-4">
-                            {messages.length === 0 ? (
-                                <div className="text-gray-500">No messages yet in this channel.</div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {messages.map((m, i) => (
-                                        <div key={m.id ?? i} className="p-2 rounded bg-slate-50">
-                                            <div className="text-sm text-slate-700 font-semibold">{m.user?.name ?? 'User'}</div>
-                                            <div className="text-base text-slate-900">{m.body}</div>
-                                            <div className="text-xs text-gray-400">{m.created_at ? new Date(m.created_at).toLocaleString('en-PH', { timeZone: 'Asia/Manila' }) : ''}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        <form onSubmit={submit} className="mt-2">
-                            <input type="hidden" name="channel_id" value={activeChannel} />
-                            <div className="flex">
-                                <input
-                                    type="text"
-                                    name="body"
-                                    value={data.body}
-                                    onChange={(e) => setData('body', e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            if (!processing && data.body?.trim()) submit();
-                                        }
-                                    }}
-                                    className="flex-1 border rounded px-3 py-2 mr-2"
-                                    placeholder="Write a message..."
-                                />
-                                <button type="submit" disabled={processing} className="bg-sky-500 text-white px-4 py-2 rounded">
-                                    Send
-                                </button>
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
+                        {/* Sidebar */}
+                        <aside className="w-80 border-r border-white/10 p-4 overflow-y-auto bg-slate-900/80 backdrop-blur-md">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="text-amber-100 font-semibold">Channels</div>
                             </div>
-                        </form>
-                    </section>
+                            <div className="space-y-2">
+                                {channelList.map((c) => (
+                                    <div key={c.id} className={`group p-2 rounded cursor-pointer ${c.id === activeChannel ? 'bg-white/5 border-l-4 border-amber-500 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                                        <button className="w-full text-left" onClick={() => { setActiveChannel(c.id); setMessages([]); }}>
+                                            <div className="font-medium text-sm truncate">{c.name}</div>
+                                            <div className="text-xs text-amber-200/80 truncate">{c.description ?? ''}</div>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </aside>
+
+                        {/* Main chat area */}
+                        <div className="flex-1 flex flex-col">
+                            <div className="flex-1 flex flex-col overflow-hidden">
+                                <div className="flex-1 overflow-y-auto p-6" id="messages-container">
+                                    <div className="mb-4">
+                                        <h2 className="text-lg font-semibold text-amber-100">{channelList.find(c => c.id === activeChannel)?.name ?? 'Channel'}</h2>
+                                        <div className="text-xs text-amber-200">{channelList.find(c => c.id === activeChannel)?.description ?? ''}</div>
+                                    </div>
+
+                                    {messages.length === 0 ? (
+                                        <div className="h-full flex items-center justify-center text-amber-200/70">No messages yet in this channel.</div>
+                                    ) : (
+                                            <div className={`flex flex-col ${messages.length <= 1 ? 'justify-center' : ''} space-y-3`}>
+                                                {messages.map((m, i) => {
+                                                    const isMe = String(m.user?.id ?? m.user_id) === String(auth.user?.id);
+                                                    return (
+                                                        <div key={m.id ?? i} className="w-full flex">
+                                                            <div className={`${isMe ? 'ml-auto' : 'mr-auto'} max-w-[78%] px-4 py-2 rounded-xl ${isMe ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}`}>
+                                                                <div className="text-xs font-semibold mb-1 text-amber-100">{m.user?.name ?? 'User'}</div>
+                                                                <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
+                                                                <div className="text-[11px] text-amber-200 mt-2 text-right">{m.created_at ? new Date(m.created_at).toLocaleString() : ''}</div>
+                                                            </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="p-4 border-t border-white/10">
+                                <form onSubmit={submit} className="flex items-end gap-3">
+                                    <input type="hidden" name="channel_id" value={activeChannel} />
+                                    <textarea
+                                        rows={1}
+                                        name="body"
+                                        value={data.body}
+                                        onChange={(e) => setData('body', e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                if (!processing && data.body?.trim()) submit();
+                                            }
+                                        }}
+                                        className="flex-1 resize-none rounded-xl bg-slate-800/30 text-amber-100 placeholder-amber-300 p-3 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                                        placeholder="Write a message..."
+                                    />
+                                    <button type="submit" disabled={processing} className="inline-flex items-center px-4 py-2 rounded-xl bg-amber-400 text-black font-semibold shadow">
+                                        Send
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>

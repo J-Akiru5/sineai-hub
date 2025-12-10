@@ -10,7 +10,7 @@ export default function Dashboard(props) {
         >
             <Head title="Dashboard" />
 
-            <div className="py-12">
+            <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Left: Main content */}

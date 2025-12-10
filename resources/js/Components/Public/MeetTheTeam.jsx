@@ -2,17 +2,17 @@ import React from 'react';
 
 const executives = [
     { name: 'Jeff Martinez', title: 'President', img: 'images/team/jeff.png' },
-    { name: 'Diether Jaye Catolin', title: 'Vice President', img: 'public/images/team/diether-jaye-catolin.jpg' },
-    { name: 'Xavier Jess Villanis', title: 'Secretary', img: 'public/images/team/xavier-jess-villanis.jpg' },
+    { name: 'Diether Jaye Catolin', title: 'Vice President', img: 'images/team/diether.png' },
+    { name: 'Xavier Jess Villanis', title: 'Secretary', img: 'images/team/xavier.png' },
 ];
 
 const directors = [
-    { name: 'Kate Fernandez', title: 'Director of Communications', img: 'public/images/team/kate-fernandez.jpg' },
-    { name: 'Alisha Barcenal', title: 'Director of Programs', img: 'public/images/team/alisha-barcenal.jpg' },
-    { name: 'Krystal Laura Sangacena', title: 'Director of Creative Development', img: 'public/images/team/krystal-laura-sangacena.jpg' },
-    { name: 'Romer Jhon Falalimpa', title: 'Director of Cultural Heritage', img: 'public/images/team/romer-jhon-falalimpa.jpg' },
-    { name: 'Ariane Pearl Gegawin', title: 'Director of External Affairs', img: 'public/images/team/ariane-pearl-gegawin.jpg' },
-    { name: 'Christian Chavez', title: 'Director of Technology and Innovations', img: 'public/images/team/christian-chavez.jpg' },
+    { name: 'Kate Fernandez', title: 'Director of Communications', img: 'images/team/kate.png' },
+    { name: 'Alisha Barcenal', title: 'Director of Programs', img: 'images/team/alisha.png' },
+    { name: 'Krystal Laura Sangacena', title: 'Director of Creative Development', img: 'images/team/krystal.png' },
+    { name: 'Romer Jhon Falalimpa', title: 'Director of Cultural Heritage', img: 'images/team/romer.png' },
+    { name: 'Ariane Pearl Gegawin', title: 'Director of External Affairs', img: 'images/team/ariane.png' },
+    { name: 'Christian Chavez', title: 'Director of Technology and Innovations', img: 'images/team/christian.png' },
 ];
 
 export default function MeetTheTeam() {

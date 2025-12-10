@@ -17,7 +17,7 @@ export default function Index({ auth, projects }) {
       >
             <Head title="Projects" />
 
-            <div className="py-12">
+        <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg">
               <div className="p-6 text-amber-100">
