@@ -23,7 +23,7 @@ export default function Show({ auth, project }) {
                                 {videoUrl ? (
                                     <div className="w-full bg-black rounded-lg overflow-hidden">
                                         <video
-                                              controls
+                                            controls
                                             preload="none"
                                             playsInline
                                             disableRemotePlayback

@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ScriptwriterController;
@@ -36,9 +37,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Public AI Chat endpoint for guests (no auth) - rate limited to prevent abuse
 Route::post('/ai/guest-chat', [AiAssistantController::class, 'guestChat'])->middleware('throttle:10,1')->name('ai.guest-chat');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -70,6 +69,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Scriptwriter page (Cinematic UI)
     Route::get('/scriptwriter', [ScriptwriterController::class, 'index'])->name('scriptwriter.index');
     Route::post('/scriptwriter/assist', [ScriptwriterController::class, 'assist'])->name('scriptwriter.assist');
+    // Script CRUD
+    Route::post('/scriptwriter', [ScriptwriterController::class, 'store'])->name('scriptwriter.store');
+    Route::get('/scriptwriter/{script}', [ScriptwriterController::class, 'show'])->name('scriptwriter.show');
+    Route::put('/scriptwriter/{script}', [ScriptwriterController::class, 'update'])->name('scriptwriter.update');
+    Route::delete('/scriptwriter/{script}', [ScriptwriterController::class, 'destroy'])->name('scriptwriter.destroy');
 
     // (Scriptwriter removed)
 

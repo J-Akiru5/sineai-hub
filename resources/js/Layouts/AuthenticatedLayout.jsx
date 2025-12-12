@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
@@ -6,9 +7,48 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 
 export default function Authenticated({ user, header, children }) {
-  const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
-  const { auth } = usePage().props;
-  const currentUser = user ?? auth?.user ?? {};
+    const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
+    const { auth } = usePage().props;
+    const currentUser = user ?? auth?.user ?? {};
+
+    // Real-time notification state
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+
+    // Subscribe to Supabase messages INSERT events
+    useEffect(() => {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !supabaseKey) return;
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const channel = supabase
+            .channel('public:messages')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+                try {
+                    if (!payload || !payload.new) return;
+                    // don't notify for our own messages
+                    if (payload.new.user_id && auth?.user && payload.new.user_id === auth.user.id) return;
+                    setUnreadCount((p) => p + 1);
+                    setToastMessage('New message received!');
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                } catch (e) {
+                    // ignore
+                }
+            })
+            .subscribe();
+
+        return () => {
+            try {
+                supabase.removeChannel(channel);
+            } catch (e) {
+                // ignore
+            }
+        };
+    }, [auth]);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -62,7 +102,12 @@ export default function Authenticated({ user, header, children }) {
                                             : 'text-slate-300 hover:text-white hover:border-amber-500/50 border-b-2 border-transparent transition duration-150 ease-in-out'
                                     }
                                 >
-                                    Chat
+                                  <div className="relative inline-block">
+                                      Chat
+                                      {unreadCount > 0 && (
+                                          <span className="absolute -top-1 -right-3 block h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-slate-900 animate-pulse" />
+                                      )}
+                                  </div>
                                 </Link>
 
                                 <Link
@@ -198,6 +243,13 @@ export default function Authenticated({ user, header, children }) {
                   </div>
               </div>
           </nav>
+
+          {/* Toast notification (bottom-right) */}
+          {showToast && (
+              <div className="fixed bottom-4 right-4 z-50 bg-slate-800 border-l-4 border-amber-500 text-white px-4 py-3 rounded shadow-2xl flex items-center gap-3 transition-all transform duration-300">
+                  <div className="text-sm">{toastMessage || 'New message received!'}</div>
+              </div>
+          )}
 
           {header && (
               <header className="bg-transparent pt-6">

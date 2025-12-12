@@ -23,11 +23,14 @@
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.80.0",
+        "@tiptap/extension-bubble-menu": "^3.13.0",
         "@tiptap/extension-floating-menu": "^3.10.5",
         "@tiptap/pm": "^3.13.0",
         "@tiptap/react": "^3.13.0",
         "@tiptap/starter-kit": "^3.13.0",
         "aos": "^2.3.4",
-        "react-markdown": "^10.1.0"
+        "marked": "^17.0.1",
+        "react-markdown": "^10.1.0",
+        "turndown": "^7.2.2"
     }
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
+use App\Models\Script;
+use Illuminate\Support\Facades\Auth;
 
 class ScriptwriterController extends Controller
 {
@@ -13,7 +15,91 @@ class ScriptwriterController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Scriptwriter/Index');
+        $scripts = request()->user()
+            ? Script::where('user_id', request()->user()->id)->latest()->get()
+            : collect();
+
+        return Inertia::render('Scriptwriter/Index', [
+            'scripts' => $scripts,
+        ]);
+    }
+
+    /**
+     * Create a new blank script for the current user.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => 'nullable|string|max:255',
+        ]);
+
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $script = Script::create([
+            'user_id' => $user->id,
+            'title' => $request->input('title', 'Untitled Script'),
+            'content' => $request->input('content', null),
+        ]);
+
+        return response()->json(['script' => $script]);
+    }
+
+    /**
+     * Update a script's title or content.
+     */
+    public function update(Request $request, Script $script)
+    {
+        $user = $request->user();
+        if (!$user || $script->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $data = $request->validate([
+            'title' => 'nullable|string|max:255',
+            'content' => 'nullable',
+        ]);
+
+        if (array_key_exists('title', $data)) {
+            $script->title = $data['title'] ?? $script->title;
+        }
+        if (array_key_exists('content', $data)) {
+            $script->content = $data['content'];
+        }
+
+        $script->save();
+
+        return response()->json(['script' => $script]);
+    }
+
+    /**
+     * Delete a script.
+     */
+    public function destroy(Request $request, Script $script)
+    {
+        $user = $request->user();
+        if (!$user || $script->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $script->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Return a specific script's data.
+     */
+    public function show(Script $script, Request $request)
+    {
+        $user = $request->user();
+        if (!$user || $script->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return response()->json(['script' => $script]);
     }
 
     /**
@@ -33,10 +119,15 @@ class ScriptwriterController extends Controller
         // Build action-specific prompt
         switch ($action) {
             case 'rewrite':
+            case 'rewrite_dialogue':
                 $userPrompt = "You are an award-winning screenwriter. Rewrite the following dialogue to be more subtext-heavy and impactful: '{$selected}'";
                 break;
             case 'describe':
+            case 'describe_scene':
                 $userPrompt = "Write a vivid, cinematic scene description for: '{$selected}'";
+                break;
+            case 'suggest_next':
+                $userPrompt = "Suggest the next lines or actions that follow this text in a screenplay-friendly manner: '{$selected}'";
                 break;
             default:
                 $userPrompt = "Provide a helpful {$action} for the following text: '{$selected}'";
