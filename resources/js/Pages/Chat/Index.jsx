@@ -7,6 +7,7 @@ import supabase from '@/supabase';
 export default function ChatIndex({ auth, channels = [], messages: initialMessages = [], users: initialUsers = {}, defaultChannelId = null }) {
     const [channelList, setChannelList] = useState(channels);
     const [activeChannel, setActiveChannel] = useState(defaultChannelId);
+    const [showSidebar, setShowSidebar] = useState(true);
 
     // messages/users kept in state so realtime updates can modify them
     const [messages, setMessages] = useState(initialMessages || []);
@@ -14,6 +15,7 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
 
     const { data, setData, post, processing, reset } = useForm({ channel_id: activeChannel, body: '' });
     const subscriptionRef = useRef(null);
+    const messagesEndRef = useRef(null);
 
     // keep the form channel_id in sync
     useEffect(() => {
@@ -24,6 +26,13 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
     useEffect(() => {
         setChannelList(channels);
     }, [channels]);
+
+    // hide sidebar on mobile when a channel is pre-selected
+    useEffect(() => {
+        if (defaultChannelId) {
+            setShowSidebar(false);
+        }
+    }, [defaultChannelId]);
 
     // Subscribe to message inserts and attach full user objects from our users state
     useEffect(() => {
@@ -43,7 +52,8 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
 
                 // look up the full user object using the user_id
                 const userObj = users?.[newMessage.user_id] ?? null;
-                newMessage.user = userObj ?? { name: 'User' };
+                // prefer to leave user null so the UI can decide (and show auth user name for self)
+                newMessage.user = userObj ?? null;
 
                 setMessages((prev) => [...prev, newMessage]);
             })
@@ -58,6 +68,15 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
             }
         };
     }, [users, activeChannel]);
+
+    // Auto-scroll to bottom when messages update
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const submit = (e) => {
         if (e) e.preventDefault();
@@ -82,14 +101,14 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
                         {/* Sidebar */}
-                        <aside className="w-80 border-r border-white/10 p-4 overflow-y-auto bg-slate-900/80 backdrop-blur-md">
+                        <aside className={`${showSidebar ? 'flex' : 'hidden'} md:flex flex-col w-72 min-w-[18rem] border-r border-white/10 p-4 overflow-y-auto bg-slate-900/80 backdrop-blur-md`}>
                             <div className="flex items-center justify-between mb-4">
                                 <div className="text-amber-100 font-semibold">Channels</div>
                             </div>
                             <div className="space-y-2">
                                 {channelList.map((c) => (
                                     <div key={c.id} className={`group p-2 rounded cursor-pointer ${c.id === activeChannel ? 'bg-white/5 border-l-4 border-amber-500 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                                        <button className="w-full text-left" onClick={() => { setActiveChannel(c.id); setMessages([]); }}>
+                                        <button className="w-full text-left" onClick={() => { setActiveChannel(c.id); setMessages([]); setShowSidebar(false); }}>
                                             <div className="font-medium text-sm truncate">{c.name}</div>
                                             <div className="text-xs text-amber-200/80 truncate">{c.description ?? ''}</div>
                                         </button>
@@ -99,12 +118,19 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                         </aside>
 
                         {/* Main chat area */}
-                        <div className="flex-1 flex flex-col">
+                        <div className={`${!showSidebar ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col`}> 
                             <div className="flex-1 flex flex-col overflow-hidden">
                                 <div className="flex-1 overflow-y-auto p-6" id="messages-container">
-                                    <div className="mb-4">
-                                        <h2 className="text-lg font-semibold text-amber-100">{channelList.find(c => c.id === activeChannel)?.name ?? 'Channel'}</h2>
-                                        <div className="text-xs text-amber-200">{channelList.find(c => c.id === activeChannel)?.description ?? ''}</div>
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <button onClick={() => { setActiveChannel(null); setShowSidebar(true); }} className="block md:hidden p-2 rounded-md text-amber-200 hover:bg-white/5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                                                <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        <div>
+                                            <h2 className="text-lg font-semibold text-amber-100">{channelList.find(c => c.id === activeChannel)?.name ?? 'Channel'}</h2>
+                                            <div className="text-xs text-amber-200">{channelList.find(c => c.id === activeChannel)?.description ?? ''}</div>
+                                        </div>
                                     </div>
 
                                     {messages.length === 0 ? (
@@ -116,7 +142,10 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                                     return (
                                                         <div key={m.id ?? i} className="w-full flex">
                                                             <div className={`${isMe ? 'ml-auto' : 'mr-auto'} max-w-[78%] px-4 py-2 rounded-xl ${isMe ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}`}>
-                                                                <div className="text-xs font-semibold mb-1 text-amber-100">{m.user?.name ?? 'User'}</div>
+                                                                {(() => {
+                                                                    const displayName = isMe ? auth.user?.name : (m.user?.name ?? 'Unknown');
+                                                                    return <div className="text-xs font-semibold mb-1 text-amber-100">{displayName}</div>;
+                                                                })()}
                                                                 <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
                                                                 <div className="text-[11px] text-amber-200 mt-2 text-right">{m.created_at ? new Date(m.created_at).toLocaleString() : ''}</div>
                                                             </div>
@@ -125,6 +154,7 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                             })}
                                         </div>
                                     )}
+                                    <div ref={messagesEndRef} />
                                 </div>
                             </div>
 

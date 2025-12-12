@@ -13,6 +13,9 @@ class ProjectController extends Controller
 {
     public function store(Request $request)
     {
+        // Allow longer-running uploads (5 minutes) to prevent cURL timeout for large files
+        @set_time_limit(300);
+
         // Validate the incoming request data
         $validated = $request->validate([
             'title' => 'required|string|max:255',

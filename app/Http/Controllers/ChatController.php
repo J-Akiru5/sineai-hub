@@ -14,16 +14,17 @@ class ChatController extends Controller
     {
         $channels = Channel::orderBy('name')->get();
 
-        // pick the first channel as default (if any)
-        $defaultChannel = $channels->first();
+        // prefer the "General" channel as default when available, otherwise fall back to the first
+        $defaultChannel = Channel::where('name', 'General')->first() ?? $channels->first();
 
         $messages = [];
         $users = []; // <-- Initialize an empty array for users
 
         if ($defaultChannel) {
+            // load the most recent 100 messages but return them in ascending order (oldest -> newest)
             $messages = Message::where('channel_id', $defaultChannel->id)
-                ->with('user')
-                ->latest()
+                ->with('user:id,name,avatar_url')
+                ->orderBy('created_at', 'desc')
                 ->take(100)
                 ->get()
                 ->reverse()
@@ -42,6 +43,19 @@ class ChatController extends Controller
             'defaultChannelId' => $defaultChannel?->id,
             'users' => $users, // <-- Pass the new 'users' array as a prop
         ]);
+    }
+
+    /**
+     * Return messages for a specific channel (JSON).
+     */
+    public function show(Channel $channel)
+    {
+        $messages = Message::where('channel_id', $channel->id)
+            ->with('user:id,name,avatar_url')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return response()->json(['messages' => $messages]);
     }
 
     public function store(Request $request)

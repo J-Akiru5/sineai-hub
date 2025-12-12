@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import SparkWidget from '@/Components/SparkWidget';
+import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function PublicLayout({ title = 'SineAI Hub', children }) {
     return (
@@ -47,10 +48,56 @@ export default function PublicLayout({ title = 'SineAI Hub', children }) {
             <SparkWidget />
 
             <footer className="mt-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="glass-card p-4 flex items-center justify-between">
-                        <div className="text-slate-400 text-sm">© {new Date().getFullYear()} SineAI Hub — Made for storytellers.</div>
-                        <div className="text-slate-400 text-sm">Public</div>
+                <div className="bg-slate-950 border-t border-white/10 pt-10 pb-6 text-slate-400">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+                            {/* Column 1 - Brand */}
+                            <div className="space-y-4">
+                                <ApplicationLogo className="h-10 w-auto text-amber-500" />
+                                <p className="text-sm">Empowering Visayan filmmakers with AI-driven creativity.</p>
+                            </div>
+
+                            {/* Column 2 - Platform */}
+                            <div>
+                                <h4 className="text-amber-500 font-bold mb-4">Platform</h4>
+                                <ul className="space-y-2">
+                                    <li><Link href="/" className="hover:underline">Home</Link></li>
+                                    <li><Link href="/projects" className="hover:underline">Projects Gallery</Link></li>
+                                    <li><Link href="/scriptwriter" className="hover:underline">Scriptwriter</Link></li>
+                                    <li><Link href="/spark" className="hover:underline">Spark AI</Link></li>
+                                </ul>
+                            </div>
+
+                            {/* Column 3 - Community */}
+                            <div>
+                                <h4 className="text-amber-500 font-bold mb-4">Guild</h4>
+                                <ul className="space-y-2">
+                                    <li><a href="/about" className="hover:underline">About Us</a></li>
+                                    <li><a href="/events" className="hover:underline">Events</a></li>
+                                    <li><a href="/join" className="hover:underline">Join the Guild</a></li>
+                                    <li><a href="/support" className="hover:underline">Support</a></li>
+                                </ul>
+                            </div>
+
+                            {/* Column 4 - Stay Connected */}
+                            <div>
+                                <h4 className="text-amber-500 font-bold mb-4">Follow Us</h4>
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <a href="#" className="text-slate-300 hover:text-white">[FB]</a>
+                                    <a href="#" className="text-slate-300 hover:text-white">[IG]</a>
+                                    <a href="#" className="text-slate-300 hover:text-white">[YT]</a>
+                                </div>
+
+                                <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
+                                    <input type="email" placeholder="Your email" className="flex-1 rounded-md bg-slate-900/50 border border-white/5 px-3 py-2 text-sm text-white placeholder-amber-300 focus:outline-none" />
+                                    <button className="px-4 py-2 bg-amber-500 text-black font-semibold rounded-md">Subscribe</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 border-t border-white/10 pt-6 text-sm text-slate-400">
+                            © 2025 SineAI Hub. Made for storytellers in Western Visayas.
+                        </div>
                     </div>
                 </div>
             </footer>

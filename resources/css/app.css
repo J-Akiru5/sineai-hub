@@ -2,85 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* nefa small utilities ported */
-.cover-gradient {
-  background: linear-gradient(169.4deg, rgba(57, 132, 244, 0.04) -6.01%, rgba(12, 211, 255, 0.04) 36.87%, rgba(47, 124, 240, 0.04) 78.04%, rgba(14, 101, 232, 0.04) 103.77%);
-}
-
-.cover-gradient-2 {
-  background: linear-gradient(169.4deg, rgba(57, 132, 244, 0.1) -6.01%, rgba(12, 211, 255, 0.1) 36.87%, rgba(47, 124, 240, 0.1) 78.04%, rgba(14, 101, 232, 0.1) 103.77%);
-}
-
-.bg-blue-gradient,
-.text-gradient {
-  background: linear-gradient(136.91deg, #468ef9 -12.5%, #0c66ee 107.5%);
-}
-
-.text-gradient {
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Cinematic design utilities */
-.cta-primary {
-  @apply inline-flex items-center px-6 py-3 rounded-xl text-white bg-gradient-to-r from-sineai-red-700 to-sineai-red-600 shadow-lg transition transform;
-}
-.cta-primary:hover {
-  @apply scale-105;
-}
-
-.cta-secondary {
-  @apply inline-flex items-center px-5 py-3 rounded-xl border border-white/20 text-white bg-transparent hover:bg-white/10 transition;
-}
-
-.glass-card {
-  @apply rounded-lg bg-slate-900/50 backdrop-blur-md border border-white/10;
-}
-
-.glass-card-pad {
-  @apply p-4;
-}
-/* small credit for hero background images */
-.hero-credit {
-  font-size: .75rem;
-  opacity: 0.75;
-}
-/* Scrollbar utilities */
-/* Scoped utility to hide visible scrollbar but preserve scrolling */
+/* Scrollbar utilities (minimal stable set) */
 .no-visible-scrollbar {
-  scrollbar-width: none;
-  /* Firefox */
+  /* Hide scrollbar where supported (IE) */
   -ms-overflow-style: none;
-  /* IE 10+ */
 }
 
-.no-visible-scrollbar::-webkit-scrollbar {
-  width: 0px;
-  height: 0px;
+@supports (scrollbar-width: none) {
+  .no-visible-scrollbar {
+    scrollbar-width: none;
+  
+
+    /* Keep WebKit hidden scrollbar only when supported */
+    .no-visible-scrollbar::-webkit-scrollbar {
+    width: 0;
+      height: 0;
 }
 
-/* Thin custom scrollbar to match Cinematic theme */
-.thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(245, 158, 11, 0.9) rgba(255, 255, 255, 0.04);
+@supports (scrollbar-width: thin) {
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245, 158, 11, 0.9) rgba(255, 255, 255, 0.04);
+  }
 }
+  
 
-.thin-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+@supports (-webkit-overflow-scrolling: touch) {
+  html {
+    -webkit-overflow-scrolling: touch;
 }
-
-.thin-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 9999px;
 }
-
-.thin-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(245, 158, 11, 0.6));
-  border-radius: 9999px;
 }
-
-/* Keep smooth scrolling behavior where supported */
-html {
-  -webkit-overflow-scrolling: touch;
 }

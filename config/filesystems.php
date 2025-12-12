@@ -62,6 +62,12 @@ return [
             'endpoint' => env('SUPABASE_URL'),
             'key' => env('SUPABASE_KEY'),
             'bucket' => env('SUPABASE_BUCKET', 'projects'),  
+            'options' => [
+                'http' => [
+                    'timeout' => 300, // Wait up to 5 minutes for uploads
+                    'connect_timeout' => 10,
+                ],
+            ],
         ],
 
     ],
