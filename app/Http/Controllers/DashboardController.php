@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Project;
 use App\Models\Script;
+use App\Models\Message;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -27,9 +28,17 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
+        // stats: total projects and message count (used as unread_messages placeholder)
+        $projectsCount = Project::where('user_id', $userId)->count();
+        $messagesCount = Message::where('user_id', $userId)->count();
+
         return Inertia::render('Dashboard', [
             'recentProjects' => $recentProjects,
             'recentScripts' => $recentScripts,
+            'stats' => [
+                'projects_count' => $projectsCount,
+                'unread_messages' => $messagesCount,
+            ],
         ]);
     }
 }

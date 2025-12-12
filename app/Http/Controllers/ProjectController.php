@@ -18,24 +18,33 @@ class ProjectController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'video' => 'required|file|mimetypes:video/mp4,video/quicktime|max:512000', // max 500MB
+            'thumbnail' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:10240', // optional thumbnail, max 10MB
         ]);
 
         // Get the authenticated user
         $user = Auth::user();
 
-        //handle file upload to Supabase
-        //We will store the file in a directory named after the user's ID
-        $path = $request->file('video')->store('user-' . $user->id, 'supabase');
+        // handle file upload to Supabase
+        // We will store the files in a directory named after the user's ID
+        $videoPath = $request->file('video')->store('user-' . $user->id, 'supabase');
 
-        // Get public URL of the uploaded video
-        $videoUrl = Storage::disk('supabase')->url($path);
+        // Manually construct the public URL using Supabase v1 storage path
+        $supabaseUrl = rtrim(env('SUPABASE_URL', ''), '/');
+        $supabaseBucket = env('SUPABASE_BUCKET', '');
+        $videoUrl = $supabaseUrl . '/storage/v1/object/public/' . $supabaseBucket . '/' . ltrim($videoPath, '/');
+
+        $thumbnailUrl = null;
+        if ($request->hasFile('thumbnail')) {
+            $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'supabase');
+            $thumbnailUrl = $supabaseUrl . '/storage/v1/object/public/' . $supabaseBucket . '/' . ltrim($thumbPath, '/');
+        }
 
         // Create a new project record in the database
         $user->projects()->create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'video_url' => $videoUrl,
-            // 'thumbnail_url' => $thumbnailUrl, // Thumbnail generation not implemented yet
+            'thumbnail_url' => $thumbnailUrl,
             // 'status' defaults to 'published' as per our schema
         ]);
 
@@ -47,16 +56,20 @@ class ProjectController extends Controller
             \Illuminate\Support\Facades\Log::error('Project store error: ' . $e->getMessage(), [
             'exception' => $e,
             'user_id' => isset($user) ? $user->id : null,
-            'path' => isset($path) ? $path : null,
+            'video_path' => isset($videoPath) ? $videoPath : null,
+            'thumb_path' => isset($thumbPath) ? $thumbPath : null,
             ]);
 
             // Attempt to remove the uploaded file if it exists to avoid orphaned uploads
             try {
-            if (isset($path) && Storage::disk('supabase')->exists($path)) {
-                Storage::disk('supabase')->delete($path);
-            }
+                if (isset($videoPath) && Storage::disk('supabase')->exists($videoPath)) {
+                    Storage::disk('supabase')->delete($videoPath);
+                }
+                if (isset($thumbPath) && Storage::disk('supabase')->exists($thumbPath)) {
+                    Storage::disk('supabase')->delete($thumbPath);
+                }
             } catch (\Exception $deleteEx) {
-            \Illuminate\Support\Facades\Log::error('Failed to delete uploaded file after project store error: ' . $deleteEx->getMessage());
+                \Illuminate\Support\Facades\Log::error('Failed to delete uploaded file after project store error: ' . $deleteEx->getMessage());
             }
 
             // Redirect back with input and an error message
