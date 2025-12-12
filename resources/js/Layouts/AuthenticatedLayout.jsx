@@ -75,6 +75,16 @@ export default function Authenticated({ user, header, children }) {
                                 >
                                     Spark
                                 </Link>
+                              <Link
+                                  href={route('scriptwriter.index')}
+                                  className={
+                                      route().current('scriptwriter.index')
+                                          ? 'text-amber-500 border-b-2 border-amber-500 font-bold focus:outline-none focus:border-amber-700 transition duration-150 ease-in-out'
+                                          : 'text-slate-300 hover:text-white hover:border-amber-500/50 border-b-2 border-transparent transition duration-150 ease-in-out'
+                                  }
+                              >
+                                  Scriptwriter
+                              </Link>
                             </div>
                         </div>
 

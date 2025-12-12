@@ -6,6 +6,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\ScriptwriterController;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -25,12 +26,10 @@ Route::get('/phpinfo', function () {
     return phpinfo();
 });
 
-// Placeholder for legacy/removed Scriptwriter feature.
-// Some frontend code still references the named route `scriptwriter.index`.
-// Keep a lightweight redirect to avoid Ziggy errors when the route is referenced.
-Route::get('/scriptwriter', function () {
-    return redirect()->route('home');
-})->name('scriptwriter.index');
+// Scriptwriter page (Inertia) - accessible to authenticated users
+// Some frontend code references `scriptwriter.index` so provide a real page.
+// The page itself lives at `resources/js/Pages/Scriptwriter/Index.jsx`.
+// Route is added inside the auth group further below.
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -65,8 +64,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Fetch full conversation history
     Route::get('/ai/conversations/{conversation}', [AiAssistantController::class, 'show'])->name('ai.conversations.show');
     // Conversation management: update title, delete conversation
-    Route::put('/ai/conversations/{conversation}', [ConversationController::class, 'update'])->name('ai.conversations.update');
-    Route::delete('/ai/conversations/{conversation}', [ConversationController::class, 'destroy'])->name('ai.conversations.destroy');
+    Route::put('/ai/conversations/{conversation}', [AiAssistantController::class, 'update'])->name('ai.conversations.update');
+    Route::delete('/ai/conversations/{conversation}', [AiAssistantController::class, 'destroy'])->name('ai.conversations.destroy');
+
+    // Scriptwriter page (Cinematic UI)
+    Route::get('/scriptwriter', [ScriptwriterController::class, 'index'])->name('scriptwriter.index');
+    Route::post('/scriptwriter/assist', [ScriptwriterController::class, 'assist'])->name('scriptwriter.assist');
 
     // (Scriptwriter removed)
 

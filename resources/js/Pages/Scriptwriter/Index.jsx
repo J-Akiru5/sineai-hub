@@ -1,4 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import ReactMarkdown from 'react-markdown';
@@ -31,6 +33,15 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
     const [editingId, setEditingId] = useState(null);
     const [editingTitle, setEditingTitle] = useState('');
     const editInputRef = useRef(null);
+    const messagesContainerRef = useRef(null);
+    const messageEndRef = useRef(null);
+
+    const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+
+    const showToast = (message, type = 'info', ms = 3000) => {
+        setToast({ visible: true, message, type });
+        setTimeout(() => setToast({ visible: false, message: '', type: 'info' }), ms);
+    };
 
     const startEditing = (conv) => {
         setEditingId(conv.id);
@@ -46,9 +57,10 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
             onSuccess: (page) => {
                 setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, title: newTitle } : c));
                 setEditingId(null);
+                showToast('Conversation renamed', 'success');
             },
-            onError: () => {
-                // keep editing state
+            onError: (err) => {
+                showToast('Failed to rename conversation', 'error');
             }
         });
     };
@@ -63,6 +75,10 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
                     setActiveConversationId(null);
                     setActiveConversation([]);
                 }
+                showToast('Conversation deleted', 'success');
+            },
+            onError: () => {
+                showToast('Failed to delete conversation', 'error');
             }
         });
     };
@@ -78,8 +94,11 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
             const msgs = (res.data.messages || []).map(m => ({ sender: m.sender, text: m.body }));
             setActiveConversation(msgs);
             setActiveConversationId(res.data.conversation.id);
+            // scroll after render
+            setTimeout(() => scrollToBottom(), 80);
         } catch (err) {
             console.error('Failed to load conversation', err);
+            showToast('Failed to load conversation', 'error');
         }
     };
 
@@ -93,11 +112,13 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
             const aiReply = response.data.reply;
             setActiveConversation(prev => [...prev, { sender: 'user', text: promptToSend }, { sender: 'ai', text: aiReply }]);
             setPrompt('');
+            setTimeout(() => scrollToBottom(), 40);
             if (response.data && response.data.conversation) {
                 const serverConv = response.data.conversation;
                 setConversations(prev => [serverConv, ...prev.filter(c => c.id !== serverConv.id)]);
                 setActiveConversationId(serverConv.id);
                 setActiveConversation((serverConv.messages || []).map(m => ({ sender: m.sender, text: m.body })));
+                setTimeout(() => scrollToBottom(), 80);
             }
         } catch (err) {
             console.error(err);
@@ -111,25 +132,60 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
         setActiveConversationId(null);
     };
 
+    // TipTap editor setup
+    const editor = useEditor({
+        extensions: [StarterKit],
+        content: '<p>INT. COFFEE SHOP - DAY</p>\n<p>Two strangers sit across from each other. Steam rises from their cups.</p>',
+    });
+
+    useEffect(() => {
+        return () => {
+            if (editor) editor.destroy();
+        };
+    }, [editor]);
+
+    useEffect(() => {
+        // whenever activeConversation changes, ensure scroll to bottom
+        scrollToBottom();
+    }, [activeConversationId, activeConversation]);
+
+    const scrollToBottom = () => {
+        try {
+            const el = messagesContainerRef.current;
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            }
+        } catch (e) {
+            // ignore
+        }
+    };
+
     return (
         <AuthenticatedLayout user={auth.user} header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Scriptwriter</h2>}>
             <Head title="Scriptwriter" />
 
-            <div className="py-6">
+            <div className="py-6 relative">
+                {/* Toast */}
+                {toast.visible && (
+                    <div className={`absolute top-4 right-6 z-50 px-4 py-2 rounded shadow-lg ${toast.type === 'success' ? 'bg-amber-400 text-black' : toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white'}`}>
+                        {toast.message}
+                    </div>
+                )}
+
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
-                        {/* Sidebar */}
-                        <aside className="w-80 border-r border-white/10 p-4 overflow-y-auto bg-slate-900/80 backdrop-blur-md">
-                            <div className="flex items-center justify-between mb-3">
+                        {/* Sidebar - 25% */}
+                        <aside className="w-1/4 min-w-[18rem] border-r border-white/10 p-4 overflow-y-auto bg-slate-900/80 backdrop-blur-md thin-scrollbar">
+                            <div className="flex items-center justify-between mb-4">
                                 <div className="text-amber-100 font-semibold">Conversations</div>
-                                <button onClick={newChat} className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-md text-sm">+ New Chat</button>
+                                <button onClick={newChat} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-md text-sm shadow-md">+ New Chat</button>
                             </div>
 
                             <div className="space-y-2">
                                 {conversations.map((c) => {
                                     const active = c.id === activeConversationId;
                                     return (
-                                        <div key={c.id || Math.random()} className={`group flex items-center justify-between p-3 rounded cursor-pointer ${active ? 'bg-white/5 border-l-4 border-amber-500 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                                        <div key={c.id || Math.random()} className={`group flex items-center justify-between gap-3 p-3 rounded cursor-pointer ${active ? 'bg-white/5 border-l-4 border-amber-500 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                                             <div className="flex-1 min-w-0" onClick={() => selectConversation(c)}>
                                                 {editingId === c.id ? (
                                                     <input
@@ -138,7 +194,7 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
                                                         onChange={(e) => setEditingTitle(e.target.value)}
                                                         onBlur={() => submitEdit(c)}
                                                         onKeyDown={(e) => { if (e.key === 'Enter') submitEdit(c); }}
-                                                        className="w-full bg-transparent border-b border-white/10 text-white px-1 py-0.5 rounded"
+                                                        className="w-full bg-transparent border-b border-white/10 text-white px-1 py-0.5 rounded text-sm"
                                                     />
                                                 ) : (
                                                     <div className="font-medium text-sm truncate">{c.title || (c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 40) : 'Untitled')}</div>
@@ -146,7 +202,7 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
                                                 <div className="text-xs text-amber-200/80 truncate">{c.messages && c.messages[0] ? (c.messages[0].body || '').slice(0, 80) : ''}</div>
                                             </div>
 
-                                            <div className="ml-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 transform">
+                                            <div className="ml-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-150">
                                                 <button onClick={() => startEditing(c)} title="Edit" className="p-1 rounded-md text-amber-200 hover:text-white hover:bg-white/5 transition-colors duration-150">
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
                                                         <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12v3h3l8.293-8.293-3-3L5 12z" />
@@ -164,38 +220,18 @@ export default function ScriptwriterIndex({ auth, conversations: initialConversa
                             </div>
                         </aside>
 
-                        {/* Main chat area */}
-                        <div className="flex-1 flex flex-col bg-slate-950">
-                            <div className="flex-1 flex flex-col overflow-hidden p-6">
-                                {(!activeConversation || activeConversation.length === 0) ? (
-                                    <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                                        <img src="/images/spark-head.png" alt="Spark" className="h-36 w-36 object-contain mb-6 drop-shadow-[0_0_30px_rgba(245,158,11,0.45)]" />
-                                        <h2 className="text-2xl font-bold text-amber-400 mb-2">Hello, Creator!</h2>
-                                        <p className="text-slate-400 max-w-md">I am Spark, your AI production assistant. Ask me to brainstorm ideas, write scripts, or create character bios.</p>
+                        {/* Main chat area - 75% */}
+                        <div className="w-3/4 flex-1 flex flex-col bg-slate-950">
+                            <div className="flex-1 flex flex-col overflow-y-auto p-6 thin-scrollbar">
+                                <div className="w-full flex-1 flex items-start justify-center py-8">
+                                    <div className="bg-white text-black font-mono p-8 shadow-lg max-w-4xl mx-auto min-h-[80vh] w-full">
+                                        {editor ? (
+                                            <EditorContent editor={editor} />
+                                        ) : (
+                                            <div className="text-sm text-slate-600">Loading editor…</div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="flex flex-col space-y-3">
-                                        {activeConversation.map((msg, index) => (
-                                            <MessageBubble key={index} sender={msg.sender} text={msg.text} />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="p-4 border-t border-white/10">
-                                <form onSubmit={handleSubmit} className="flex gap-4">
-                                    <input
-                                        type="text"
-                                        value={prompt}
-                                        onChange={(e) => setPrompt(e.target.value)}
-                                        placeholder="Ask Spark for script ideas, a shot list, or a movie title..."
-                                        className="flex-1 bg-slate-800/30 border border-white/6 text-amber-100 placeholder-amber-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                                        disabled={isLoading}
-                                    />
-                                    <button type="submit" className="bg-gradient-to-r from-amber-400 to-amber-700 text-slate-900 px-4 py-2 rounded-md font-semibold" disabled={isLoading}>
-                                        Send
-                                    </button>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     </div>

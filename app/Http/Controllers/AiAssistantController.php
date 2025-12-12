@@ -44,8 +44,9 @@ class AiAssistantController extends Controller
             try {
                 $apiKey = env('GEMINI_API_KEY');
                 if ($apiKey) {
-                    $titleEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
-                    $titlePrompt = "Create a short, 3-5 word title for a conversation starting with: {$validated['prompt']}";
+                    // Use the same model family as the main chat endpoint
+                    $titleEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+                    $titlePrompt = "Create a short, strictly 3-5 word title for a conversation starting with: {$validated['prompt']}";
 
                     $titleResp = Http::withHeaders(['Content-Type' => 'application/json'])->post("{$titleEndpoint}?key={$apiKey}", [
                         'contents' => [[ 'parts' => [[ 'text' => $titlePrompt ]]]]
@@ -54,8 +55,12 @@ class AiAssistantController extends Controller
                     if ($titleResp->successful()) {
                         $rawTitle = $titleResp->json('candidates.0.content.parts.0.text');
                         if ($rawTitle) {
-                            $cleanTitle = trim(str_replace(["\n", '"', "'"], ' ', $rawTitle));
-                            $conversation->title = mb_substr($cleanTitle, 0, 80);
+                            // sanitize: remove newlines, backticks, and common markdown characters, collapse spaces
+                            $cleanTitle = preg_replace('/[\r\n]+/', ' ', $rawTitle);
+                            $cleanTitle = preg_replace('/[`*_>#\[\](){}~-]+/', ' ', $cleanTitle);
+                            $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+                            $cleanTitle = trim($cleanTitle);
+                            $conversation->title = mb_substr($cleanTitle, 0, 255);
                             $conversation->save();
                         }
                     }
@@ -208,5 +213,40 @@ class AiAssistantController extends Controller
             ],
             'messages' => $messages,
         ]);
+    }
+
+    /**
+     * Update a conversation's metadata (title).
+     */
+    public function update(Request $request, Conversation $conversation)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        if ($conversation->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'Unauthorized.'], 403);
+        }
+
+        $conversation->title = trim($data['title']);
+        $conversation->save();
+
+        return response()->json(['success' => true, 'conversation' => $conversation]);
+    }
+
+    /**
+     * Destroy a conversation and its messages.
+     */
+    public function destroy(Conversation $conversation, Request $request)
+    {
+        if ($conversation->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'Unauthorized.'], 403);
+        }
+
+        // remove messages first to be explicit
+        $conversation->messages()->delete();
+        $conversation->delete();
+
+        return response()->json(['success' => true]);
     }
 }

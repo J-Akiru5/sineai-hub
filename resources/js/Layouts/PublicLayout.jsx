@@ -4,7 +4,7 @@ import SparkWidget from '@/Components/SparkWidget';
 
 export default function PublicLayout({ title = 'SineAI Hub', children }) {
     return (
-        <div className="relative min-h-screen bg-slate-950 text-white">
+        <div className="min-h-screen bg-slate-950 relative overflow-x-hidden text-white">
             <Head title={title} />
 
             {/* background blobs */}

@@ -10,4 +10,16 @@ export default defineConfig({
         }),
         react(),
     ],
+    // ADD THIS SECTION
+    optimizeDeps: {
+        include: [
+            '@tiptap/react',
+            '@tiptap/starter-kit',
+            '@tiptap/extension-placeholder',
+            '@tiptap/pm/state',
+            '@tiptap/pm/view',
+            '@tiptap/pm/model',
+            '@tiptap/pm/transform',
+        ],
+    },
 });
