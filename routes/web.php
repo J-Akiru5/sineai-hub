@@ -8,6 +8,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ScriptwriterController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -74,6 +76,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scriptwriter/{script}', [ScriptwriterController::class, 'show'])->name('scriptwriter.show');
     Route::put('/scriptwriter/{script}', [ScriptwriterController::class, 'update'])->name('scriptwriter.update');
     Route::delete('/scriptwriter/{script}', [ScriptwriterController::class, 'destroy'])->name('scriptwriter.destroy');
+
+    // Admin area routes (requires user to have the 'admin' role)
+    Route::middleware(['auth', 'ensure.role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+
+        // User management (list, update roles)
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/ban', [AdminUserController::class, 'toggleBan'])->name('users.ban');
+
+        // Role management (list, create, delete)
+        Route::get('/roles', [AdminRoleController::class, 'index'])->name('roles.index');
+        Route::post('/roles', [AdminRoleController::class, 'store'])->name('roles.store');
+        Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
+        Route::get('/roles/{role}/edit', [AdminRoleController::class, 'edit'])->name('roles.edit');
+        Route::patch('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+    });
 
     // (Scriptwriter removed)
 

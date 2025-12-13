@@ -22,6 +22,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar_url',
+        'pen_name',
+        'studio_name',
+        'location',
+        'contact_number',
+        'is_approved',
     ];
 
     /**
@@ -58,5 +64,35 @@ class User extends Authenticatable
     public function conversations(): HasMany
     {
         return $this->hasMany(Conversation::class);
+    }
+
+    /**
+     * The roles that belong to the user.
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_has_roles');
+    }
+
+    /**
+     * Check if user has a role by slug or name.
+     */
+    public function hasRole($slug)
+    {
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->contains(function ($role) use ($slug) {
+            return isset($role->slug) ? $role->slug === $slug : ($role->name === $slug || $role->name === ($slug));
+        });
+    }
+
+    /**
+     * Convenience helper to check for admin role.
+     */
+    public function isAdmin()
+    {
+        return $this->hasRole('admin');
     }
 }
