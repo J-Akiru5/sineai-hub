@@ -92,6 +92,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
         Route::get('/roles/{role}/edit', [AdminRoleController::class, 'edit'])->name('roles.edit');
         Route::patch('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+        
+        // Channel management
+        Route::get('/channels', [\App\Http\Controllers\Admin\ChannelController::class, 'index'])->name('channels.index');
+        Route::post('/channels', [\App\Http\Controllers\Admin\ChannelController::class, 'store'])->name('channels.store');
+        Route::patch('/channels/{channel}', [\App\Http\Controllers\Admin\ChannelController::class, 'update'])->name('channels.update');
+        Route::delete('/channels/{channel}', [\App\Http\Controllers\Admin\ChannelController::class, 'destroy'])->name('channels.destroy');
     });
 
     // (Scriptwriter removed)

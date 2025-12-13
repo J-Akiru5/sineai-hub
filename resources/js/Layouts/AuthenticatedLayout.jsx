@@ -70,6 +70,9 @@ export default function Authenticated({ user, header, children }) {
                                     <Link href={route('chat')} className={route().current('chat') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Chat</Link>
                                     <Link href={route('ai.assistant')} className={route().current('ai.assistant') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Spark</Link>
                                     <Link href={route('scriptwriter.index')} className={route().current('scriptwriter.index') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Scriptwriter</Link>
+                                    {((currentUser?.roles || []).some(r => r.name === 'admin' || r.name === 'super-admin')) && (
+                                        <Link href={route('admin.dashboard')} className={route().current('admin.*') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Admin Panel</Link>
+                                    )}
                                 </div>
                             </div>
 
@@ -114,6 +117,9 @@ export default function Authenticated({ user, header, children }) {
                             <Link href={route('chat')} className="block text-slate-300">Chat</Link>
                             <Link href={route('ai.assistant')} className="block text-slate-300">Spark</Link>
                             <Link href={route('scriptwriter.index')} className="block text-slate-300">Scriptwriter</Link>
+                            {((currentUser?.roles || []).some(r => r.name === 'admin' || r.name === 'super-admin')) && (
+                                <Link href={route('admin.dashboard')} className="block text-slate-300">Admin Panel</Link>
+                            )}
                             <div className="pt-2 border-t border-white/6">
                                 <Link href={route('profile.edit')} className="block text-slate-300">Profile</Link>
                                 <Link href={route('logout')} method="post" as="button" className="block text-slate-300">Log Out</Link>

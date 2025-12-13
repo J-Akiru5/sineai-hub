@@ -32,7 +32,7 @@ class HandleInertiaRequests extends Middleware
     {
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? $request->user()->load('roles') : null,
             ],
             // Share translations for the current locale (loaded from resources/lang/{locale}.json)
             'translations' => function () use ($request) {

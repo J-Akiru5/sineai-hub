@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import UserAvatar from '@/Components/UserAvatar';
 import { Head, useForm } from '@inertiajs/react';
 import supabase from '@/supabase';
 
@@ -139,19 +140,29 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                             <div className={`flex flex-col ${messages.length <= 1 ? 'justify-center' : ''} space-y-3`}>
                                                 {messages.map((m, i) => {
                                                     const isMe = String(m.user?.id ?? m.user_id) === String(auth.user?.id);
+                                                    const displayName = isMe ? auth.user?.name : (m.user?.name ?? 'Unknown');
                                                     return (
-                                                        <div key={m.id ?? i} className="w-full flex">
+                                                        <div key={m.id ?? i} className={`w-full flex items-start ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                                            {!isMe && (
+                                                                <div className="mr-3">
+                                                                    <UserAvatar user={m.user} />
+                                                                </div>
+                                                            )}
+
                                                             <div className={`${isMe ? 'ml-auto' : 'mr-auto'} max-w-[78%] px-4 py-2 rounded-xl ${isMe ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}`}>
-                                                                {(() => {
-                                                                    const displayName = isMe ? auth.user?.name : (m.user?.name ?? 'Unknown');
-                                                                    return <div className="text-xs font-semibold mb-1 text-amber-100">{displayName}</div>;
-                                                                })()}
+                                                                <div className="text-xs font-semibold mb-1 text-amber-100">{displayName}</div>
                                                                 <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.body}</div>
                                                                 <div className="text-[11px] text-amber-200 mt-2 text-right">{m.created_at ? new Date(m.created_at).toLocaleString() : ''}</div>
                                                             </div>
-                                                    </div>
-                                                );
-                                            })}
+
+                                                            {isMe && (
+                                                                <div className="ml-3">
+                                                                    <UserAvatar user={auth.user} />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                         </div>
                                     )}
                                     <div ref={messagesEndRef} />

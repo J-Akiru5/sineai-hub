@@ -10,9 +10,30 @@ use Inertia\Inertia;
 
 class ChatController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $channels = Channel::orderBy('name')->get();
+        $user = $request->user();
+
+        $channels = Channel::orderBy('name')
+            ->where(function ($q) use ($user) {
+                $q->whereNull('allowed_role_id')
+                  ->orWhere(function ($q2) use ($user) {
+                      if (! $user) {
+                          return; // guest cannot match any roles
+                      }
+                      // users with admin privileges see all channels
+                      if (method_exists($user, 'hasRole') && ($user->hasRole('admin') || $user->hasRole('super-admin'))) {
+                          $q2->orWhereRaw('TRUE');
+                          return;
+                      }
+
+                      // user must have role matching allowed_role_id
+                      $roleIds = $user->roles->pluck('id')->toArray();
+                      if (! empty($roleIds)) {
+                          $q2->whereIn('allowed_role_id', $roleIds);
+                      }
+                  });
+            })->get();
 
         // prefer the "General" channel as default when available, otherwise fall back to the first
         $defaultChannel = Channel::where('name', 'General')->first() ?? $channels->first();
