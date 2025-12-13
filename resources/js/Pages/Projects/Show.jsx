@@ -1,6 +1,6 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 
 export default function Show({ auth, project }) {
     const title = project?.title ?? 'Untitled Project';
@@ -52,9 +52,23 @@ export default function Show({ auth, project }) {
                                 </div>
 
                                 <div className="mt-6">
-                                    <Link href={route('projects.index')} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-slate-900 font-semibold rounded-lg shadow-md">
-                                        Back to Gallery
-                                    </Link>
+                                    <div className="flex items-center gap-3">
+                                        <Link href={route('projects.index')} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-slate-900 font-semibold rounded-lg shadow-md">
+                                            Back to Gallery
+                                        </Link>
+
+                                        {auth?.user?.id === project.user_id && (
+                                            <button
+                                                onClick={() => {
+                                                    if (!confirm('Are you sure you want to delete this project? This cannot be undone.')) return;
+                                                    router.delete(route('projects.destroy', project.id));
+                                                }}
+                                                className="inline-flex items-center px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md"
+                                            >
+                                                Delete Project
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

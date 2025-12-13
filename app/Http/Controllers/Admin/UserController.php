@@ -7,6 +7,9 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -69,6 +72,11 @@ class UserController extends Controller
 
         $user->roles()->sync($roleIds);
 
+        try {
+            \App\Services\Logger::log('USER_MGMT', 'ROLES_UPDATED', sprintf('%s updated roles for %s', auth()->user()?->name ?? 'System', $user->email));
+        } catch (\Throwable $e) {
+        }
+
         return redirect()->back()->with('success', 'User roles updated.');
     }
 
@@ -77,17 +85,63 @@ class UserController extends Controller
      */
     public function toggleBan(Request $request, User $user)
     {
+        // Prevent banning yourself
+        if ($user->id === Auth::id()) {
+            return redirect()->back()->with('error', 'You cannot ban yourself.');
+        }
+
+        // Prevent banning administrators
+        $roleNames = $user->roles->pluck('name')->map(fn($n) => Str::lower($n))->toArray();
+        if (in_array('admin', $roleNames) || in_array('super-admin', $roleNames)) {
+            return redirect()->back()->with('error', 'Cannot ban an administrator.');
+        }
+
         // Flip the is_banned flag
         $user->is_banned = ! (bool) $user->is_banned;
         $user->save();
 
         // Log activity
         try {
-            \App\Services\Logger::log($user->is_banned ? 'USER_BANNED' : 'USER_UNBANNED', sprintf('%s %s user %s', auth()->user()?->name ?? 'System', $user->is_banned ? 'banned' : 'unbanned', $user->email));
+            \App\Services\Logger::log('USER_MGMT', $user->is_banned ? 'USER_BANNED' : 'USER_UNBANNED', sprintf('%s %s user %s', auth()->user()?->name ?? 'System', $user->is_banned ? 'banned' : 'unbanned', $user->email));
         } catch (\Throwable $e) {
             // ignore logging errors
         }
 
         return redirect()->back()->with('success', 'User ban status updated.');
+    }
+
+    /**
+     * Store a new user (manual onboarding).
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'role' => ['required', 'integer', 'exists:roles,id'],
+        ]);
+
+        // Default password (informational) - using a safe hashed default
+        $defaultPassword = 'password';
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($defaultPassword),
+        ]);
+
+        // Attach role
+        $role = Role::find($validated['role']);
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
+
+        // Log creation
+        try {
+            \App\Services\Logger::log('USER_MGMT', 'USER_CREATED', sprintf('%s created user %s with role %s', auth()->user()?->name ?? 'System', $user->email, $role?->name ?? 'N/A'));
+        } catch (\Throwable $e) {
+        }
+
+        return redirect()->back()->with('success', 'User created. Default password will be: password');
     }
 }

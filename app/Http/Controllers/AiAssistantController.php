@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Services\Logger;
 
 class AiAssistantController extends Controller
 {
@@ -68,6 +69,11 @@ class AiAssistantController extends Controller
             } catch (\Exception $e) {
                 \Log::warning('Title generation failed: ' . $e->getMessage());
                 // continue without blocking the main reply
+            }
+            // Log conversation creation (with title if available)
+            try {
+                Logger::log('AI_USAGE', 'Started Conversation', "User " . auth()->user()?->name . " started a new chat: {$conversation->title}");
+            } catch (\Throwable $e) {
             }
         }
 

@@ -7,6 +7,8 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use App\Services\Logger;
 
 class RoleController extends Controller
 {
@@ -34,10 +36,36 @@ class RoleController extends Controller
     }
 
     /**
-     * Update the role's permissions.
+     * Update the role's name or permissions.
      */
     public function update(Request $request, Role $role)
     {
+        // If updating role name
+        if ($request->has('name')) {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->ignore($role->id)],
+            ]);
+
+            $newName = $validated['name'];
+
+            // Prevent renaming protected roles
+            $lowerCurrent = strtolower($role->name ?? '');
+            if (in_array($lowerCurrent, ['admin', 'super-admin']) && strtolower($newName) !== $lowerCurrent) {
+                return redirect()->back()->with('error', 'Cannot rename protected role.');
+            }
+
+            $role->name = $newName;
+            $role->save();
+
+            try {
+                Logger::log('ROLE_MGMT', 'Updated Role', "Role '{$role->name}' was updated by " . auth()->user()?->name);
+            } catch (\Throwable $e) {
+            }
+
+            return redirect()->back()->with('success', 'Role updated.');
+        }
+
+        // Otherwise assume permissions update
         $validated = $request->validate([
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['integer', 'exists:permissions,id'],
@@ -70,6 +98,11 @@ class RoleController extends Controller
             'guard_name' => 'web',
         ]);
 
+        try {
+            Logger::log('ROLE_MGMT', 'Created Role', "Role '{$validated['name']}' was created by " . auth()->user()?->name);
+        } catch (\Throwable $e) {
+        }
+
         return redirect()->back()->with('success', 'Role created.');
     }
 
@@ -79,13 +112,12 @@ class RoleController extends Controller
             return redirect()->back()->with('error', 'Cannot delete admin role.');
         }
 
-        try {
-            \App\Services\Logger::log('ROLE_DELETED', sprintf('%s deleted role %s', auth()->user()?->name ?? 'System', $role->name));
-        } catch (\Throwable $e) {
-            // ignore
-        }
+            try {
+                Logger::log('ROLE_MGMT', 'Deleted Role', "Role '{$role->name}' was deleted by " . auth()->user()?->name);
+            } catch (\Throwable $e) {
+            }
 
-        $role->delete();
+            $role->delete();
         return redirect()->back()->with('success', 'Role deleted.');
     }
 }

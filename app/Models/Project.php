@@ -17,6 +17,10 @@ class Project extends Model
         'video_url',
         'thumbnail_url',
         'status',
+        'visibility',
+        'moderation_status',
+        'views_count',
+        'category',
     ];
 
     // Note: do not append computed URL attributes. Use the raw `video_url` and
@@ -28,5 +32,15 @@ class Project extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function playlists()
+    {
+        return $this->belongsToMany(Playlist::class, 'playlist_project')->withPivot('sort_order');
+    }
+
+    public function flags()
+    {
+        return $this->hasMany(ContentFlag::class);
     }
 }

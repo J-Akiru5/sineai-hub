@@ -29,7 +29,12 @@ class ChannelController extends Controller
             'allowed_role_id' => ['nullable', 'integer', 'exists:roles,id'],
         ]);
 
-        Channel::create($data);
+        $channel = Channel::create($data);
+
+        try {
+            \App\Services\Logger::log('SYSTEM', 'CHANNEL_CREATED', sprintf('%s created channel %s', auth()->user()?->name ?? 'System', $channel->name));
+        } catch (\Throwable $e) {
+        }
 
         return redirect()->back()->with('success', 'Channel created.');
     }
@@ -44,11 +49,21 @@ class ChannelController extends Controller
 
         $channel->update($data);
 
+        try {
+            \App\Services\Logger::log('SYSTEM', 'CHANNEL_UPDATED', sprintf('%s updated channel %s', auth()->user()?->name ?? 'System', $channel->name));
+        } catch (\Throwable $e) {
+        }
+
         return redirect()->back()->with('success', 'Channel updated.');
     }
 
     public function destroy(Channel $channel)
     {
+        try {
+            \App\Services\Logger::log('SYSTEM', 'CHANNEL_DELETED', sprintf('%s deleted channel %s', auth()->user()?->name ?? 'System', $channel->name));
+        } catch (\Throwable $e) {
+        }
+
         $channel->delete();
         return redirect()->back()->with('success', 'Channel deleted.');
     }

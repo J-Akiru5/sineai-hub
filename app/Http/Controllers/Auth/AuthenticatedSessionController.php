@@ -36,6 +36,12 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
+        try {
+            \App\Services\Logger::log('AUTH', 'USER_LOGIN', sprintf('%s logged in', $user?->email ?? 'unknown'));
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
         if ($user && (method_exists($user, 'hasRole') && ($user->hasRole('admin') || $user->hasRole('super-admin')))) {
             return redirect()->intended(route('admin.dashboard'));
         }
@@ -53,6 +59,11 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        try {
+            \App\Services\Logger::log('AUTH', 'USER_LOGOUT', sprintf('%s logged out', auth()->user()?->email ?? 'unknown'));
+        } catch (\Throwable $e) {
+        }
 
         return redirect('/');
     }

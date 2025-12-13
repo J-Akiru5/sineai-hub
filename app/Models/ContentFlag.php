@@ -5,14 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ActivityLog extends Model
+class ContentFlag extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'action', 'description', 'category', 'ip_address'];
+    protected $fillable = [
+        'user_id',
+        'project_id',
+        'reason',
+        'status',
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 }

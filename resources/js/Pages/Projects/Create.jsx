@@ -14,6 +14,9 @@ export default function Create({ auth }) {
         title: '',
         description: '',
         video: null, // File inputs are handled as null initially
+        thumbnail: null,
+        is_premiere_public: false,
+        category: '',
     });
 
     const submit = (e) => {
@@ -70,6 +73,36 @@ export default function Create({ auth }) {
                                         onChange={(e) => setData('video', e.target.files[0])}
                                     />
                                     <InputError message={errors.video} className="mt-2 text-amber-200/80" />
+                                </div>
+
+                                <div className="mb-4">
+                                    <InputLabel htmlFor="thumbnail" value="Thumbnail (optional)" />
+                                    <input
+                                        id="thumbnail"
+                                        type="file"
+                                        name="thumbnail"
+                                        className="mt-1 block w-full text-amber-200"
+                                        onChange={(e) => setData('thumbnail', e.target.files[0])}
+                                    />
+                                    <InputError message={errors.thumbnail} className="mt-2 text-amber-200/80" />
+                                </div>
+
+                                <div className="mb-4 flex items-center gap-4">
+                                    <label className="flex items-center gap-2">
+                                        <input type="checkbox" checked={data.is_premiere_public} onChange={(e) => setData('is_premiere_public', e.target.checked)} />
+                                        <span className="ml-2">Publish to Premiere (Public)</span>
+                                    </label>
+                                    <div className="ml-auto w-1/3">
+                                        <InputLabel htmlFor="category" value="Category" />
+                                        <select id="category" value={data.category} onChange={(e) => setData('category', e.target.value)} className="w-full mt-1 border rounded px-2 py-1 bg-slate-800/20 text-amber-100">
+                                            <option value="">Select category</option>
+                                            <option value="Short Film">Short Film</option>
+                                            <option value="Documentary">Documentary</option>
+                                            <option value="Music Video">Music Video</option>
+                                            <option value="Experimental">Experimental</option>
+                                        </select>
+                                        <InputError message={errors.category} className="mt-2 text-amber-200/80" />
+                                    </div>
                                 </div>
                                 
                                 {progress && (

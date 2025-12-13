@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function UsersIndex({ users, roles, filters = {} }) {
@@ -13,6 +13,15 @@ export default function UsersIndex({ users, roles, filters = {} }) {
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedRoles, setSelectedRoles] = useState([]);
     const [submitting, setSubmitting] = useState(false);
+  // Create user modal state
+  const [showCreate, setShowCreate] = useState(false);
+  const [createName, setCreateName] = useState('');
+  const [createEmail, setCreateEmail] = useState('');
+  const [createRole, setCreateRole] = useState(roles[0]?.id || '');
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+
+  const { props } = usePage();
+  const currentUser = props?.auth?.user || null;
 
     function openModal(user) {
         setSelectedUser(user);
@@ -78,8 +87,11 @@ export default function UsersIndex({ users, roles, filters = {} }) {
                         <option value="active">Active</option>
                         <option value="banned">Banned</option>
                     </select>
-                </div>
-            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowCreate(true)} className="px-3 py-2 bg-emerald-600 text-white rounded">Add User</button>
+          </div>
+        </div>
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -107,11 +119,29 @@ export default function UsersIndex({ users, roles, filters = {} }) {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                     <button onClick={() => openModal(user)} className="px-3 py-1 bg-amber-500 text-white rounded">Manage Roles</button>
-                                    <button onClick={() => {
-                                        router.patch(route('admin.users.ban', user.id));
-                                    }} className={`ml-2 px-3 py-1 rounded ${user.is_banned ? 'bg-green-500 text-white' : 'bg-red-600 text-white'}`}>
-                                        {user.is_banned ? 'Unban' : 'Ban'}
+                              {/* Ban button: hide/disable for current user or admins */}
+                              {(() => {
+                                const isSelf = currentUser && currentUser.id === user.id;
+                                const userRoleNames = (user.roles || []).map((r) => (r.name || '').toLowerCase());
+                                const isAdmin = userRoleNames.includes('admin') || userRoleNames.includes('super-admin');
+                                const canBan = !isSelf && !isAdmin;
+
+                                if (!canBan) {
+                                  return (
+                                    <button disabled title={isSelf ? 'You cannot ban yourself' : 'Cannot ban an administrator'} className="ml-2 px-3 py-1 rounded bg-gray-300 text-gray-700 cursor-not-allowed">
+                                      {user.is_banned ? 'Unban' : 'Ban'}
                                     </button>
+                                  );
+                                }
+
+                                return (
+                                          <button onClick={() => {
+                                            router.patch(route('admin.users.ban', user.id));
+                                          }} className={`ml-2 px-3 py-1 rounded ${user.is_banned ? 'bg-green-500 text-white' : 'bg-red-600 text-white'}`}>
+                                            {user.is_banned ? 'Unban' : 'Ban'}
+                                          </button>
+                                );
+                              })()}
                                 </td>
                             </tr>
                         ))}
@@ -152,6 +182,56 @@ export default function UsersIndex({ users, roles, filters = {} }) {
                     </div>
                 </div>
             )}
+
+        {/* Create User Modal */}
+        {showCreate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-lg bg-white rounded shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Create User</h2>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                setCreateSubmitting(true);
+                router.post(route('admin.users.store'), {
+                  name: createName,
+                  email: createEmail,
+                  role: createRole,
+                }, {
+                  onFinish: () => {
+                    setCreateSubmitting(false);
+                    setShowCreate(false);
+                    // refresh list
+                    router.get(route('admin.users.index'));
+                  }
+                });
+              }}>
+                <div className="space-y-3 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium">Name</label>
+                    <input required value={createName} onChange={(e) => setCreateName(e.target.value)} className="w-full border rounded px-3 py-2" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Email</label>
+                    <input required type="email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} className="w-full border rounded px-3 py-2" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Role</label>
+                    <select required value={createRole} onChange={(e) => setCreateRole(e.target.value)} className="w-full border rounded px-3 py-2">
+                      <option value="">Select role</option>
+                      {roles.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="text-sm text-gray-600">Default password will be: <strong>password</strong></div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-1 border rounded">Cancel</button>
+                  <button type="submit" disabled={createSubmitting} className="px-3 py-1 bg-emerald-600 text-white rounded">Create</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         </AdminLayout>
     );
 }

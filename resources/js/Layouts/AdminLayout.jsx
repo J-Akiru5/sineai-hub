@@ -33,6 +33,15 @@ export default function AdminLayout({ children, header }) {
                         Role Management
                     </Link>
 
+            <Link href={route('admin.channels.index')} className={`block px-4 py-2 rounded-md ${isActive('admin.channels.*') ? 'bg-gray-800' : 'hover:bg-gray-800/60'}`}>
+              <span className="inline-block w-4 text-center mr-2">#</span>
+              Channel Management
+            </Link>
+
+            <Link href={route('admin.activity-logs.index')} className={`block px-4 py-2 rounded-md ${isActive('admin.activity-logs.*') ? 'bg-gray-800' : 'hover:bg-gray-800/60'}`}>
+              Activity Logs
+            </Link>
+
                     <Link href={route('dashboard')} className="block px-4 py-2 rounded-md hover:bg-gray-800/60">
                         Back to App
                     </Link>

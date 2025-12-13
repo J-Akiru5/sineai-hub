@@ -4,19 +4,39 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
 
 class Logger
 {
-    public static function log(string $action, string $description = null)
+    /**
+     * Log an activity.
+     * Supports two signatures:
+     *  - log($action, $description) => category defaults to 'SYSTEM'
+     *  - log($category, $action, $description)
+     */
+    public static function log($a, $b = null, $c = null)
     {
-        $user = Auth::user();
+        if ($c === null) {
+            // two-arg form: action, description
+            $category = 'SYSTEM';
+            $action = $a;
+            $description = $b;
+        } else {
+            $category = $a;
+            $action = $b;
+            $description = $c;
+        }
 
-        ActivityLog::create([
-            'user_id' => $user?->id,
-            'action' => $action,
-            'description' => $description,
-            'ip_address' => Request::ip(),
-        ]);
+        try {
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => $action,
+                'description' => $description,
+                'category' => $category,
+                'ip_address' => request()->ip(),
+            ]);
+        } catch (\Throwable $e) {
+            // fail silently
+        }
     }
 }
+

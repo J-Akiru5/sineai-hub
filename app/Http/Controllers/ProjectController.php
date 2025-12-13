@@ -21,38 +21,52 @@ class ProjectController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'video' => 'required|file|mimetypes:video/mp4,video/quicktime|max:512000', // max 500MB
-            'thumbnail' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:10240', // optional thumbnail, max 10MB
+            'thumbnail' => 'nullable|image|max:2048', // optional thumbnail, max 2MB
+            'is_premiere_public' => 'boolean',
+            'category' => 'nullable|string',
         ]);
 
         // Get the authenticated user
         $user = Auth::user();
 
-        // handle file upload to Supabase
+        // handle file upload to DigitalOcean Spaces
         // We will store the files in a directory named after the user's ID
-        $videoPath = $request->file('video')->store('user-' . $user->id, 'supabase');
+        $videoPath = $request->file('video')->store('user-' . $user->id, 'digitalocean');
 
-        // Manually construct the public URL using Supabase v1 storage path
-        $supabaseUrl = rtrim(env('SUPABASE_URL', ''), '/');
-        $supabaseBucket = env('SUPABASE_BUCKET', '');
-        $videoUrl = $supabaseUrl . '/storage/v1/object/public/' . $supabaseBucket . '/' . ltrim($videoPath, '/');
+        // Get the CDN endpoint from the .env file and append the file path.
+        $bucket = env('DO_SPACES_BUCKET');
+        $videoUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$videoPath}";
 
         $thumbnailUrl = null;
         if ($request->hasFile('thumbnail')) {
-            $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'supabase');
-            $thumbnailUrl = $supabaseUrl . '/storage/v1/object/public/' . $supabaseBucket . '/' . ltrim($thumbPath, '/');
+            $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
+            $endpoint = env('DO_SPACES_ENDPOINT');
+            $thumbnailUrl = "{$endpoint}/{$thumbPath}";
         }
 
+        // Determine flags/metadata
+        $isPremierePublic = $request->boolean('is_premiere_public', false);
+        $category = $validated['category'] ?? null;
+
         // Create a new project record in the database
-        $user->projects()->create([
+        $project = $user->projects()->create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'video_url' => $videoUrl,
             'thumbnail_url' => $thumbnailUrl,
+            'is_premiere_public' => $isPremierePublic,
+            'category' => $category,
             // 'status' defaults to 'published' as per our schema
         ]);
 
         // Redirect the user back to the projects page with a success message
         try {
+            // Log project creation
+            try {
+                \App\Services\Logger::log('CONTENT', 'Project Uploaded', "User " . auth()->user()?->name . " uploaded a new project: {$project->title}");
+            } catch (\Throwable $logEx) {
+            }
+
             return Redirect::route('projects.index')->with('success', 'Project created successfully!');
         } catch (\Exception $e) {
             // Log the error
@@ -65,11 +79,11 @@ class ProjectController extends Controller
 
             // Attempt to remove the uploaded file if it exists to avoid orphaned uploads
             try {
-                if (isset($videoPath) && Storage::disk('supabase')->exists($videoPath)) {
-                    Storage::disk('supabase')->delete($videoPath);
+                if (isset($videoPath) && Storage::disk('digitalocean')->exists($videoPath)) {
+                    Storage::disk('digitalocean')->delete($videoPath);
                 }
-                if (isset($thumbPath) && Storage::disk('supabase')->exists($thumbPath)) {
-                    Storage::disk('supabase')->delete($thumbPath);
+                if (isset($thumbPath) && Storage::disk('digitalocean')->exists($thumbPath)) {
+                    Storage::disk('digitalocean')->delete($thumbPath);
                 }
             } catch (\Exception $deleteEx) {
                 \Illuminate\Support\Facades\Log::error('Failed to delete uploaded file after project store error: ' . $deleteEx->getMessage());
@@ -109,5 +123,42 @@ class ProjectController extends Controller
         return Inertia::render('Projects/Index', [
             'projects' => $projects,
         ]);
+    }
+
+    /**
+     * Delete a project and its associated files.
+     */
+    public function destroy(Project $project)
+    {
+        // Only owner can delete
+        if (Auth::id() !== $project->user_id) {
+            abort(403);
+        }
+
+        // Attempt to remove stored files from DigitalOcean
+        try {
+            $endpoint = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
+
+            if (!empty($project->video_url)) {
+                $videoPath = str_replace($endpoint . '/', '', $project->video_url);
+                if ($videoPath && Storage::disk('digitalocean')->exists($videoPath)) {
+                    Storage::disk('digitalocean')->delete($videoPath);
+                }
+            }
+
+            if (!empty($project->thumbnail_url)) {
+                $thumbPath = str_replace($endpoint . '/', '', $project->thumbnail_url);
+                if ($thumbPath && Storage::disk('digitalocean')->exists($thumbPath)) {
+                    Storage::disk('digitalocean')->delete($thumbPath);
+                }
+            }
+        } catch (\Exception $e) {
+            // Log but continue with DB deletion
+            \Illuminate\Support\Facades\Log::warning('Failed to delete project files: ' . $e->getMessage());
+        }
+
+        $project->delete();
+
+        return Redirect::route('projects.index')->with('success', 'Project deleted.');
     }
 }

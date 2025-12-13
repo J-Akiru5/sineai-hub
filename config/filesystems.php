@@ -70,6 +70,19 @@ return [
             ],
         ],
 
+        'digitalocean' => [
+            'driver' => 's3',
+            'key' => env('DO_SPACES_KEY'),
+            'secret' => env('DO_SPACES_SECRET'),
+            'region' => env('DO_SPACES_REGION'),
+            'bucket' => env('DO_SPACES_BUCKET'),
+            'url' => env('DO_SPACES_ENDPOINT'), // This is crucial for public URLs
+            'endpoint' => env('DO_SPACES_ENDPOINT'),
+            'use_path_style_endpoint' => false,
+            'throw' => true,
+            'visibility' => 'public', // Default to public for premiere videos
+        ],
+
     ],
 
     /*
@@ -88,3 +101,4 @@ return [
     ],
 
 ];
+

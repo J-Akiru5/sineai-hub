@@ -53,6 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Show individual project
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 
     // Chat routes
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
@@ -83,6 +84,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // User management (list, update roles)
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::patch('/users/{user}/ban', [AdminUserController::class, 'toggleBan'])->name('users.ban');
 
@@ -92,6 +94,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
         Route::get('/roles/{role}/edit', [AdminRoleController::class, 'edit'])->name('roles.edit');
         Route::patch('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+        
+        // Activity logs
+        Route::get('/activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
         
         // Channel management
         Route::get('/channels', [\App\Http\Controllers\Admin\ChannelController::class, 'index'])->name('channels.index');
