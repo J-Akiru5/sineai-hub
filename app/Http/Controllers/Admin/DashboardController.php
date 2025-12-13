@@ -8,6 +8,8 @@ use Inertia\Inertia;
 use App\Models\ActivityLog;
 use App\Models\User;
 use App\Models\Project;
+use App\Models\Channel;
+use App\Models\ContentFlag;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +21,15 @@ class DashboardController extends Controller
 
         $totalUsers = User::count();
         $totalProjects = Project::count();
+        $totalChannels = Channel::count();
+
+        $totalPublicProjects = Project::where('visibility', 'public')
+            ->where('moderation_status', 'approved')
+            ->count();
+
+        $pendingApprovalCount = Project::where('moderation_status', 'pending')->count();
+
+        $openReportsCount = ContentFlag::where('status', 'open')->count();
 
         $now = Carbon::now();
         $start = $now->copy()->subMonths(5)->startOfMonth(); // 6 months including current
@@ -50,11 +61,11 @@ class DashboardController extends Controller
             $userCounts[] = $count;
         }
 
-        // Projects distribution by status
-        $projectStatus = Project::select('status', DB::raw('COUNT(*) as count'))
-            ->groupBy('status')
+        // Projects distribution by moderation_status (pending / approved / rejected)
+        $projectStatus = Project::select('moderation_status', DB::raw('COUNT(*) as count'))
+            ->groupBy('moderation_status')
             ->get()
-            ->pluck('count', 'status');
+            ->pluck('count', 'moderation_status');
 
         $projectStatusDistribution = $projectStatus->toArray();
 
@@ -70,6 +81,10 @@ class DashboardController extends Controller
                 'data' => $userCounts,
             ],
             'projectStatusDistribution' => $projectStatusDistribution,
+            'totalChannels' => $totalChannels,
+            'totalPublicProjects' => $totalPublicProjects,
+            'pendingApprovalCount' => $pendingApprovalCount,
+            'openReportsCount' => $openReportsCount,
         ]);
     }
 }

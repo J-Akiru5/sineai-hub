@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PremiereController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\ConversationController;
@@ -36,6 +37,13 @@ Route::get('/phpinfo', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Search (public)
+Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('search.index');
+
+// Premiere discovery (public)
+Route::get('/premiere', [PremiereController::class, 'index'])->name('premiere.index');
+Route::get('/premiere/{project}', [PremiereController::class, 'show'])->name('premiere.show');
+
 // Public AI Chat endpoint for guests (no auth) - rate limited to prevent abuse
 Route::post('/ai/guest-chat', [AiAssistantController::class, 'guestChat'])->middleware('throttle:10,1')->name('ai.guest-chat');
 
@@ -48,8 +56,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Routes for our Projects feature
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+    Route::get('/my-projects', [ProjectController::class, 'myProjects'])->name('projects.my');
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+
+    // Edit & update routes for projects (owners only)
+    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
+    Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
 
     // Show individual project
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
@@ -103,9 +116,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/channels', [\App\Http\Controllers\Admin\ChannelController::class, 'store'])->name('channels.store');
         Route::patch('/channels/{channel}', [\App\Http\Controllers\Admin\ChannelController::class, 'update'])->name('channels.update');
         Route::delete('/channels/{channel}', [\App\Http\Controllers\Admin\ChannelController::class, 'destroy'])->name('channels.destroy');
+        
+        // Moderation panel
+        Route::get('/moderation', [\App\Http\Controllers\Admin\ModerationController::class, 'index'])->name('moderation.index');
+        Route::patch('/moderation/project/{project}', [\App\Http\Controllers\Admin\ModerationController::class, 'updateProjectStatus'])->name('moderation.updateProjectStatus');
+        Route::patch('/moderation/flag/{flag}', [\App\Http\Controllers\Admin\ModerationController::class, 'resolveFlag'])->name('moderation.resolveFlag');
     });
 
     // (Scriptwriter removed)
+
+    // Playlists resource
+    Route::resource('playlists', \App\Http\Controllers\PlaylistController::class);
+    Route::post('/playlists/{playlist}/add', [\App\Http\Controllers\PlaylistController::class, 'addProject'])->name('playlists.addProject');
+
+    // Comments (project comments)
+    Route::resource('comments', \App\Http\Controllers\CommentController::class)->only(['store', 'destroy']);
+
+    // Flags (content reporting)
+    Route::post('/flags', [\App\Http\Controllers\FlagController::class, 'store'])->name('flags.store');
 
 // Language switch route (sets session locale)
 Route::post('/language', function (Request $request) {

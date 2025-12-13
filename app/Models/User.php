@@ -59,6 +59,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get comments made by the user.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Get search histories for the user.
+     */
+    public function searchHistories(): HasMany
+    {
+        return $this->hasMany(SearchHistory::class);
+    }
+
+    /**
      * Get the conversations for the user.
      */
     public function conversations(): HasMany

@@ -1,10 +1,11 @@
 import AdminLayout from '@/Layouts/AdminLayout';
+import { Link } from '@inertiajs/react';
 import { Chart, registerables } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 
 Chart.register(...registerables);
 
-export default function Dashboard({ recentLogs = [], totalUsers = 0, totalProjects = 0, newUsersThisMonth = 0, usersOverTime = { labels: [], data: [] }, projectStatusDistribution = {} }) {
+export default function Dashboard({ recentLogs = [], totalUsers = 0, totalProjects = 0, newUsersThisMonth = 0, usersOverTime = { labels: [], data: [] }, projectStatusDistribution = {}, totalChannels = 0, totalPublicProjects = 0, pendingApprovalCount = 0, openReportsCount = 0 }) {
 
     const userLineData = {
         labels: usersOverTime.labels || [],
@@ -55,6 +56,33 @@ export default function Dashboard({ recentLogs = [], totalUsers = 0, totalProjec
                         <div className="text-sm text-gray-500">Site Visits</div>
                         <div className="text-2xl font-bold">— Coming Soon</div>
                     </div>
+                </div>
+
+                {/* Community & Content stats row */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="p-4 border rounded bg-white">
+                        <div className="text-sm text-gray-500">Total Channels</div>
+                        <div className="text-2xl font-bold">{totalChannels}</div>
+                    </div>
+
+                    <div className="p-4 border rounded bg-white">
+                        <div className="text-sm text-gray-500">Public Premiere Projects</div>
+                        <div className="text-2xl font-bold">{totalPublicProjects}</div>
+                    </div>
+
+                    <Link href={route('admin.moderation.index')} className="block">
+                        <div className="p-4 border rounded bg-amber-100 hover:bg-amber-200 cursor-pointer">
+                            <div className="text-sm text-gray-700">Pending Approvals</div>
+                            <div className="text-2xl font-bold text-amber-800">{pendingApprovalCount}</div>
+                        </div>
+                    </Link>
+
+                    <Link href={route('admin.moderation.index')} className="block">
+                        <div className="p-4 border rounded bg-amber-100 hover:bg-amber-200 cursor-pointer">
+                            <div className="text-sm text-gray-700">Open Reports</div>
+                            <div className="text-2xl font-bold text-amber-800">{openReportsCount}</div>
+                        </div>
+                    </Link>
                 </div>
 
                 {/* Charts row */}

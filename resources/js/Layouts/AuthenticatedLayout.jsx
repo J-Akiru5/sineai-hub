@@ -64,14 +64,49 @@ export default function Authenticated({ user, header, children }) {
 
                             {/* Desktop Links (center) */}
                             <div className="hidden md:flex items-center justify-center flex-1">
-                                <div className="flex gap-6 text-slate-300">
-                                    <Link href={route('dashboard')} className={route().current('dashboard') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Dashboard</Link>
-                                    <Link href={route('projects.index')} className={route().current('projects.*') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Projects</Link>
-                                    <Link href={route('chat')} className={route().current('chat') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Chat</Link>
-                                    <Link href={route('ai.assistant')} className={route().current('ai.assistant') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Spark</Link>
-                                    <Link href={route('scriptwriter.index')} className={route().current('scriptwriter.index') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Scriptwriter</Link>
+                                <div className="flex gap-6 text-slate-300 items-center">
+                                    <Link href={route('dashboard')} className={route().current('dashboard') ? 'border-b-2 border-amber-500 text-amber-500 font-semibold pb-1' : 'hover:text-white'}>Dashboard</Link>
+                                    <Link href={route('projects.index')} className={route().current('projects.*') ? 'border-b-2 border-amber-500 text-amber-500 font-semibold pb-1' : 'hover:text-white'}>Projects</Link>
+                                    <Link href={route('premiere.index')} className={route().current('premiere.*') ? 'border-b-2 border-amber-500 text-amber-500 font-semibold pb-1' : 'hover:text-white'}>Premiere</Link>
+
+                                    {/* Studio Dropdown */}
+                                    <Dropdown>
+                                        <Dropdown.Trigger>
+                                            {({ open }) => (
+                                                <button className={`${route().current('projects.my') || route().current('playlists.*') ? 'border-b-2 border-amber-500 text-amber-500 font-semibold pb-1' : 'hover:text-white'} inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-amber-500`}>
+                                                    <span>Studio</span>
+                                                    <svg className={`h-4 w-4 transition-transform ${open ? 'transform rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                                </button>
+                                            )}
+                                        </Dropdown.Trigger>
+                                        <Dropdown.Content contentClasses={'py-1 bg-slate-900 text-white border border-white/10'} align="left">
+                                            <Dropdown.Link href={route('projects.my')} className={''}>My Projects</Dropdown.Link>
+                                            <Dropdown.Link href={route('playlists.index')} className={''}>My Playlists</Dropdown.Link>
+                                            <Dropdown.Link href={route('projects.create')} className={''}>Upload Project</Dropdown.Link>
+                                        </Dropdown.Content>
+                                    </Dropdown>
+
+                                    {/* Community Chat top-level link */}
+                                    <Link href={route('chat')} className={route().current('chat') ? 'border-b-2 border-amber-500 text-amber-500 font-semibold pb-1' : 'hover:text-white'}>Community Chat</Link>
+
+                                    {/* AI Tools Dropdown */}
+                                    <Dropdown>
+                                        <Dropdown.Trigger>
+                                            {({ open }) => (
+                                                <button className={`${route().current('ai.*') || route().current('scriptwriter.*') ? 'border-b-2 border-amber-500 text-amber-500 font-semibold pb-1' : 'hover:text-white'} inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-amber-500`}>
+                                                    <span>AI Tools</span>
+                                                    <svg className={`h-4 w-4 transition-transform ${open ? 'transform rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                                </button>
+                                            )}
+                                        </Dropdown.Trigger>
+                                        <Dropdown.Content contentClasses={'py-1 bg-slate-900 text-white border border-white/10'} align="left">
+                                            <Dropdown.Link href={route('ai.assistant')} className={''}>Spark Assistant</Dropdown.Link>
+                                            <Dropdown.Link href={route('scriptwriter.index')} className={''}>Scriptwriter</Dropdown.Link>
+                                        </Dropdown.Content>
+                                    </Dropdown>
+
                                     {((currentUser?.roles || []).some(r => r.name === 'admin' || r.name === 'super-admin')) && (
-                                        <Link href={route('admin.dashboard')} className={route().current('admin.*') ? 'text-amber-500 font-semibold' : 'hover:text-white'}>Admin Panel</Link>
+                                        <Link href={route('admin.dashboard')} className={route().current('admin.*') ? 'border-b-2 border-amber-500 text-amber-500 font-semibold pb-1' : 'hover:text-white'}>Admin Panel</Link>
                                     )}
                                 </div>
                             </div>
@@ -111,15 +146,35 @@ export default function Authenticated({ user, header, children }) {
                 {/* Mobile Slide-down Menu */}
                 {showingNavigationDropdown && (
                     <div className="md:hidden bg-slate-900/95 border-b border-white/6">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2">
-                            <Link href={route('dashboard')} className="block text-slate-300">Dashboard</Link>
-                            <Link href={route('projects.index')} className="block text-slate-300">Projects</Link>
-                            <Link href={route('chat')} className="block text-slate-300">Chat</Link>
-                            <Link href={route('ai.assistant')} className="block text-slate-300">Spark</Link>
-                            <Link href={route('scriptwriter.index')} className="block text-slate-300">Scriptwriter</Link>
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-3">
+                            <div>
+                                <Link href={route('dashboard')} className="block text-slate-300">Dashboard</Link>
+                                <Link href={route('projects.index')} className="block text-slate-300">Projects</Link>
+                                <Link href={route('premiere.index')} className="block text-slate-300">Premiere</Link>
+                            </div>
+
+                            <div className="pt-2">
+                                <div className="text-slate-400 text-xs uppercase mb-1">Studio</div>
+                                <Link href={route('projects.my')} className="block text-slate-300 pl-2">My Projects</Link>
+                                <Link href={route('playlists.index')} className="block text-slate-300 pl-2">My Playlists</Link>
+                                <Link href={route('projects.create')} className="block text-slate-300 pl-2">Upload Project</Link>
+                            </div>
+
+                            <div className="pt-2">
+                                <div className="text-slate-400 text-xs uppercase mb-1">Community</div>
+                                <Link href={route('chat')} className="block text-slate-300 pl-2">Community Chat</Link>
+                            </div>
+
+                            <div className="pt-2">
+                                <div className="text-slate-400 text-xs uppercase mb-1">AI Tools</div>
+                                <Link href={route('ai.assistant')} className="block text-slate-300 pl-2">Spark Assistant</Link>
+                                <Link href={route('scriptwriter.index')} className="block text-slate-300 pl-2">Scriptwriter</Link>
+                            </div>
+
                             {((currentUser?.roles || []).some(r => r.name === 'admin' || r.name === 'super-admin')) && (
                                 <Link href={route('admin.dashboard')} className="block text-slate-300">Admin Panel</Link>
                             )}
+
                             <div className="pt-2 border-t border-white/6">
                                 <Link href={route('profile.edit')} className="block text-slate-300">Profile</Link>
                                 <Link href={route('logout')} method="post" as="button" className="block text-slate-300">Log Out</Link>

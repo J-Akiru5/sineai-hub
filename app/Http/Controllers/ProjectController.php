@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class ProjectController extends Controller
 {
@@ -24,6 +25,7 @@ class ProjectController extends Controller
             'thumbnail' => 'nullable|image|max:2048', // optional thumbnail, max 2MB
             'is_premiere_public' => 'boolean',
             'category' => 'nullable|string',
+            'visibility' => ['nullable', 'in:private,unlisted,public'],
         ]);
 
         // Get the authenticated user
@@ -47,6 +49,7 @@ class ProjectController extends Controller
         // Determine flags/metadata
         $isPremierePublic = $request->boolean('is_premiere_public', false);
         $category = $validated['category'] ?? null;
+        $visibility = $validated['visibility'] ?? 'private';
 
         // Create a new project record in the database
         $project = $user->projects()->create([
@@ -56,6 +59,7 @@ class ProjectController extends Controller
             'thumbnail_url' => $thumbnailUrl,
             'is_premiere_public' => $isPremierePublic,
             'category' => $category,
+            'visibility' => $visibility,
             // 'status' defaults to 'published' as per our schema
         ]);
 
@@ -107,6 +111,21 @@ class ProjectController extends Controller
         // eager load user relation for the frontend
         $project->load('user');
 
+        // Access control: if not owner, ensure public & approved
+        $userId = Auth::id();
+        if ($userId !== $project->user_id) {
+            if ($project->visibility !== 'public' || $project->moderation_status !== 'approved') {
+                abort(403);
+            }
+        }
+
+        // Increment view count
+        try {
+            $project->increment('views_count');
+        } catch (\Exception $e) {
+            Log::warning('Failed to increment project views: ' . $e->getMessage());
+        }
+
         return Inertia::render('Projects/Show', [
             'project' => $project,
         ]);
@@ -114,13 +133,26 @@ class ProjectController extends Controller
 
     public function index()
     {
-       
-        // Return projects as-is. The `video_url` and `thumbnail_url` stored
-        // in the database already contain the absolute Supabase links, so
-        // don't attempt to transform or re-generate them here.
-        $projects = Project::with('user')->latest()->get();
+        // Only return projects that are public and approved for the public gallery
+        $projects = Project::with('user')
+            ->where('visibility', 'public')
+            ->where('moderation_status', 'approved')
+            ->latest()
+            ->get();
 
         return Inertia::render('Projects/Index', [
+            'projects' => $projects,
+        ]);
+    }
+
+    /**
+     * Return all projects for the authenticated user (dashboard).
+     */
+    public function myProjects()
+    {
+        $projects = Project::with('user')->where('user_id', Auth::id())->latest()->paginate(10)->withQueryString();
+
+        return Inertia::render('Projects/MyProjects', [
             'projects' => $projects,
         ]);
     }
@@ -160,5 +192,109 @@ class ProjectController extends Controller
         $project->delete();
 
         return Redirect::route('projects.index')->with('success', 'Project deleted.');
+    }
+
+    /**
+     * Show edit form for a project.
+     */
+    public function edit(Project $project)
+    {
+        // Only owner can edit
+        if (Auth::id() !== $project->user_id) {
+            abort(403);
+        }
+
+        $project->load('user');
+
+        return Inertia::render('Projects/Edit', [
+            'project' => $project,
+        ]);
+    }
+
+    /**
+     * Update project details.
+     */
+    public function update(Request $request, Project $project)
+    {
+        // Only owner can update
+        if (Auth::id() !== $project->user_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime|max:512000',
+            'thumbnail' => 'nullable|image|max:2048',
+            'is_premiere_public' => 'boolean',
+            'category' => 'nullable|string',
+            'visibility' => ['nullable', 'in:private,unlisted,public'],
+        ]);
+
+        // Allow longer-running uploads if user replaces video
+        @set_time_limit(300);
+
+        // Handle optional video replacement
+        if ($request->hasFile('video')) {
+            $user = Auth::user();
+            $videoPath = $request->file('video')->store('user-' . $user->id, 'digitalocean');
+            $bucket = env('DO_SPACES_BUCKET');
+            $videoUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$videoPath}";
+
+            // try to delete old video
+            try {
+                $endpoint = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
+                if (!empty($project->video_url)) {
+                    $oldPath = str_replace($endpoint . '/', '', $project->video_url);
+                    if ($oldPath && Storage::disk('digitalocean')->exists($oldPath)) {
+                        Storage::disk('digitalocean')->delete($oldPath);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to delete old video: ' . $e->getMessage());
+            }
+
+            $project->video_url = $videoUrl;
+        }
+
+        // Handle optional thumbnail replacement
+        if ($request->hasFile('thumbnail')) {
+            $user = isset($user) ? $user : Auth::user();
+            $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
+            $endpoint = env('DO_SPACES_ENDPOINT');
+            $thumbnailUrl = "{$endpoint}/{$thumbPath}";
+
+            try {
+                $endpointTrim = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
+                if (!empty($project->thumbnail_url)) {
+                    $oldThumb = str_replace($endpointTrim . '/', '', $project->thumbnail_url);
+                    if ($oldThumb && Storage::disk('digitalocean')->exists($oldThumb)) {
+                        Storage::disk('digitalocean')->delete($oldThumb);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to delete old thumbnail: ' . $e->getMessage());
+            }
+
+            $project->thumbnail_url = $thumbnailUrl;
+        }
+
+        // Update basic fields
+        $project->title = $validated['title'];
+        $project->description = $validated['description'] ?? null;
+        $project->category = $validated['category'] ?? null;
+        $project->visibility = $validated['visibility'] ?? 'private';
+
+        // Handle is_premiere_public explicitly (checkbox may be absent when unchecked)
+        $project->is_premiere_public = $request->boolean('is_premiere_public', false);
+
+        $project->save();
+
+        try {
+            \App\Services\Logger::log('CONTENT', 'Project Updated', "User " . auth()->user()?->name . " updated project: {$project->title}");
+        } catch (\Throwable $ex) {
+        }
+
+        return Redirect::route('projects.my')->with('success', 'Project updated successfully.');
     }
 }

@@ -27,13 +27,14 @@ export default function PublicLayout({ title = 'SineAI Hub', children }) {
                             </Link>
                         </div>
 
-                        <nav className="flex-1 flex items-center justify-center">
+                        <div className="flex-1 flex items-center justify-center">
                             <div className="hidden sm:flex space-x-8">
                                 <a href="#about" className="text-sm text-amber-200/90 hover:underline">About</a>
                                 <a href="#features" className="text-sm text-amber-200/90 hover:underline">Features</a>
                                 <a href="#team" className="text-sm text-amber-200/90 hover:underline">Team</a>
+                                <Link href={route('premiere.index')} className="text-sm text-amber-100 font-semibold hover:underline">Premiere</Link>
                             </div>
-                        </nav>
+                        </div>
 
                         <div className="flex items-center gap-3">
                             <Link href="/login" className="text-sm text-amber-200/80 hover:underline">Login</Link>

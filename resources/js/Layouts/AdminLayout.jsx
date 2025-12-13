@@ -33,6 +33,10 @@ export default function AdminLayout({ children, header }) {
                         Role Management
                     </Link>
 
+            <Link href={route('admin.moderation.index')} className={`block px-4 py-2 rounded-md ${isActive('admin.moderation.*') ? 'bg-gray-800' : 'hover:bg-gray-800/60'}`}>
+              Moderation
+            </Link>
+
             <Link href={route('admin.channels.index')} className={`block px-4 py-2 rounded-md ${isActive('admin.channels.*') ? 'bg-gray-800' : 'hover:bg-gray-800/60'}`}>
               <span className="inline-block w-4 text-center mr-2">#</span>
               Channel Management

@@ -1,37 +1,41 @@
-// resources/js/Pages/Projects/Create.jsx
+// resources/js/Pages/Projects/Edit.jsx
 
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
-export default function Create({ auth }) {
-    // useForm is Inertia's way of managing form state
-    const { data, setData, post, processing, errors, progress } = useForm({
-        title: '',
-        description: '',
-        video: null, // File inputs are handled as null initially
+export default function Edit({ auth, project }) {
+    const { data, setData, processing, errors, progress } = useForm({
+        title: project.title || '',
+        description: project.description || '',
+        video: null, // optional replacement
         thumbnail: null,
-        is_premiere_public: false,
-        category: '',
-        visibility: 'private',
+        is_premiere_public: project.is_premiere_public ?? false,
+        category: project.category || '',
+        visibility: project.visibility || 'private',
     });
 
     const submit = (e) => {
         e.preventDefault();
-        // The 'post' helper will send the form data to the named route 'projects.store'
-        post(route('projects.store'));
+
+        // Use POST with method spoofing to ensure multipart/form-data (file) uploads
+        // send the freshest `data` object to the backend to avoid stale state issues.
+        router.post(route('projects.update', project.id), {
+            _method: 'patch',
+            ...data,
+        });
     };
 
     return (
         <AuthenticatedLayout
             auth={auth}
-            header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Upload New Project</h2>}
+            header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Edit Project</h2>}
         >
-            <Head title="Upload Project" />
+            <Head title={`Edit ${project.title}`} />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -65,7 +69,7 @@ export default function Create({ auth }) {
                                 </div>
 
                                 <div className="mb-4">
-                                    <InputLabel htmlFor="video" value="Video File" />
+                                    <InputLabel htmlFor="video" value="Replace Video (optional)" />
                                     <input
                                         id="video"
                                         type="file"
@@ -114,7 +118,7 @@ export default function Create({ auth }) {
                                     </select>
                                     <InputError message={errors.visibility} className="mt-2 text-amber-200/80" />
                                 </div>
-                                
+
                                 {progress && (
                                     <div className="w-full bg-slate-800/20 rounded-full mb-4">
                                         <div className="bg-amber-500 text-xs font-medium text-slate-900 text-center p-0.5 leading-none rounded-full" style={{ width: `${progress.percentage}%` }}>
@@ -125,7 +129,7 @@ export default function Create({ auth }) {
 
                                 <div className="flex items-center justify-end mt-4">
                                     <PrimaryButton className="ml-4 bg-gradient-to-r from-amber-400 to-amber-700 text-slate-900" disabled={processing}>
-                                        Upload Project
+                                        Update Project
                                     </PrimaryButton>
                                 </div>
                             </form>
