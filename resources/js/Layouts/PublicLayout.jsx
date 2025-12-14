@@ -83,10 +83,10 @@ export default function PublicLayout({ title = 'SineAI Hub', children }) {
                             <div>
                                 <h4 className="text-amber-500 font-bold mb-4">Platform</h4>
                                 <ul className="space-y-2">
-                                    <li><Link href="/" className="hover:underline">Home</Link></li>
-                                    <li><Link href="/projects" className="hover:underline">Projects Gallery</Link></li>
-                                    <li><Link href="/scriptwriter" className="hover:underline">Scriptwriter</Link></li>
-                                    <li><Link href="/spark" className="hover:underline">Spark AI</Link></li>
+                                    <li><Link href="/" className="hover:underline hover:text-amber-200 transition-colors">Home</Link></li>
+                                    <li><Link href={route('premiere.index')} className="hover:underline hover:text-amber-200 transition-colors">Premiere</Link></li>
+                                    <li><Link href={route('login')} className="hover:underline hover:text-amber-200 transition-colors">Scriptwriter</Link></li>
+                                    <li><Link href={route('login')} className="hover:underline hover:text-amber-200 transition-colors">Spark AI</Link></li>
                                 </ul>
                             </div>
 
@@ -94,10 +94,10 @@ export default function PublicLayout({ title = 'SineAI Hub', children }) {
                             <div>
                                 <h4 className="text-amber-500 font-bold mb-4">Guild</h4>
                                 <ul className="space-y-2">
-                                    <li><a href="/about" className="hover:underline">About Us</a></li>
-                                    <li><a href="/events" className="hover:underline">Events</a></li>
-                                    <li><a href="/join" className="hover:underline">Join the Guild</a></li>
-                                    <li><a href="/support" className="hover:underline">Support</a></li>
+                                    <li><a href="#about" className="hover:underline hover:text-amber-200 transition-colors">About Us</a></li>
+                                    <li><a href="#team" className="hover:underline hover:text-amber-200 transition-colors">Leadership</a></li>
+                                    <li><Link href={route('register')} className="hover:underline hover:text-amber-200 transition-colors">Join the Guild</Link></li>
+                                    <li><Link href={route('login')} className="hover:underline hover:text-amber-200 transition-colors">Login</Link></li>
                                 </ul>
                             </div>
 
