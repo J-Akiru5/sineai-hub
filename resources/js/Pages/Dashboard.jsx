@@ -104,6 +104,13 @@ export default function Dashboard({
                                         <span>New Script</span>
                                     </Link>
                                     <Link
+                                        href={route('studio.editor')}
+                                        className="group flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/20"
+                                    >
+                                        <Film className="w-5 h-5" />
+                                        <span>Video Editor</span>
+                                    </Link>
+                                    <Link
                                         href={route('projects.create')}
                                         className="group flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-all border border-white/10 hover:border-amber-500/30"
                                     >

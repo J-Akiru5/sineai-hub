@@ -104,6 +104,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/spark/rewrite', [\App\Http\Controllers\SparkScriptController::class, 'rewrite'])->name('spark.rewrite');
     Route::post('/spark/generate', [\App\Http\Controllers\SparkScriptController::class, 'generate'])->name('spark.generate');
 
+    // Video Editor (Studio)
+    Route::get('/studio/editor', function () {
+        return Inertia::render('Studio/Editor');
+    })->name('studio.editor');
+
     // Admin area routes (requires user to have the 'admin' role)
     Route::middleware(['auth', 'ensure.role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
