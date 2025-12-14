@@ -13,10 +13,11 @@ const sanitizeMediaUrl = (url) => {
     if (!url) return null;
     if (!(url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) return null;
     try {
-        const base = (typeof window !== 'undefined' && window.location?.origin) || 'https://sineai.local';
+        const base = (typeof window !== 'undefined' && window.location?.origin) || 'http://localhost';
         const parsed = new URL(url, base);
         const protocol = parsed.protocol.toLowerCase();
-        if (protocol === 'http:' || protocol === 'https:') {
+        const allowedExt = /\.(png|jpe?g|webp|gif|mp4|webm|ogg)(\?.*)?$/i;
+        if ((protocol === 'http:' || protocol === 'https:') && allowedExt.test(parsed.pathname)) {
             return url;
         }
     } catch (e) {
@@ -38,7 +39,7 @@ export default function Show({ project, suggestedVideos, comments }) {
     const videoRef = useRef(null);
     const glowMedia = sanitizeMediaUrl(project?.thumbnail_url || project?.video_url || null);
     const escapedGlowMedia = escapeForCssUrl(glowMedia);
-    const glowBackgroundStyle = escapedGlowMedia ? { '--glow-image': `url(${escapedGlowMedia})` } : {};
+    const glowBackgroundStyle = escapedGlowMedia ? { '--glow-image': `url(${escapedGlowMedia})`, backgroundImage: 'var(--glow-image)' } : {};
 
     useEffect(() => {
         function onKey(e) {
@@ -90,7 +91,6 @@ export default function Show({ project, suggestedVideos, comments }) {
                                     maxWidth: GLOW_MAX_WIDTH,
                                     borderRadius: GLOW_RADIUS,
                                     ...glowBackgroundStyle,
-                                    backgroundImage: glowBackgroundStyle['--glow-image'] ? 'var(--glow-image)' : undefined,
                                 }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
