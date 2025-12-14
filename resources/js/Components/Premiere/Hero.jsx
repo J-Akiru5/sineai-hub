@@ -29,7 +29,7 @@ export default function Hero({ featuredProject }) {
             </div>
 
             {/* Foreground content */}
-            <div className="relative z-10 h-full flex items-end px-6 sm:px-10 lg:px-16 pb-[30%]">
+            <div className="relative z-10 h-full flex items-end px-6 sm:px-10 lg:px-16 pb-24">
                 <div className="max-w-4xl space-y-5">
                     <div className="flex items-center gap-3 text-xs uppercase tracking-[0.35em] text-amber-200 font-semibold">
                         <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur">Premiere</span>
