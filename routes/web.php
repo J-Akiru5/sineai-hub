@@ -91,6 +91,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/scriptwriter/{script}', [ScriptwriterController::class, 'update'])->name('scriptwriter.update');
     Route::delete('/scriptwriter/{script}', [ScriptwriterController::class, 'destroy'])->name('scriptwriter.destroy');
 
+    // Spark AI Integration for Scriptwriter
+    Route::post('/spark/rewrite', [\App\Http\Controllers\SparkScriptController::class, 'rewrite'])->name('spark.rewrite');
+    Route::post('/spark/generate', [\App\Http\Controllers\SparkScriptController::class, 'generate'])->name('spark.generate');
+
     // Admin area routes (requires user to have the 'admin' role)
     Route::middleware(['auth', 'ensure.role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
