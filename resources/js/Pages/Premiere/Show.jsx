@@ -7,6 +7,8 @@ import CommentSection from '@/Components/Premiere/CommentSection';
 export default function Show({ project, suggestedVideos, comments }) {
     const [isPaused, setIsPaused] = useState(true);
     const videoRef = useRef(null);
+    const THEATER_MAX_WIDTH = '98vw';
+    const glowMedia = project?.thumbnail_url || project?.video_url || null;
 
     useEffect(() => {
         function onKey(e) {
@@ -43,24 +45,18 @@ export default function Show({ project, suggestedVideos, comments }) {
             <Head title={project.title} />
 
             <div className="w-full bg-black text-white">
-                <div className="max-w-[98vw] mx-auto min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-10 py-10 relative overflow-hidden">
+                <div
+                    className="mx-auto min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-10 py-10 relative overflow-hidden w-full"
+                    style={{ maxWidth: THEATER_MAX_WIDTH }}
+                >
                     <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),rgba(0,0,0,0.6)_45%,rgba(0,0,0,0.95)_90%)]" />
 
                     <div className="relative w-full max-w-6xl aspect-video rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black">
                         <div className="absolute inset-0 -z-10 flex items-center justify-center">
-                            <div className="relative w-[115%] max-w-[1800px] aspect-video rounded-[32px] overflow-hidden blur-3xl saturate-150 opacity-60 scale-110">
-                                {project?.video_url ? (
-                                    <video
-                                        src={project.video_url}
-                                        muted
-                                        loop
-                                        autoPlay
-                                        playsInline
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <img src={project.thumbnail_url} alt={project.title} className="absolute inset-0 w-full h-full object-cover" />
-                                )}
+                            <div
+                                className="relative w-[115%] max-w-[1800px] aspect-video rounded-[32px] overflow-hidden blur-3xl saturate-150 opacity-60 scale-110 bg-center bg-cover"
+                                style={glowMedia ? { backgroundImage: `url('${glowMedia}')` } : {}}
+                            >
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
                             </div>
                         </div>
