@@ -79,6 +79,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
     Route::get('/chat/{channel}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.messages');
+    Route::get('/chat/user/scripts', [ChatController::class, 'userScripts'])->name('chat.user.scripts');
+    Route::get('/chat/user/projects', [ChatController::class, 'userProjects'])->name('chat.user.projects');
 
     // AI Assistant route to display page
     Route::get('/ai/chat', [AiAssistantController::class, 'index'])->name('ai.assistant');
