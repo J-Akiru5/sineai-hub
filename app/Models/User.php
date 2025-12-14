@@ -23,11 +23,22 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar_url',
+        'banner_url',
         'pen_name',
         'studio_name',
         'location',
         'contact_number',
         'is_approved',
+        // Creator profile fields
+        'username',
+        'bio',
+        'headline',
+        'website',
+        'social_links',
+        'is_verified_creator',
+        'creator_verified_at',
+        'followers_count',
+        'following_count',
     ];
 
     /**
@@ -48,6 +59,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'social_links' => 'array',
+        'is_verified_creator' => 'boolean',
+        'creator_verified_at' => 'datetime',
     ];
 
     /**
@@ -145,5 +159,124 @@ class User extends Authenticatable
     public function editorProjects(): HasMany
     {
         return $this->hasMany(EditorProject::class);
+    }
+
+    /**
+     * Get the user's notifications.
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Get unread notifications count.
+     */
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->unread()->count();
+    }
+
+    /**
+     * Get the user's settings.
+     */
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class);
+    }
+
+    /**
+     * Get or create user settings.
+     */
+    public function getOrCreateSettings(): UserSetting
+    {
+        return $this->settings ?? $this->settings()->create(UserSetting::defaults());
+    }
+
+    /**
+     * Users this user follows.
+     */
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Users who follow this user.
+     */
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if user is following another user.
+     */
+    public function isFollowing(User $user): bool
+    {
+        return $this->following()->where('following_id', $user->id)->exists();
+    }
+
+    /**
+     * Follow a user.
+     */
+    public function follow(User $user): void
+    {
+        if ($this->id === $user->id) return; // Can't follow yourself
+        
+        if (!$this->isFollowing($user)) {
+            $this->following()->attach($user->id);
+            $this->increment('following_count');
+            $user->increment('followers_count');
+            
+            // Create notification
+            Notification::notify(
+                $user->id,
+                Notification::TYPE_FOLLOW,
+                "{$this->name} started following you",
+                null,
+                route('creator.show', $this->username ?? $this->id),
+                $this,
+                $this->id
+            );
+        }
+    }
+
+    /**
+     * Unfollow a user.
+     */
+    public function unfollow(User $user): void
+    {
+        if ($this->isFollowing($user)) {
+            $this->following()->detach($user->id);
+            $this->decrement('following_count');
+            $user->decrement('followers_count');
+        }
+    }
+
+    /**
+     * Get scripts for this user.
+     */
+    public function scripts(): HasMany
+    {
+        return $this->hasMany(Script::class);
+    }
+
+    /**
+     * Accessor for display name (username or name).
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->username ?? $this->name;
+    }
+
+    /**
+     * Get the profile URL.
+     */
+    public function getProfileUrlAttribute(): string
+    {
+        return route('creator.show', $this->username ?? $this->id);
     }
 }

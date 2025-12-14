@@ -176,9 +176,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/categories/{category}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{category}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('categories.destroy');
         Route::post('/categories/reorder', [\App\Http\Controllers\Admin\CategoryController::class, 'reorder'])->name('categories.reorder');
+        
+        // Admin Creator Management
+        Route::get('/creators', [\App\Http\Controllers\Admin\CreatorController::class, 'index'])->name('creators.index');
+        Route::patch('/creators/{user}/verify', [\App\Http\Controllers\Admin\CreatorController::class, 'toggleVerification'])->name('creators.verify');
     });
 
-    // (Scriptwriter removed)
+    // Settings routes
+    Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+    Route::patch('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::patch('/settings/notifications', [\App\Http\Controllers\SettingsController::class, 'updateNotifications'])->name('settings.notifications');
+    Route::patch('/settings/privacy', [\App\Http\Controllers\SettingsController::class, 'updatePrivacy'])->name('settings.privacy');
+    Route::patch('/settings/appearance', [\App\Http\Controllers\SettingsController::class, 'updateAppearance'])->name('settings.appearance');
+    Route::patch('/settings/player', [\App\Http\Controllers\SettingsController::class, 'updatePlayer'])->name('settings.player');
+    Route::delete('/settings/account', [\App\Http\Controllers\SettingsController::class, 'deleteAccount'])->name('settings.deleteAccount');
+    Route::get('/settings/export', [\App\Http\Controllers\SettingsController::class, 'exportData'])->name('settings.export');
+
+    // Notifications routes
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::delete('/notifications/{notification}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('/notifications', [\App\Http\Controllers\NotificationController::class, 'clearAll'])->name('notifications.clearAll');
 
     // Playlists resource
     Route::resource('playlists', \App\Http\Controllers\PlaylistController::class);
@@ -192,6 +212,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Flags (content reporting)
     Route::post('/flags', [\App\Http\Controllers\FlagController::class, 'store'])->name('flags.store');
 
+    // Follow/Unfollow actions
+    Route::post('/creators/{user}/follow', [\App\Http\Controllers\CreatorController::class, 'follow'])->name('creator.follow');
+    Route::delete('/creators/{user}/follow', [\App\Http\Controllers\CreatorController::class, 'unfollow'])->name('creator.unfollow');
+
 // Language switch route (sets session locale)
 Route::post('/language', function (Request $request) {
     $request->validate(['locale' => 'required|string']);
@@ -200,5 +224,10 @@ Route::post('/language', function (Request $request) {
     return back(303);
 })->name('language');
 });
+
+// Public Creator Profile routes (outside auth middleware)
+Route::get('/creator/{identifier}', [\App\Http\Controllers\CreatorController::class, 'show'])->name('creator.show');
+Route::get('/creator/{identifier}/followers', [\App\Http\Controllers\CreatorController::class, 'followers'])->name('creator.followers');
+Route::get('/creator/{identifier}/following', [\App\Http\Controllers\CreatorController::class, 'following'])->name('creator.following');
 
 require __DIR__.'/auth.php';
