@@ -11,7 +11,11 @@ class Message extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'channel_id', 'body'];
+    protected $fillable = ['user_id', 'channel_id', 'body', 'message_type', 'attachment_data'];
+
+    protected $casts = [
+        'attachment_data' => 'array',
+    ];
 
     public function channel()
     {

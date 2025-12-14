@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
+import { Cloud, CloudOff, Check, RefreshCw, FileText, Sparkles, Type, MessageSquare, Film, Wand2, Zap, BookOpen } from 'lucide-react';
 
 // Utility to generate unique IDs
 let blockIdCounter = Date.now();
@@ -16,6 +17,9 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     const [showHint, setShowHint] = useState(true);
     const [focusedBlockId, setFocusedBlockId] = useState(null);
     
+    // Sync status state
+    const [syncStatus, setSyncStatus] = useState('synced'); // 'synced', 'syncing', 'offline'
+
     // Spark AI state
     const [isRewriting, setIsRewriting] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -28,6 +32,12 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     ]);
 
     const blockRefs = useRef({});
+    const activeScriptRef = useRef(activeScript);
+
+    // Keep ref in sync with state
+    useEffect(() => {
+        activeScriptRef.current = activeScript;
+    }, [activeScript]);
 
     // Derived state: Extract scenes for navigation (memoized for performance)
     const scenes = useMemo(() => {
@@ -96,17 +106,39 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     // Auto-Save Logic (Debounced)
     const handleAutoSave = useCallback(
         debounce((blocksData) => {
-            if (!activeScript) return;
+            const currentScript = activeScriptRef.current;
+            if (!currentScript || !currentScript.id) return;
             setIsSaving(true);
-            axios.put(window.route('scriptwriter.update', activeScript.id), {
+            setSyncStatus('syncing');
+            axios.put(route('scriptwriter.update', currentScript.id), {
                 content: JSON.stringify(blocksData),
-                title: activeScript.title
+                title: currentScript.title
             }).then(() => {
                 setIsSaving(false);
-            }).catch(err => console.error("Save failed", err));
+                setSyncStatus('synced');
+            }).catch(err => {
+                console.error("Save failed", err);
+                setSyncStatus('offline');
+            });
         }, 2000),
-        [activeScript]
+        []
     );
+
+    // Manual sync trigger
+    const handleManualSync = () => {
+        const currentScript = activeScriptRef.current;
+        if (!currentScript || !currentScript.id || syncStatus === 'syncing') return;
+        setSyncStatus('syncing');
+        axios.put(route('scriptwriter.update', currentScript.id), {
+            content: JSON.stringify(blocks),
+            title: currentScript.title
+        }).then(() => {
+            setSyncStatus('synced');
+        }).catch(err => {
+            console.error("Sync failed", err);
+            setSyncStatus('offline');
+        });
+    };
 
     // Save blocks when they change
     useEffect(() => {
@@ -392,39 +424,44 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                 }
             `}</style>
 
-            {/* Full-Width Studio Layout Container */}
-            <div className="h-[calc(100vh-64px)] w-full flex bg-zinc-100">
+            {/* Full-Width Studio Layout with Cinematic Gradient Background */}
+            <div className="h-[calc(100vh-64px)] w-full flex bg-gradient-to-br from-slate-950 via-slate-900 to-black">
 
-                {/* Left Pane - Scene Navigator */}
-                <div className="w-64 bg-white border-r border-zinc-300 flex-shrink-0 flex flex-col print:hidden">
-                    <div className="p-4 border-b border-zinc-200">
+                {/* Left Pane - Scene Navigator (Glass Pane) */}
+                <div className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 flex-shrink-0 flex flex-col print:hidden">
+                    <div className="p-4 border-b border-white/10 space-y-3">
                         <button
                             onClick={createNewScript}
-                            className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded hover:from-amber-400 hover:to-amber-500 transition-all shadow-md mb-2"
+                            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 font-semibold rounded-xl hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
                         >
+                            <FileText className="w-4 h-4" />
                             + New Script
                         </button>
                         <button
                             onClick={handleExportPDF}
-                            className="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded hover:from-blue-400 hover:to-blue-500 transition-all shadow-md"
+                            className="w-full py-2.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-semibold rounded-xl transition-all border border-blue-500/30 flex items-center justify-center gap-2"
                         >
-                            📄 Export PDF
+                            <BookOpen className="w-4 h-4" />
+                            Export PDF
                         </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-1">
-                        <h3 className="px-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Scenes ({scenes.length})</h3>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                        <h3 className="px-2 text-xs font-semibold text-amber-500/80 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <Film className="w-3 h-3" />
+                            Scenes ({scenes.length})
+                        </h3>
                         {scenes.map((scene) => (
                             <div
                                 key={scene.id}
                                 onClick={() => scrollToScene(scene.id)}
-                                className="p-3 rounded cursor-pointer transition-colors hover:bg-zinc-50 border-l-2 border-transparent hover:border-amber-500"
+                                className="p-3 rounded-xl cursor-pointer transition-all bg-white/5 hover:bg-white/10 border border-transparent hover:border-amber-500/30 group"
                             >
-                                <div className="flex items-start gap-2">
-                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex-shrink-0">
+                                <div className="flex items-start gap-3">
+                                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-slate-900 text-xs font-bold flex-shrink-0 shadow-lg shadow-amber-500/20">
                                         {scene.sceneNumber}
                                     </span>
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm text-zinc-900 truncate">
+                                        <div className="font-medium text-sm text-slate-200 truncate group-hover:text-white transition-colors">
                                             {scene.content || `Scene ${scene.sceneNumber}`}
                                         </div>
                                     </div>
@@ -432,7 +469,8 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                             </div>
                         ))}
                         {scenes.length === 0 && (
-                            <div className="text-center text-zinc-400 text-sm py-6">
+                            <div className="text-center text-slate-500 text-sm py-8 px-4">
+                                <Film className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                 No scenes yet. Add a Scene Heading block to get started.
                             </div>
                         )}
@@ -442,52 +480,109 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                 {/* Center Pane - Editor */}
                 <div className="flex-1 overflow-y-auto flex justify-center p-8 relative">
                     
-                    {/* Floating Toolbar */}
-                    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 flex gap-2 bg-zinc-800 rounded-full px-4 py-2 shadow-lg print:hidden">
-                        <button 
-                            aria-label="Insert scene heading"
-                            onClick={() => changeBlockType('scene-heading')}
-                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
-                        >
-                            Scene Heading
-                        </button>
-                        <button 
-                            aria-label="Insert action line"
-                            onClick={() => changeBlockType('action')}
-                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
-                        >
-                            Action
-                        </button>
-                        <button 
-                            aria-label="Insert character name"
-                            onClick={() => changeBlockType('character')}
-                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
-                        >
-                            Character
-                        </button>
-                        <button 
-                            aria-label="Insert dialogue"
-                            onClick={() => changeBlockType('dialogue')}
-                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
-                        >
-                            Dialogue
-                        </button>
+                    {/* Command Dock - macOS style bottom toolbar */}
+                    <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30 print:hidden">
+                        <div className="flex items-center gap-1 bg-slate-900/90 backdrop-blur-xl rounded-2xl px-2 py-2 shadow-2xl shadow-black/50 border border-white/10">
+                            <button
+                                aria-label="Insert scene heading"
+                                onClick={() => changeBlockType('scene-heading')}
+                                className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-2 ${focusedBlockId && blocks.find(b => b.id === focusedBlockId)?.type === 'scene-heading' ? 'bg-amber-500 text-slate-900' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Film className="w-4 h-4" />
+                                Scene
+                            </button>
+                            <button
+                                aria-label="Insert action line"
+                                onClick={() => changeBlockType('action')}
+                                className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-2 ${focusedBlockId && blocks.find(b => b.id === focusedBlockId)?.type === 'action' ? 'bg-amber-500 text-slate-900' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Zap className="w-4 h-4" />
+                                Action
+                            </button>
+                            <button
+                                aria-label="Insert character name"
+                                onClick={() => changeBlockType('character')}
+                                className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-2 ${focusedBlockId && blocks.find(b => b.id === focusedBlockId)?.type === 'character' ? 'bg-amber-500 text-slate-900' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Type className="w-4 h-4" />
+                                Character
+                            </button>
+                            <button
+                                aria-label="Insert dialogue"
+                                onClick={() => changeBlockType('dialogue')}
+                                className={`px-4 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center gap-2 ${focusedBlockId && blocks.find(b => b.id === focusedBlockId)?.type === 'dialogue' ? 'bg-amber-500 text-slate-900' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                Dialogue
+                            </button>
+                            <div className="w-px h-8 bg-white/20 mx-1" />
+                            <button
+                                aria-label="Insert parenthetical"
+                                onClick={() => changeBlockType('parenthetical')}
+                                className={`px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${focusedBlockId && blocks.find(b => b.id === focusedBlockId)?.type === 'parenthetical' ? 'bg-amber-500 text-slate-900' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                (...)
+                            </button>
+                            <button
+                                aria-label="Insert transition"
+                                onClick={() => changeBlockType('transition')}
+                                className={`px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${focusedBlockId && blocks.find(b => b.id === focusedBlockId)?.type === 'transition' ? 'bg-amber-500 text-slate-900' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                CUT TO
+                            </button>
+                        </div>
                     </div>
 
-                    {/* The "Paper" Component - Responsive wrapper */}
-                    <div className="bg-white shadow-lg min-h-[11in] w-full max-w-[8.5in] p-6 md:p-12 font-mono text-zinc-900 mt-16 print:shadow-none print:p-0 print:mt-0 print:w-full print:max-w-full">
+                    {/* The "Paper" Component - Floating with realistic shadow */}
+                    <div className="bg-white shadow-[0_25px_100px_-12px_rgba(0,0,0,0.8)] min-h-[11in] w-full max-w-[8.5in] p-6 md:p-12 font-mono text-zinc-900 rounded-lg print:shadow-none print:p-0 print:mt-0 print:w-full print:max-w-full print:rounded-none">
                         {/* Title bar inside paper */}
                         <div className="mb-6 pb-4 border-b border-zinc-200 flex items-center justify-between print:hidden">
                             <input 
                                 value={activeScript?.title || ''}
-                                onChange={(e) => setActiveScript({ ...activeScript, title: e.target.value })}
-                                onBlur={() => handleAutoSave(blocks)}
+                                onChange={(e) => {
+                                    if (activeScript) {
+                                        setActiveScript({ ...activeScript, title: e.target.value });
+                                    }
+                                }}
+                                onBlur={() => {
+                                    if (activeScript && activeScript.id) {
+                                        handleAutoSave(blocks);
+                                    }
+                                }}
                                 className="bg-transparent border-none text-xl font-bold text-zinc-900 focus:ring-0 placeholder-zinc-400 w-full font-sans"
                                 placeholder="Untitled Script"
                             />
-                            <div className="text-xs text-amber-600 ml-4 flex-shrink-0">
-                                {isSaving ? 'Saving...' : '✓ Saved'}
-                            </div>
+                            {/* Cloud Sync Button */}
+                            <button
+                                onClick={handleManualSync}
+                                disabled={syncStatus === 'syncing'}
+                                className={`ml-4 flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${syncStatus === 'synced'
+                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                    : syncStatus === 'syncing'
+                                        ? 'bg-amber-100 text-amber-700'
+                                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                    }`}
+                            >
+                                {syncStatus === 'synced' && (
+                                    <>
+                                        <Cloud className="w-4 h-4" />
+                                        <span>Synced</span>
+                                        <Check className="w-3 h-3" />
+                                    </>
+                                )}
+                                {syncStatus === 'syncing' && (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        <span>Syncing...</span>
+                                    </>
+                                )}
+                                {syncStatus === 'offline' && (
+                                    <>
+                                        <CloudOff className="w-4 h-4" />
+                                        <span>Retry Sync</span>
+                                    </>
+                                )}
+                            </button>
                         </div>
 
                         {/* Block-based Editor */}
@@ -506,15 +601,20 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                                         )}
                                         {!sceneNumber && <div className="flex-shrink-0 w-8 print:hidden"></div>}
                                         
-                                        <input
+                                        <textarea
                                             ref={el => blockRefs.current[block.id] = el}
-                                            type="text"
                                             value={block.content}
                                             onChange={(e) => updateBlockContent(block.id, e.target.value)}
                                             onKeyDown={(e) => handleKeyDown(e, block.id, block.type)}
                                             onFocus={() => setFocusedBlockId(block.id)}
-                                            className={`${getBlockClasses(block.type)} ${block.type === 'scene-heading' ? 'print:break-before-page' : ''} flex-1`}
+                                            className={`${getBlockClasses(block.type)} ${block.type === 'scene-heading' ? 'print:break-before-page' : ''} flex-1 resize-none overflow-hidden`}
                                             placeholder={`${block.type.replace('-', ' ')}...`}
+                                            rows={1}
+                                            style={{ minHeight: '1.75rem' }}
+                                            onInput={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = e.target.scrollHeight + 'px';
+                                            }}
                                         />
                                     </div>
                                 );
@@ -524,117 +624,147 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
 
                     {/* Pro Tip Bubble */}
                     {showHint && (
-                        <div className="fixed bottom-6 left-6 z-40 bg-zinc-800 text-zinc-200 text-sm p-4 rounded-lg border border-zinc-700 shadow-xl max-w-xs print:hidden">
+                        <div className="fixed bottom-24 left-6 z-40 bg-slate-900/95 backdrop-blur-xl text-slate-200 text-sm p-4 rounded-2xl border border-white/10 shadow-2xl max-w-xs print:hidden">
                             <button 
                                 onClick={() => setShowHint(false)}
-                                className="absolute top-2 right-2 text-zinc-400 hover:text-white"
+                                className="absolute top-3 right-3 text-slate-400 hover:text-white transition-colors"
                             >
                                 ✕
                             </button>
-                            <p className="flex items-start gap-2">
-                                <span className="text-xl">💡</span>
-                                <span><strong>Pro Tip:</strong> Use Enter to add new blocks, Tab to cycle block types, and Backspace on empty blocks to delete them!</span>
+                            <p className="flex items-start gap-3">
+                                <span className="text-2xl">💡</span>
+                                <span><strong className="text-amber-500">Pro Tip:</strong> Use Enter to add new blocks, Tab to cycle block types, and Backspace on empty blocks to delete them!</span>
                             </p>
                         </div>
                     )}
                 </div>
 
-                {/* Right Pane - Spark AI Tools */}
-                <div className="w-80 bg-white border-l border-zinc-300 flex-shrink-0 flex flex-col print:hidden">
-                    <div className="p-4 border-b border-zinc-200">
-                        <h3 className="font-semibold text-lg text-zinc-900">✨ Spark AI</h3>
-                        <p className="text-xs text-zinc-500 mt-1">AI-powered writing assistant</p>
+                {/* Right Pane - Spark AI Tools (Glass Pane) */}
+                <div className="w-80 bg-black/40 backdrop-blur-xl border-l border-white/10 flex-shrink-0 flex flex-col print:hidden">
+                    <div className="p-4 border-b border-white/10">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                                <Sparkles className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-lg text-white">Spark AI</h3>
+                                <p className="text-xs text-slate-400">AI-powered writing assistant</p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-5">
                         
                         {/* Rewrite Section */}
-                        {focusedBlockId && (
-                            <div className="space-y-2">
-                                <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">Rewrite Block</h4>
-                                <p className="text-xs text-zinc-500 mb-2">Select a tone to rewrite the focused block:</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={() => handleSparkRewrite('witty')}
-                                        disabled={isRewriting}
-                                        className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-400 hover:to-purple-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isRewriting ? '...' : '😄 Witty'}
-                                    </button>
-                                    <button
-                                        onClick={() => handleSparkRewrite('dramatic')}
-                                        disabled={isRewriting}
-                                        className="p-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-400 hover:to-red-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isRewriting ? '...' : '🎭 Dramatic'}
-                                    </button>
-                                    <button
-                                        onClick={() => handleSparkRewrite('concise')}
-                                        disabled={isRewriting}
-                                        className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-400 hover:to-blue-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isRewriting ? '...' : '✂️ Concise'}
-                                    </button>
-                                    <button
-                                        onClick={() => handleSparkRewrite('aggressive')}
-                                        disabled={isRewriting}
-                                        className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-400 hover:to-orange-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isRewriting ? '...' : '💪 Aggressive'}
-                                    </button>
-                                </div>
+                        <div className="space-y-3">
+                            <h4 className="text-xs font-semibold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+                                <Wand2 className="w-3 h-3" />
+                                Rewrite Block
+                            </h4>
+                            <p className="text-xs text-slate-400">Select a tone to rewrite the focused block:</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => handleSparkRewrite('witty')}
+                                    disabled={isRewriting || !focusedBlockId}
+                                    className="p-2.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-xl transition-all border border-purple-500/30 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                                >
+                                    {isRewriting ? <RefreshCw className="w-3 h-3 animate-spin" /> : '😄'} Witty
+                                </button>
+                                <button
+                                    onClick={() => handleSparkRewrite('dramatic')}
+                                    disabled={isRewriting || !focusedBlockId}
+                                    className="p-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-all border border-red-500/30 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                                >
+                                    {isRewriting ? <RefreshCw className="w-3 h-3 animate-spin" /> : '🎭'} Dramatic
+                                </button>
+                                <button
+                                    onClick={() => handleSparkRewrite('concise')}
+                                    disabled={isRewriting || !focusedBlockId}
+                                    className="p-2.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-xl transition-all border border-blue-500/30 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                                >
+                                    {isRewriting ? <RefreshCw className="w-3 h-3 animate-spin" /> : '✂️'} Concise
+                                </button>
+                                <button
+                                    onClick={() => handleSparkRewrite('aggressive')}
+                                    disabled={isRewriting || !focusedBlockId}
+                                    className="p-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-xl transition-all border border-orange-500/30 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                                >
+                                    {isRewriting ? <RefreshCw className="w-3 h-3 animate-spin" /> : '💪'} Aggressive
+                                </button>
                             </div>
-                        )}
+                        </div>
 
                         {/* Scene Generator Section */}
-                        <div className="space-y-2 pt-4 border-t border-zinc-200">
-                            <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">Generate Scene</h4>
+                        <div className="space-y-3 pt-4 border-t border-white/10">
+                            <h4 className="text-xs font-semibold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+                                <Sparkles className="w-3 h-3" />
+                                Generate Scene
+                            </h4>
                             <textarea
                                 value={scenePrompt}
                                 onChange={(e) => setScenePrompt(e.target.value)}
                                 placeholder="Describe the scene you want to generate..."
-                                className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm resize-none"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 text-sm text-white placeholder-slate-500 resize-none transition-all"
                                 rows="3"
                                 disabled={isGenerating}
                             />
                             <button
                                 onClick={handleSparkGenerate}
                                 disabled={isGenerating || !scenePrompt.trim()}
-                                className="w-full p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-lg shadow-emerald-500/20 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                {isGenerating ? '✨ Generating...' : '✨ Generate Scene'}
+                                {isGenerating ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4" />
+                                        Generate Scene
+                                    </>
+                                )}
                             </button>
-                            <p className="text-xs text-zinc-500 italic">Tip: Spark will use your recent script as context.</p>
+                            <p className="text-xs text-slate-500 italic">Tip: Spark will use your recent script as context.</p>
                         </div>
 
                         {/* Smart Formatting Guide */}
-                        <div className="pt-4 border-t border-zinc-200">
-                            <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">Smart Formatting</h4>
-                            <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3 text-xs text-zinc-700 space-y-2">
-                                <div>
-                                    <p className="font-semibold">⏎ Enter</p>
-                                    <p className="text-zinc-600">Auto-advance to next block type</p>
+                        <div className="pt-4 border-t border-white/10">
+                            <h4 className="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-3">Smart Formatting</h4>
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-slate-300 space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <span className="w-6 h-6 rounded bg-slate-700 flex items-center justify-center text-[10px] font-mono">↵</span>
+                                    <div>
+                                        <p className="font-semibold text-white">Enter</p>
+                                        <p className="text-slate-400">Auto-advance to next block type</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-semibold">⇥ Tab</p>
-                                    <p className="text-zinc-600">Cycle through block types</p>
+                                <div className="flex items-start gap-3">
+                                    <span className="w-6 h-6 rounded bg-slate-700 flex items-center justify-center text-[10px] font-mono">⇥</span>
+                                    <div>
+                                        <p className="font-semibold text-white">Tab</p>
+                                        <p className="text-slate-400">Cycle through block types</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-semibold">⌫ Backspace</p>
-                                    <p className="text-zinc-600">Delete empty blocks</p>
+                                <div className="flex items-start gap-3">
+                                    <span className="w-6 h-6 rounded bg-slate-700 flex items-center justify-center text-[10px] font-mono">⌫</span>
+                                    <div>
+                                        <p className="font-semibold text-white">Backspace</p>
+                                        <p className="text-slate-400">Delete empty blocks</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Block Types Reference */}
-                        <div className="pt-4 border-t border-zinc-200">
-                            <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-2">Block Types</h4>
-                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-zinc-700 space-y-1">
-                                <p><span className="font-semibold">Scene Heading:</span> UPPERCASE, bold</p>
-                                <p><span className="font-semibold">Action:</span> Standard width</p>
-                                <p><span className="font-semibold">Character:</span> Centered, UPPERCASE</p>
-                                <p><span className="font-semibold">Dialogue:</span> Centered, 75% width</p>
-                                <p><span className="font-semibold">Parenthetical:</span> Centered, italic</p>
-                                <p><span className="font-semibold">Transition:</span> Right-aligned, UPPERCASE</p>
+                        <div className="pt-4 border-t border-white/10">
+                            <h4 className="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-3">Block Types</h4>
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-xs text-slate-300 space-y-2">
+                                <p><span className="font-semibold text-amber-400">Scene Heading:</span> UPPERCASE, bold</p>
+                                <p><span className="font-semibold text-amber-400">Action:</span> Standard width</p>
+                                <p><span className="font-semibold text-amber-400">Character:</span> Centered, UPPERCASE</p>
+                                <p><span className="font-semibold text-amber-400">Dialogue:</span> Centered, 75% width</p>
+                                <p><span className="font-semibold text-amber-400">Parenthetical:</span> Centered, italic</p>
+                                <p><span className="font-semibold text-amber-400">Transition:</span> Right-aligned, UPPERCASE</p>
                             </div>
                         </div>
                     </div>

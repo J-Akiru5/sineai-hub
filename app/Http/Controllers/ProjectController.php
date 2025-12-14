@@ -100,7 +100,12 @@ class ProjectController extends Controller
 
     public function create()
     {
-        return Inertia::render('Projects/Create');
+        // Load categories for dropdown
+        $categories = \App\Models\Category::active()->ordered()->get(['id', 'name', 'slug', 'icon']);
+
+        return Inertia::render('Projects/Create', [
+            'categories' => $categories,
+        ]);
     }
 
     /**
@@ -213,9 +218,13 @@ class ProjectController extends Controller
         }
 
         $project->load('user');
+        
+        // Load categories for dropdown
+        $categories = \App\Models\Category::active()->ordered()->get(['id', 'name', 'slug', 'icon']);
 
         return Inertia::render('Projects/Edit', [
             'project' => $project,
+            'categories' => $categories,
         ]);
     }
 
@@ -235,41 +244,87 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'directors_note' => 'nullable|string',
             'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime|max:512000',
             'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'category' => 'nullable|string',
+            'category_id' => 'nullable|exists:categories,id',
             'visibility' => ['nullable', 'in:private,unlisted,public'],
+            'release_year' => 'nullable|integer|min:1900|max:' . (date('Y') + 5),
+            'content_rating' => 'nullable|string|max:10',
+            'language' => 'nullable|string|max:50',
+            'cast_crew' => 'nullable|array',
+            'tags' => 'nullable|array',
         ]);
 
         // Update text fields
         $project->title = $validated['title'];
         $project->description = $validated['description'] ?? null;
+        $project->directors_note = $validated['directors_note'] ?? null;
         $project->category = $validated['category'] ?? null;
+        $project->category_id = $validated['category_id'] ?? null;
         $project->visibility = $validated['visibility'] ?? 'private';
+        $project->release_year = $validated['release_year'] ?? null;
+        $project->content_rating = $validated['content_rating'] ?? null;
+        $project->language = $validated['language'] ?? null;
+        $project->cast_crew = $validated['cast_crew'] ?? null;
+        $project->tags = $validated['tags'] ?? null;
+
+        $bucket = env('DO_SPACES_BUCKET');
 
         // Optional video upload
         if ($request->hasFile('video')) {
             // Delete old video if present
-            if ($project->video_path && Storage::disk('s3')->exists($project->video_path)) {
-                Storage::disk('s3')->delete($project->video_path);
+            $oldVideoPath = $this->extractPathFromUrl($project->video_url);
+            if ($oldVideoPath && Storage::disk('digitalocean')->exists($oldVideoPath)) {
+                Storage::disk('digitalocean')->delete($oldVideoPath);
             }
 
-            $videoPath = $request->file('video')->store('videos', 's3');
-            $project->video_path = $videoPath;
+            $videoPath = $request->file('video')->store('user-' . Auth::id(), 'digitalocean');
+            $project->video_url = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$videoPath}";
+            
+            // Auto-generate thumbnail if none uploaded
+            if (!$request->hasFile('thumbnail') && !$project->thumbnail_url) {
+                // We'll let the frontend handle this or generate a placeholder
+            }
         }
 
         // Optional thumbnail upload
         if ($request->hasFile('thumbnail')) {
-            if ($project->thumbnail_path && Storage::disk('s3')->exists($project->thumbnail_path)) {
-                Storage::disk('s3')->delete($project->thumbnail_path);
+            $oldThumbPath = $this->extractPathFromUrl($project->thumbnail_url);
+            if ($oldThumbPath && Storage::disk('digitalocean')->exists($oldThumbPath)) {
+                Storage::disk('digitalocean')->delete($oldThumbPath);
             }
 
-            $thumbPath = $request->file('thumbnail')->store('thumbnails', 's3');
-            $project->thumbnail_path = $thumbPath;
+            $thumbPath = $request->file('thumbnail')->store('user-' . Auth::id() . '/thumbnails', 'digitalocean');
+            $project->thumbnail_url = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$thumbPath}";
         }
 
         $project->save();
 
-        return to_route('projects.index')->with('success', 'Project updated successfully!');
+        return to_route('projects.my')->with('success', 'Project updated successfully!');
+    }
+
+    /**
+     * Extract path from DO Spaces URL.
+     */
+    private function extractPathFromUrl(?string $url): ?string
+    {
+        if (!$url) return null;
+        
+        $bucket = env('DO_SPACES_BUCKET');
+        $pattern = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/";
+        
+        if (str_starts_with($url, $pattern)) {
+            return substr($url, strlen($pattern));
+        }
+        
+        // Try alternative endpoint format
+        $endpoint = env('DO_SPACES_ENDPOINT');
+        if ($endpoint && str_starts_with($url, $endpoint)) {
+            return substr($url, strlen($endpoint) + 1);
+        }
+        
+        return null;
     }
 }

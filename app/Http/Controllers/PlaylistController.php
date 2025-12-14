@@ -29,6 +29,28 @@ class PlaylistController extends Controller
         ]);
     }
 
+    public function show(Request $request, Playlist $playlist)
+    {
+        // Check visibility permissions
+        if ($playlist->visibility === 'private' && $playlist->user_id !== Auth::id()) {
+            abort(403, 'This playlist is private.');
+        }
+
+        $playlist->load(['user', 'projects' => function ($query) {
+            $query->with('user')
+                ->where('visibility', 'public')
+                ->where('moderation_status', 'approved')
+                ->orderBy('pivot_sort_order');
+        }]);
+
+        $playlist->loadCount('projects');
+
+        return Inertia::render('Playlists/Show', [
+            'playlist' => $playlist,
+            'isOwner' => Auth::id() === $playlist->user_id,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -93,5 +115,34 @@ class PlaylistController extends Controller
         $playlist->projects()->attach($projectId, ['sort_order' => $sortOrder]);
 
         return Redirect::back()->with('success', 'Project added to playlist.');
+    }
+
+    public function removeProject(Request $request, Playlist $playlist)
+    {
+        if ($playlist->user_id !== Auth::id()) abort(403);
+
+        $validated = $request->validate([
+            'project_id' => ['required', 'integer', 'exists:projects,id'],
+        ]);
+
+        $playlist->projects()->detach($validated['project_id']);
+
+        return Redirect::back()->with('success', 'Project removed from playlist.');
+    }
+
+    public function reorder(Request $request, Playlist $playlist)
+    {
+        if ($playlist->user_id !== Auth::id()) abort(403);
+
+        $validated = $request->validate([
+            'order' => ['required', 'array'],
+            'order.*' => ['integer', 'exists:projects,id'],
+        ]);
+
+        foreach ($validated['order'] as $index => $projectId) {
+            $playlist->projects()->updateExistingPivot($projectId, ['sort_order' => $index]);
+        }
+
+        return response()->json(['success' => true]);
     }
 }

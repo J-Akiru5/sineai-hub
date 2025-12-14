@@ -39,10 +39,17 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Search (public)
 Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('search.index');
+Route::get('/search/suggestions', [\App\Http\Controllers\SearchController::class, 'suggestions'])->name('search.suggestions');
 
 // Premiere discovery (public)
 Route::get('/premiere', [PremiereController::class, 'index'])->name('premiere.index');
 Route::get('/premiere/{project}', [PremiereController::class, 'show'])->name('premiere.show');
+
+// Premiere authenticated actions
+Route::middleware(['auth'])->group(function () {
+    Route::patch('/premiere/{project}', [PremiereController::class, 'update'])->name('premiere.update');
+    Route::post('/premiere/{project}/like', [PremiereController::class, 'toggleLike'])->name('premiere.toggleLike');
+});
 
 // Public AI Chat endpoint for guests (no auth) - rate limited to prevent abuse
 Route::post('/ai/guest-chat', [AiAssistantController::class, 'guestChat'])->middleware('throttle:10,1')->name('ai.guest-chat');
@@ -72,6 +79,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
     Route::get('/chat/{channel}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.messages');
+    Route::get('/chat/user/scripts', [ChatController::class, 'userScripts'])->name('chat.user.scripts');
+    Route::get('/chat/user/projects', [ChatController::class, 'userProjects'])->name('chat.user.projects');
 
     // AI Assistant route to display page
     Route::get('/ai/chat', [AiAssistantController::class, 'index'])->name('ai.assistant');
@@ -84,6 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/ai/conversations/{conversation}', [AiAssistantController::class, 'destroy'])->name('ai.conversations.destroy');
 
     // Scriptwriter page (Cinematic UI)
+    Route::get('/scripts', [ScriptwriterController::class, 'list'])->name('scripts.index');
     Route::get('/scriptwriter', [ScriptwriterController::class, 'index'])->name('scriptwriter.index');
     Route::post('/scriptwriter/assist', [ScriptwriterController::class, 'assist'])->name('scriptwriter.assist');
     // Script CRUD
@@ -96,9 +106,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/spark/rewrite', [\App\Http\Controllers\SparkScriptController::class, 'rewrite'])->name('spark.rewrite');
     Route::post('/spark/generate', [\App\Http\Controllers\SparkScriptController::class, 'generate'])->name('spark.generate');
 
+    // Storage Management
+    Route::get('/storage', [\App\Http\Controllers\StorageController::class, 'index'])->name('storage.index');
+    Route::post('/storage/upload', [\App\Http\Controllers\StorageController::class, 'upload'])->name('storage.upload');
+    Route::delete('/storage/{file}', [\App\Http\Controllers\StorageController::class, 'destroy'])->name('storage.destroy');
+    Route::patch('/storage/{file}/rename', [\App\Http\Controllers\StorageController::class, 'rename'])->name('storage.rename');
+    Route::patch('/storage/{file}/move', [\App\Http\Controllers\StorageController::class, 'move'])->name('storage.move');
+    Route::get('/storage/folder/{folder?}', [\App\Http\Controllers\StorageController::class, 'folder'])->name('storage.folder');
+    Route::get('/storage/type/{type}', [\App\Http\Controllers\StorageController::class, 'byType'])->name('storage.type');
+
     // Video Editor (Studio)
+    Route::get('/studio/projects', [\App\Http\Controllers\EditorProjectController::class, 'index'])->name('studio.projects');
+    Route::post('/studio/projects', [\App\Http\Controllers\EditorProjectController::class, 'store'])->name('studio.projects.store');
+    Route::get('/studio/editor/{project}', [\App\Http\Controllers\EditorProjectController::class, 'edit'])->name('studio.editor.edit');
+    Route::patch('/studio/editor/{project}', [\App\Http\Controllers\EditorProjectController::class, 'update'])->name('studio.editor.update');
+    Route::post('/studio/editor/{project}/timeline', [\App\Http\Controllers\EditorProjectController::class, 'saveTimeline'])->name('studio.editor.timeline');
+    Route::post('/studio/editor/{project}/assets', [\App\Http\Controllers\EditorProjectController::class, 'uploadAsset'])->name('studio.editor.upload');
+    Route::post('/studio/editor/{project}/assets/library', [\App\Http\Controllers\EditorProjectController::class, 'addAssetFromLibrary'])->name('studio.editor.addFromLibrary');
+    Route::delete('/studio/editor/{project}/assets/{asset}', [\App\Http\Controllers\EditorProjectController::class, 'removeAsset'])->name('studio.editor.removeAsset');
+    Route::delete('/studio/projects/{project}', [\App\Http\Controllers\EditorProjectController::class, 'destroy'])->name('studio.projects.destroy');
+    Route::post('/studio/projects/{project}/duplicate', [\App\Http\Controllers\EditorProjectController::class, 'duplicate'])->name('studio.projects.duplicate');
+    
+    // Legacy route for new project creation flow
     Route::get('/studio/editor', function () {
-        return Inertia::render('Studio/Editor');
+        return Inertia::render('Studio/Editor', [
+            'project' => null,
+            'userVideos' => auth()->user()->files()->ofType('video')->orderBy('created_at', 'desc')->get(),
+            'quota' => [
+                'remaining' => auth()->user()->getOrCreateStorageQuota()->remaining_bytes,
+                'formatted_remaining' => auth()->user()->getOrCreateStorageQuota()->formatted_remaining,
+            ],
+        ]);
     })->name('studio.editor');
 
     // Admin area routes (requires user to have the 'admin' role)
@@ -131,6 +169,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/moderation', [\App\Http\Controllers\Admin\ModerationController::class, 'index'])->name('moderation.index');
         Route::patch('/moderation/project/{project}', [\App\Http\Controllers\Admin\ModerationController::class, 'updateProjectStatus'])->name('moderation.updateProjectStatus');
         Route::patch('/moderation/flag/{flag}', [\App\Http\Controllers\Admin\ModerationController::class, 'resolveFlag'])->name('moderation.resolveFlag');
+        
+        // Category management
+        Route::get('/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])->name('categories.index');
+        Route::post('/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('categories.store');
+        Route::patch('/categories/{category}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{category}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::post('/categories/reorder', [\App\Http\Controllers\Admin\CategoryController::class, 'reorder'])->name('categories.reorder');
     });
 
     // (Scriptwriter removed)
@@ -138,6 +183,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Playlists resource
     Route::resource('playlists', \App\Http\Controllers\PlaylistController::class);
     Route::post('/playlists/{playlist}/add', [\App\Http\Controllers\PlaylistController::class, 'addProject'])->name('playlists.addProject');
+    Route::post('/playlists/{playlist}/remove', [\App\Http\Controllers\PlaylistController::class, 'removeProject'])->name('playlists.removeProject');
+    Route::post('/playlists/{playlist}/reorder', [\App\Http\Controllers\PlaylistController::class, 'reorder'])->name('playlists.reorder');
 
     // Comments (project comments)
     Route::resource('comments', \App\Http\Controllers\CommentController::class)->only(['store', 'destroy']);
