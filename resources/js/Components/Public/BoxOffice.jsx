@@ -101,12 +101,12 @@ function PosterCard({ project }) {
             {/* Film Strip Decorative Border */}
             <div className="absolute top-0 left-0 right-0 h-6 bg-black/50 flex items-center justify-around px-2 opacity-50">
                 {[...Array(8)].map((_, i) => (
-                    <div key={i} className="w-3 h-2 bg-white/30 rounded-sm" />
+                    <div key={`film-strip-top-${i}`} className="w-3 h-2 bg-white/30 rounded-sm" />
                 ))}
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-6 bg-black/50 flex items-center justify-around px-2 opacity-50">
                 {[...Array(8)].map((_, i) => (
-                    <div key={i} className="w-3 h-2 bg-white/30 rounded-sm" />
+                    <div key={`film-strip-bottom-${i}`} className="w-3 h-2 bg-white/30 rounded-sm" />
                 ))}
             </div>
         </div>
@@ -135,12 +135,12 @@ function PlaceholderPoster({ project }) {
             {/* Decorative Film Strip */}
             <div className="absolute top-0 left-0 right-0 h-6 bg-black/30 flex items-center justify-around px-2 opacity-30">
                 {[...Array(8)].map((_, i) => (
-                    <div key={i} className="w-3 h-2 bg-white/20 rounded-sm" />
+                    <div key={`placeholder-strip-top-${i}`} className="w-3 h-2 bg-white/20 rounded-sm" />
                 ))}
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-6 bg-black/30 flex items-center justify-around px-2 opacity-30">
                 {[...Array(8)].map((_, i) => (
-                    <div key={i} className="w-3 h-2 bg-white/20 rounded-sm" />
+                    <div key={`placeholder-strip-bottom-${i}`} className="w-3 h-2 bg-white/20 rounded-sm" />
                 ))}
             </div>
         </div>
