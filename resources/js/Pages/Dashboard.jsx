@@ -1,9 +1,23 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import SparkRunner from '@/Components/SparkRunner';
 
 export default function Dashboard({ auth, recentProjects = [], recentScripts = [], stats = {}, errors = {} }) {
     const projects = recentProjects || []
     const scripts = recentScripts || []
+    const [showGame, setShowGame] = useState(false);
+
+    // Close modal on Escape key press
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && showGame) {
+                setShowGame(false);
+            }
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [showGame]);
 
     return (
         <AuthenticatedLayout
@@ -116,6 +130,41 @@ export default function Dashboard({ auth, recentProjects = [], recentScripts = [
                     </div>
                 </div>
             </div>
+
+            {/* Easter Egg Trigger Button */}
+            <button
+                onClick={() => setShowGame(true)}
+                className="fixed bottom-6 right-6 z-40 opacity-30 hover:opacity-100 transition-opacity duration-300 focus:outline-none"
+                aria-label="Play Spark Runner"
+                title="Secret Game"
+            >
+                <img
+                    src="/images/spark-head.png"
+                    alt="Spark"
+                    className="w-10 h-10 object-cover rounded-full"
+                />
+            </button>
+
+            {/* Easter Egg Game Modal */}
+            {showGame && (
+                <div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowGame(false);
+                    }}
+                >
+                    <div className="relative bg-slate-900/90 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 shadow-2xl">
+                        <button
+                            onClick={() => setShowGame(false)}
+                            className="absolute top-3 right-3 text-slate-400 hover:text-white focus:outline-none text-xl"
+                            aria-label="Close game"
+                        >
+                            ✕
+                        </button>
+                        <SparkRunner />
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
