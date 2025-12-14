@@ -43,8 +43,8 @@ WORKDIR /var/www
 # Copy composer files first to leverage Docker cache
 COPY composer.json composer.lock ./
 
-# Install PHP dependencies (no dev) before copying the full app
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+# Install PHP dependencies without running scripts (artisan doesn't exist yet)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 # Copy application files
 COPY . .
@@ -52,6 +52,9 @@ COPY . .
 # Copy built frontend assets from Stage 1
 COPY --from=frontend /app/public/build public/build
 COPY --from=frontend /app/public/build/manifest.json public/build/manifest.json
+
+# Now run composer scripts (artisan exists now)
+RUN composer dump-autoload --optimize && php artisan package:discover --ansi
 
 # Ensure appropriate permissions for runtime
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache || true
