@@ -29,6 +29,15 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
 
     const blockRefs = useRef({});
 
+    // Derived state: Extract scenes for navigation
+    const scenes = blocks
+        .map((block, index) => ({ ...block, originalIndex: index }))
+        .filter(block => block.type === 'scene-heading')
+        .map((scene, sceneIndex) => ({
+            ...scene,
+            sceneNumber: sceneIndex + 1
+        }));
+
     // Initialize blocks from activeScript
     useEffect(() => {
         if (activeScript && activeScript.content) {
@@ -282,6 +291,27 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
         }
     };
 
+    // Scene Navigation: Scroll to specific scene block
+    const scrollToScene = (blockId) => {
+        const element = blockRefs.current[blockId];
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.focus();
+            setFocusedBlockId(blockId);
+        }
+    };
+
+    // PDF Export: Trigger browser print
+    const handleExportPDF = () => {
+        window.print();
+    };
+
+    // Get scene number for a block
+    const getSceneNumber = (blockId) => {
+        const sceneIndex = scenes.findIndex(scene => scene.id === blockId);
+        return sceneIndex >= 0 ? sceneIndex + 1 : null;
+    };
+
     // Hint Timer
     useEffect(() => {
         const timer = setTimeout(() => setShowHint(false), 8000);
@@ -295,36 +325,106 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
         >
             <Head title="Scriptwriter" />
 
+            {/* Print Styles for PDF Export */}
+            <style>{`
+                @media print {
+                    @page {
+                        size: letter;
+                        margin: 1in;
+                    }
+                    
+                    body {
+                        background: white !important;
+                    }
+                    
+                    /* Hide UI elements */
+                    nav, .print\\:hidden {
+                        display: none !important;
+                    }
+                    
+                    /* Ensure black text */
+                    * {
+                        color: black !important;
+                    }
+                    
+                    /* Page breaks for scene headings */
+                    .print\\:break-before-page:not(:first-child) {
+                        page-break-before: always;
+                    }
+                    
+                    /* Full width paper */
+                    .print\\:w-full {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                    }
+                    
+                    /* Remove shadows */
+                    .print\\:shadow-none {
+                        box-shadow: none !important;
+                    }
+                    
+                    /* Remove padding */
+                    .print\\:p-0 {
+                        padding: 0 !important;
+                    }
+                    
+                    /* Remove margin-top */
+                    .print\\:mt-0 {
+                        margin-top: 0 !important;
+                    }
+                    
+                    /* Ensure proper font for screenplay */
+                    input[type="text"] {
+                        border: none !important;
+                        outline: none !important;
+                        background: transparent !important;
+                    }
+                }
+            `}</style>
+
             {/* Full-Width Studio Layout Container */}
             <div className="h-[calc(100vh-64px)] w-full flex bg-zinc-100">
 
                 {/* Left Pane - Scene Navigator */}
-                <div className="w-64 bg-white border-r border-zinc-300 flex-shrink-0 flex flex-col">
+                <div className="w-64 bg-white border-r border-zinc-300 flex-shrink-0 flex flex-col print:hidden">
                     <div className="p-4 border-b border-zinc-200">
                         <button
                             onClick={createNewScript}
-                            className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded hover:from-amber-400 hover:to-amber-500 transition-all shadow-md"
+                            className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded hover:from-amber-400 hover:to-amber-500 transition-all shadow-md mb-2"
                         >
                             + New Script
                         </button>
+                        <button
+                            onClick={handleExportPDF}
+                            className="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded hover:from-blue-400 hover:to-blue-500 transition-all shadow-md"
+                        >
+                            📄 Export PDF
+                        </button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-3 space-y-1">
-                        <h3 className="px-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Scenes</h3>
-                        {scripts.map(script => (
+                        <h3 className="px-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Scenes ({scenes.length})</h3>
+                        {scenes.map((scene) => (
                             <div
-                                key={script.id}
-                                onClick={() => setActiveScript(script)}
-                                className={`p-3 rounded cursor-pointer transition-colors ${activeScript?.id === script.id
-                                    ? 'bg-amber-50 text-zinc-900 border-l-4 border-amber-500'
-                                    : 'text-zinc-600 hover:bg-zinc-50'
-                                    }`}
+                                key={scene.id}
+                                onClick={() => scrollToScene(scene.id)}
+                                className="p-3 rounded cursor-pointer transition-colors hover:bg-zinc-50 border-l-2 border-transparent hover:border-amber-500"
                             >
-                                <div className="font-medium truncate text-sm">{script.title || 'Untitled Script'}</div>
-                                <div className="text-xs text-zinc-400 mt-1">{new Date(script.created_at).toLocaleDateString()}</div>
+                                <div className="flex items-start gap-2">
+                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex-shrink-0">
+                                        {scene.sceneNumber}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-sm text-zinc-900 truncate">
+                                            {scene.content || `Scene ${scene.sceneNumber}`}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ))}
-                        {scripts.length === 0 && (
-                            <div className="text-center text-zinc-400 text-sm py-6">No scripts yet.</div>
+                        {scenes.length === 0 && (
+                            <div className="text-center text-zinc-400 text-sm py-6">
+                                No scenes yet. Add a Scene Heading block to get started.
+                            </div>
                         )}
                     </div>
                 </div>
@@ -333,7 +433,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                 <div className="flex-1 overflow-y-auto flex justify-center p-8 relative">
                     
                     {/* Floating Toolbar */}
-                    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 flex gap-2 bg-zinc-800 rounded-full px-4 py-2 shadow-lg">
+                    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 flex gap-2 bg-zinc-800 rounded-full px-4 py-2 shadow-lg print:hidden">
                         <button 
                             aria-label="Insert scene heading"
                             onClick={() => changeBlockType('scene-heading')}
@@ -365,9 +465,9 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                     </div>
 
                     {/* The "Paper" Component - Responsive wrapper */}
-                    <div className="bg-white shadow-lg min-h-[11in] w-full max-w-[8.5in] p-6 md:p-12 font-mono text-zinc-900 mt-16">
+                    <div className="bg-white shadow-lg min-h-[11in] w-full max-w-[8.5in] p-6 md:p-12 font-mono text-zinc-900 mt-16 print:shadow-none print:p-0 print:mt-0 print:w-full print:max-w-full">
                         {/* Title bar inside paper */}
-                        <div className="mb-6 pb-4 border-b border-zinc-200 flex items-center justify-between">
+                        <div className="mb-6 pb-4 border-b border-zinc-200 flex items-center justify-between print:hidden">
                             <input 
                                 value={activeScript?.title || ''}
                                 onChange={(e) => setActiveScript({ ...activeScript, title: e.target.value })}
@@ -382,26 +482,39 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
 
                         {/* Block-based Editor */}
                         <div className="space-y-2">
-                            {blocks.map((block, index) => (
-                                <div key={block.id} className="relative">
-                                    <input
-                                        ref={el => blockRefs.current[block.id] = el}
-                                        type="text"
-                                        value={block.content}
-                                        onChange={(e) => updateBlockContent(block.id, e.target.value)}
-                                        onKeyDown={(e) => handleKeyDown(e, block.id, block.type)}
-                                        onFocus={() => setFocusedBlockId(block.id)}
-                                        className={getBlockClasses(block.type)}
-                                        placeholder={`${block.type.replace('-', ' ')}...`}
-                                    />
-                                </div>
-                            ))}
+                            {blocks.map((block, index) => {
+                                const sceneNumber = block.type === 'scene-heading' ? getSceneNumber(block.id) : null;
+                                return (
+                                    <div key={block.id} className="relative flex items-start gap-2">
+                                        {/* Scene Number Badge (only for scene headings) */}
+                                        {sceneNumber && (
+                                            <div className="flex-shrink-0 w-8 pt-1 print:hidden">
+                                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold">
+                                                    {sceneNumber}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {!sceneNumber && <div className="flex-shrink-0 w-8 print:hidden"></div>}
+                                        
+                                        <input
+                                            ref={el => blockRefs.current[block.id] = el}
+                                            type="text"
+                                            value={block.content}
+                                            onChange={(e) => updateBlockContent(block.id, e.target.value)}
+                                            onKeyDown={(e) => handleKeyDown(e, block.id, block.type)}
+                                            onFocus={() => setFocusedBlockId(block.id)}
+                                            className={`${getBlockClasses(block.type)} ${block.type === 'scene-heading' ? 'print:break-before-page' : ''} flex-1`}
+                                            placeholder={`${block.type.replace('-', ' ')}...`}
+                                        />
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
                     {/* Pro Tip Bubble */}
                     {showHint && (
-                        <div className="fixed bottom-6 left-6 z-40 bg-zinc-800 text-zinc-200 text-sm p-4 rounded-lg border border-zinc-700 shadow-xl max-w-xs">
+                        <div className="fixed bottom-6 left-6 z-40 bg-zinc-800 text-zinc-200 text-sm p-4 rounded-lg border border-zinc-700 shadow-xl max-w-xs print:hidden">
                             <button 
                                 onClick={() => setShowHint(false)}
                                 className="absolute top-2 right-2 text-zinc-400 hover:text-white"
@@ -417,7 +530,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                 </div>
 
                 {/* Right Pane - Spark AI Tools */}
-                <div className="w-80 bg-white border-l border-zinc-300 flex-shrink-0 flex flex-col">
+                <div className="w-80 bg-white border-l border-zinc-300 flex-shrink-0 flex flex-col print:hidden">
                     <div className="p-4 border-b border-zinc-200">
                         <h3 className="font-semibold text-lg text-zinc-900">✨ Spark AI</h3>
                         <p className="text-xs text-zinc-500 mt-1">AI-powered writing assistant</p>
