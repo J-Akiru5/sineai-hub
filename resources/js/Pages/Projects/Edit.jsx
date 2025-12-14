@@ -2,14 +2,15 @@
 
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
 export default function Edit({ auth, project }) {
-    const { data, setData, processing, errors, progress } = useForm({
+    const { data, setData, post, processing, errors, progress } = useForm({
+        _method: 'patch',
         title: project.title || '',
         description: project.description || '',
         video: null, // optional replacement
@@ -21,13 +22,7 @@ export default function Edit({ auth, project }) {
 
     const submit = (e) => {
         e.preventDefault();
-
-        // Use POST with method spoofing to ensure multipart/form-data (file) uploads
-        // send the freshest `data` object to the backend to avoid stale state issues.
-        router.post(route('projects.update', project.id), {
-            _method: 'patch',
-            ...data,
-        });
+        post(route('projects.update', project.id));
     };
 
     return (

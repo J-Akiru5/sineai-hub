@@ -43,7 +43,7 @@ class ProjectController extends Controller
         if ($request->hasFile('thumbnail')) {
             $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
             $endpoint = env('DO_SPACES_ENDPOINT');
-            $thumbnailUrl = "{$endpoint}/{$thumbPath}";
+            $thumbnailUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$thumbPath}";
         }
 
         // Determine flags/metadata
@@ -216,76 +216,67 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
-        // Only owner can update
+        // Ensure only owner can update
         if (Auth::id() !== $project->user_id) {
             abort(403);
         }
 
+        // Validate basic fields; files are optional
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime|max:512000',
-            'thumbnail' => 'nullable|image|max:2048',
             'is_premiere_public' => 'boolean',
             'category' => 'nullable|string',
             'visibility' => ['nullable', 'in:private,unlisted,public'],
         ]);
 
-        // Allow longer-running uploads if user replaces video
         @set_time_limit(300);
 
-        // Handle optional video replacement
+        // Handle video upload explicitly if provided
         if ($request->hasFile('video')) {
             $user = Auth::user();
             $videoPath = $request->file('video')->store('user-' . $user->id, 'digitalocean');
-            $bucket = env('DO_SPACES_BUCKET');
-            $videoUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$videoPath}";
+            $endpoint = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
+            $project->video_url = $endpoint ? "{$endpoint}/{$videoPath}" : $videoPath;
 
-            // try to delete old video
+            // attempt to delete previous video file
             try {
-                $endpoint = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
-                if (!empty($project->video_url)) {
-                    $oldPath = str_replace($endpoint . '/', '', $project->video_url);
+                if (!empty($project->getOriginal('video_url'))) {
+                    $oldPath = str_replace($endpoint . '/', '', $project->getOriginal('video_url'));
                     if ($oldPath && Storage::disk('digitalocean')->exists($oldPath)) {
                         Storage::disk('digitalocean')->delete($oldPath);
                     }
                 }
-            } catch (\Exception $e) {
-                Log::warning('Failed to delete old video: ' . $e->getMessage());
+            } catch (\Throwable $e) {
+                Log::warning('Failed to delete previous video: ' . $e->getMessage());
             }
-
-            $project->video_url = $videoUrl;
         }
 
-        // Handle optional thumbnail replacement
+        // Handle thumbnail upload explicitly if provided
         if ($request->hasFile('thumbnail')) {
             $user = isset($user) ? $user : Auth::user();
             $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
-            $endpoint = env('DO_SPACES_ENDPOINT');
-            $thumbnailUrl = "{$endpoint}/{$thumbPath}";
+            $endpoint = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
+            $project->thumbnail_url = $endpoint ? "{$endpoint}/{$thumbPath}" : $thumbPath;
 
+            // attempt to delete previous thumbnail
             try {
-                $endpointTrim = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
-                if (!empty($project->thumbnail_url)) {
-                    $oldThumb = str_replace($endpointTrim . '/', '', $project->thumbnail_url);
+                if (!empty($project->getOriginal('thumbnail_url'))) {
+                    $oldThumb = str_replace($endpoint . '/', '', $project->getOriginal('thumbnail_url'));
                     if ($oldThumb && Storage::disk('digitalocean')->exists($oldThumb)) {
                         Storage::disk('digitalocean')->delete($oldThumb);
                     }
                 }
-            } catch (\Exception $e) {
-                Log::warning('Failed to delete old thumbnail: ' . $e->getMessage());
+            } catch (\Throwable $e) {
+                Log::warning('Failed to delete previous thumbnail: ' . $e->getMessage());
             }
-
-            $project->thumbnail_url = $thumbnailUrl;
         }
 
-        // Update basic fields
+        // Persist validated and other scalar fields
         $project->title = $validated['title'];
         $project->description = $validated['description'] ?? null;
         $project->category = $validated['category'] ?? null;
         $project->visibility = $validated['visibility'] ?? 'private';
-
-        // Handle is_premiere_public explicitly (checkbox may be absent when unchecked)
         $project->is_premiere_public = $request->boolean('is_premiere_public', false);
 
         $project->save();

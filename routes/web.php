@@ -62,7 +62,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Edit & update routes for projects (owners only)
     Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
-    Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
+    // Accept any HTTP verb for update to avoid client-specific method mismatches (handles POST/PUT/PATCH)
+    Route::any('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
 
     // Show individual project
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
