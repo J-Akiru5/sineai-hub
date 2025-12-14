@@ -54,7 +54,12 @@ class EditorProjectAsset extends Model
      */
     public function getUrlAttribute(): string
     {
-        return Storage::disk('digitalocean')->url($this->path);
+        // Construct full CDN URL for DigitalOcean Spaces
+        $bucket = config('filesystems.disks.digitalocean.bucket');
+        $region = config('filesystems.disks.digitalocean.region', 'sgp1');
+        
+        // Use CDN URL format
+        return "https://{$bucket}.{$region}.cdn.digitaloceanspaces.com/{$this->path}";
     }
 
     /**

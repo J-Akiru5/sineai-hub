@@ -42,6 +42,13 @@ class UserFile extends Model
      */
     public function getUrlAttribute(): string
     {
+        // Use CDN URL for DigitalOcean Spaces
+        if ($this->disk === 'digitalocean') {
+            $bucket = config('filesystems.disks.digitalocean.bucket');
+            $region = config('filesystems.disks.digitalocean.region', 'sgp1');
+            return "https://{$bucket}.{$region}.cdn.digitaloceanspaces.com/{$this->path}";
+        }
+        
         return Storage::disk($this->disk)->url($this->path);
     }
 
