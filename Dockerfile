@@ -64,7 +64,7 @@ COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Expose HTTP port for the DigitalOcean App Platform
-EXPOSE 80
+EXPOSE 8080
 
 # Start supervisord which manages nginx and php-fpm
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
