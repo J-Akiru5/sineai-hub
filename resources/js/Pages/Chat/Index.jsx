@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, Fragment } from 'react';
+import React, { useEffect, useState, useRef, Fragment, useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import UserAvatar from '@/Components/UserAvatar';
 import { Head, useForm, router } from '@inertiajs/react';
@@ -177,26 +177,35 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
     const presenceRef = useRef(null);
     const messagesEndRef = useRef(null);
 
-    // Group channels by category
-    const groupedChannels = channelList.reduce((acc, channel) => {
-        const category = channel.category || 'General';
-        if (!acc[category]) {
-            acc[category] = [];
-        }
-        acc[category].push(channel);
-        return acc;
-    }, {});
+    // Group channels by category (memoized)
+    const groupedChannels = useMemo(() => {
+        return channelList.reduce((acc, channel) => {
+            const category = channel.category || 'General';
+            if (!acc[category]) {
+                acc[category] = [];
+            }
+            acc[category].push(channel);
+            return acc;
+        }, {});
+    }, [channelList]);
 
     // Define category order for display
     const categoryOrder = ['General', 'Production', 'Officer Deck'];
-    const sortedCategories = Object.keys(groupedChannels).sort((a, b) => {
-        const indexA = categoryOrder.indexOf(a);
-        const indexB = categoryOrder.indexOf(b);
-        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-    });
+    const sortedCategories = useMemo(() => {
+        return Object.keys(groupedChannels).sort((a, b) => {
+            const indexA = categoryOrder.indexOf(a);
+            const indexB = categoryOrder.indexOf(b);
+            if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    }, [groupedChannels]);
+
+    // Memoize online users list for performance
+    const displayedOnlineUsers = useMemo(() => {
+        return Object.values(users).filter(u => onlineUsers.has(u?.id)).slice(0, 10);
+    }, [users, onlineUsers]);
 
     // keep the form channel_id in sync
     useEffect(() => {
@@ -391,17 +400,21 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
             };
         }
 
+        // Update form data before submission
+        setData({
+            channel_id: activeChannel,
+            body: data.body,
+            message_type: messageType,
+            attachment_data: attachmentData
+        });
+
         // Simple POST; do not add optimistic/pending messages.
         post(route('chat.messages'), {
-            data: {
-                channel_id: activeChannel,
-                body: data.body,
-                message_type: messageType,
-                attachment_data: attachmentData
-            },
             onSuccess: () => {
                 // Clear input; the authoritative message will arrive via realtime and be appended.
                 reset('body');
+                setData('message_type', 'text');
+                setData('attachment_data', null);
                 setSelectedScript(null);
                 setSelectedProject(null);
                 setIsAnnouncementMode(false);
@@ -489,7 +502,7 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                     Online — {onlineUsers.size}
                                 </div>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
-                                    {Object.values(users).filter(u => onlineUsers.has(u?.id)).slice(0, 10).map((u) => (
+                                    {displayedOnlineUsers.map((u) => (
                                         <div key={u.id} className="flex items-center gap-2 px-1 py-0.5">
                                             <div className="relative">
                                                 <UserAvatar user={u} size={6} />

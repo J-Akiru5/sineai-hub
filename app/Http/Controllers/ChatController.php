@@ -24,15 +24,15 @@ class ChatController extends Controller
                       if (! $user) {
                           return; // guest cannot match any roles
                       }
-                      // users with admin privileges see all channels
+                      // users with admin privileges see all channels - use whereNotNull to include all
                       if (method_exists($user, 'hasRole') && ($user->hasRole('admin') || $user->hasRole('super-admin'))) {
-                          $q2->orWhereRaw('TRUE');
+                          $q2->orWhereNotNull('id'); // Grants access to all channels for admins
                           return;
                       }
 
-                      // officers can see officer channels
+                      // officers can see all channels including officer-restricted ones
                       if (method_exists($user, 'hasRole') && $user->hasRole('officer')) {
-                          $q2->orWhereRaw('TRUE');
+                          $q2->orWhereNotNull('id'); // Grants access to all channels for officers
                           return;
                       }
 
@@ -129,6 +129,11 @@ class ChatController extends Controller
         // Validate that body is provided for text/announcement messages
         if (in_array($messageType, ['text', 'announcement']) && empty($request->body)) {
             return response()->json(['error' => 'Message body is required'], 422);
+        }
+
+        // Validate that attachment data is provided for script/project messages
+        if (in_array($messageType, ['script', 'project']) && empty($request->attachment_data)) {
+            return response()->json(['error' => 'Attachment data is required for script/project messages'], 422);
         }
 
         Message::create([
