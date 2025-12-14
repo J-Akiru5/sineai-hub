@@ -13,8 +13,12 @@ const sanitizeMediaUrl = (url) => {
     if (!url) return null;
     if (!(url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) return null;
     try {
-        const parsed = new URL(url, 'https://example.com');
-        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url;
+        const base = (typeof window !== 'undefined' && window.location?.origin) || 'https://sineai.local';
+        const parsed = new URL(url, base);
+        const protocol = parsed.protocol.toLowerCase();
+        if (protocol === 'http:' || protocol === 'https:') {
+            return url;
+        }
     } catch (e) {
         return null;
     }
@@ -26,7 +30,7 @@ const escapeForCssUrl = (value) => {
     if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
         return CSS.escape(value);
     }
-    return value.replace(/(['"\\])/g, '\\$1');
+    return value.replace(/[^a-zA-Z0-9]/g, (char) => `\\${char}`);
 };
 
 export default function Show({ project, suggestedVideos, comments }) {
@@ -34,6 +38,7 @@ export default function Show({ project, suggestedVideos, comments }) {
     const videoRef = useRef(null);
     const glowMedia = sanitizeMediaUrl(project?.thumbnail_url || project?.video_url || null);
     const escapedGlowMedia = escapeForCssUrl(glowMedia);
+    const glowBackgroundStyle = escapedGlowMedia ? { '--glow-image': `url("${escapedGlowMedia}")` } : {};
 
     useEffect(() => {
         function onKey(e) {
@@ -84,7 +89,7 @@ export default function Show({ project, suggestedVideos, comments }) {
                                     width: GLOW_SCALE_WIDTH,
                                     maxWidth: GLOW_MAX_WIDTH,
                                     borderRadius: GLOW_RADIUS,
-                                    ...(escapedGlowMedia ? { backgroundImage: `url('${escapedGlowMedia}')` } : {}),
+                                    ...(glowBackgroundStyle['--glow-image'] ? { ...glowBackgroundStyle, backgroundImage: 'var(--glow-image)' } : {}),
                                 }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
