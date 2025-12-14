@@ -15,19 +15,24 @@ export default function CinemaLayout({ children, header }) {
 
     return (
         <div className="min-h-screen text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/40 via-slate-950 to-black">
-            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all ${scrolled ? 'bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg' : 'bg-transparent'}`}>
+            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all ${scrolled ? 'bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg' : 'bg-gradient-to-b from-black/80 via-black/60 to-transparent'}`}>
                 <div className="px-6 lg:px-10">
-                    <div className="h-16 flex items-center justify-between">
-                        <Link href={route('premiere.index')} className="flex items-center gap-3">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-400">
-                                <rect x="2" y="4" width="20" height="14" rx="2" fill="currentColor" />
-                                <polygon points="10,8 16,11 10,14" fill="#2b0505" />
-                            </svg>
-                            <span className="font-bold text-lg text-amber-400">SineAI Hub</span>
-                        </Link>
+                    <div className="h-16 grid grid-cols-3 items-center">
+                        <div className="flex items-center gap-3">
+                            <Link href={route('premiere.index')} className="flex items-center gap-3">
+                                <img src="/images/logo.png" alt="SineAI Logo" className="h-10 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]" />
+                                <span className="font-bold text-lg text-amber-300">SineAI Hub</span>
+                            </Link>
+                        </div>
 
-                        <div className="flex items-center gap-6">
-                            <div className="w-80 md:w-96">
+                        <div className="flex items-center justify-center">
+                            <Link href={route('premiere.index')} className="tracking-widest text-amber-500 font-black text-sm sm:text-base hover:text-amber-400">
+                                PREMIERE
+                            </Link>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-6">
+                            <div className="w-72 md:w-96">
                                 <SearchBar />
                             </div>
                             <Link href={route('home')} className="hover:text-amber-300">Home</Link>
