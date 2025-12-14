@@ -40,9 +40,14 @@ export default function Show({ project, suggestedVideos, comments }) {
     const videoRef = useRef(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [watchingCount, setWatchingCount] = useState(1);
+    const [isEnded, setIsEnded] = useState(false);
+    const [resumePrompt, setResumePrompt] = useState(null);
     const glowMedia = sanitizeMediaUrl(project?.thumbnail_url || project?.video_url || null);
     const escapedGlowMedia = escapeForCssUrl(glowMedia);
     const glowBackgroundStyle = escapedGlowMedia ? { '--glow-image': `url(${escapedGlowMedia})`, backgroundImage: 'var(--glow-image)' } : {};
+    const playlistId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('playlist_id') : null;
+    const playlistMode = !!playlistId;
+    const upNextItems = suggestedVideos?.slice?.(0, 3) || [];
 
     useEffect(() => {
         function onKey(e) {
@@ -52,21 +57,34 @@ export default function Show({ project, suggestedVideos, comments }) {
 
             if (!videoRef.current) return;
 
-            // Space or 'k' toggles play
-            if (e.code === 'Space' || e.key === 'k' || e.key === 'K') {
+            if (['Space', 'KeyK'].includes(e.code)) {
                 e.preventDefault();
                 if (videoRef.current.paused) videoRef.current.play(); else videoRef.current.pause();
             }
 
-            // Arrow keys seek
+            if (e.code === 'KeyF') {
+                e.preventDefault();
+                const player = videoRef.current;
+                if (!document.fullscreenElement && player?.requestFullscreen) {
+                    player.requestFullscreen();
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+
+            if (e.code === 'KeyM') {
+                e.preventDefault();
+                if (videoRef.current) videoRef.current.muted = !videoRef.current.muted;
+            }
+
             if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                videoRef.current.currentTime = Math.min(videoRef.current.duration || 0, videoRef.current.currentTime + 5);
+                videoRef.current.currentTime = Math.min(videoRef.current.duration || 0, videoRef.current.currentTime + 10);
             }
 
             if (e.key === 'ArrowLeft') {
                 e.preventDefault();
-                videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
+                videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
             }
         }
 
@@ -97,6 +115,44 @@ export default function Show({ project, suggestedVideos, comments }) {
         };
     }, [project?.id]);
 
+    // Resume playback
+    useEffect(() => {
+        if (!project?.id || typeof window === 'undefined') return;
+        const key = `resume_project_${project.id}`;
+        const stored = window.localStorage.getItem(key);
+        if (stored) {
+            const time = parseFloat(stored);
+            if (!Number.isNaN(time) && time > 10) {
+                setResumePrompt(time);
+            }
+        }
+        const handleBeforeUnload = () => {
+            if (videoRef.current) {
+                window.localStorage.setItem(key, String(videoRef.current.currentTime));
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [project?.id]);
+
+    const handlePauseStore = () => {
+        if (typeof window === 'undefined' || !project?.id || !videoRef.current) return;
+        window.localStorage.setItem(`resume_project_${project.id}`, String(videoRef.current.currentTime));
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleResume = () => {
+        if (!videoRef.current || resumePrompt == null) return;
+        videoRef.current.currentTime = resumePrompt;
+        videoRef.current.play();
+        setResumePrompt(null);
+    };
+
     return (
         <CinemaLayout>
             <Head title={project.title} />
@@ -121,7 +177,7 @@ export default function Show({ project, suggestedVideos, comments }) {
                                 </button>
                             </div>
 
-                            <div className="relative overflow-hidden rounded-[28px] shadow-2xl ring-1 ring-white/10 bg-black">
+                            <div className={`relative overflow-hidden rounded-[28px] shadow-2xl ring-1 ring-white/10 bg-black transition duration-500 ${isEnded ? 'scale-90 opacity-40' : 'scale-100 opacity-100'}`}>
                                 <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),rgba(0,0,0,0.6)_45%,rgba(0,0,0,0.95)_90%)]" />
                                 <div className="absolute inset-0 -z-10 flex items-center justify-center">
                                     <div
@@ -143,7 +199,11 @@ export default function Show({ project, suggestedVideos, comments }) {
                                     controls
                                     autoPlay
                                     onPlay={() => setIsPaused(false)}
-                                    onPause={() => setIsPaused(true)}
+                                    onPause={() => {
+                                        setIsPaused(true);
+                                        handlePauseStore();
+                                    }}
+                                    onEnded={() => setIsEnded(true)}
                                     className="relative z-10 w-full h-full bg-black object-cover"
                                 />
 
@@ -166,11 +226,55 @@ export default function Show({ project, suggestedVideos, comments }) {
                                         <p className="text-amber-200 line-clamp-3 [text-shadow:0_3px_12px_rgba(0,0,0,0.8)]">{project.description}</p>
                                     </div>
                                 </div>
+
+                                {resumePrompt != null && !isEnded && (
+                                    <div className="absolute top-4 left-4 z-20">
+                                        <button
+                                            onClick={handleResume}
+                                            className="px-4 py-2 rounded-full bg-amber-500 text-black font-semibold shadow-lg hover:bg-amber-400 transition"
+                                        >
+                                            Resume from {formatTime(resumePrompt)}?
+                                        </button>
+                                    </div>
+                                )}
+
+                                {isEnded && upNextItems.length > 0 && (
+                                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-md">
+                                        <div className="bg-slate-900/80 border border-white/10 rounded-2xl p-6 max-w-3xl w-full shadow-2xl">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="text-white text-lg font-semibold">Up Next</div>
+                                                <button
+                                                    onClick={() => setIsEnded(false)}
+                                                    className="text-amber-300 hover:text-amber-200 text-sm"
+                                                >
+                                                    Replay
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                {upNextItems.map((item) => (
+                                                    <a
+                                                        key={item.id}
+                                                        href={route('premiere.show', item.id)}
+                                                        className="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-amber-400 transition shadow"
+                                                    >
+                                                        <div className="aspect-video overflow-hidden">
+                                                            <img src={item.thumbnail_url || item.video_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                        </div>
+                                                        <div className="p-3 space-y-1">
+                                                            <div className="text-white font-semibold line-clamp-2">{item.title}</div>
+                                                            <div className="text-xs text-amber-300">{item.user?.name}</div>
+                                                        </div>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         <div className={`${sidebarOpen ? 'w-full lg:w-80 xl:w-96' : 'hidden lg:block lg:w-0'} transition-all duration-200`}>
-                            {sidebarOpen && <PremiereSidebar comments={comments} projectId={project.id} />}
+                            {sidebarOpen && <PremiereSidebar comments={comments} projectId={project.id} playlistMode={playlistMode} playlistItems={suggestedVideos} />}
                         </div>
                     </div>
 
