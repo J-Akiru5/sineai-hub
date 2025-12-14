@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import SparkWidget from '@/Components/SparkWidget';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function PublicLayout({ title = 'SineAI Hub', children }) {
+    const [open, setOpen] = useState(false);
     return (
         <div className="min-h-screen bg-slate-950 relative overflow-x-hidden text-white">
             <Head title={title} />
@@ -38,11 +39,31 @@ export default function PublicLayout({ title = 'SineAI Hub', children }) {
 
                         <div className="flex items-center gap-3">
                             <Link href="/login" className="text-sm text-amber-200/80 hover:underline">Login</Link>
-                            <Link href="/register" className="cta-primary hidden sm:inline-flex">Register</Link>
+                            <Link href="/register" className="cta-primary">Register</Link>
+
+                            {/* Mobile hamburger */}
+                            <button onClick={() => setOpen((s) => !s)} className="sm:hidden p-2 rounded-md ml-2 text-amber-200 hover:bg-white/5">
+                                <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                                    <path className={!open ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                                    <path className={open ? 'inline-flex' : 'hidden'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
             </header>
+
+            {/* Mobile menu */}
+            {open && (
+                <div className="sm:hidden bg-slate-900/95 border-b border-white/6">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-3">
+                        <a href="#about" className="block text-amber-200">About</a>
+                        <a href="#features" className="block text-amber-200">Features</a>
+                        <a href="#team" className="block text-amber-200">Team</a>
+                        <Link href={route('premiere.index')} className="block text-amber-200">Premiere</Link>
+                    </div>
+                </div>
+            )}
 
             <main>{children}</main>
 

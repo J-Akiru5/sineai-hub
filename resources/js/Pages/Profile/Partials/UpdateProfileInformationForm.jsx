@@ -1,23 +1,35 @@
+import { useState, useEffect } from 'react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function UpdateProfileInformation({ mustVerifyEmail, status, className }) {
     const user = usePage().props.auth.user;
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+    const [preview, setPreview] = useState(null);
+
+    const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         name: user.name,
         email: user.email,
+        avatar: null,
+        _method: 'patch',
     });
 
     const submit = (e) => {
         e.preventDefault();
 
-        patch(route('profile.update'));
+        post(route('profile.update'));
     };
+
+    useEffect(() => {
+        return () => {
+            if (preview) URL.revokeObjectURL(preview);
+        };
+    }, [preview]);
 
     return (
         <section className={className}>
@@ -30,6 +42,25 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <UserAvatar user={preview ? { avatar_url: preview, name: user.name } : user} size={10} />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="avatar" value="Avatar" />
+                        <input id="avatar" name="avatar" type="file" accept="image/*" onChange={(e) => {
+                            const file = e.target.files && e.target.files[0];
+                            setData('avatar', file);
+                            if (file) {
+                                const url = URL.createObjectURL(file);
+                                setPreview(url);
+                            } else {
+                                setPreview(null);
+                            }
+                        }} className="mt-1" />
+                        <InputError className="mt-2" message={errors.avatar} />
+                    </div>
+                </div>
                 <div>
                     <InputLabel htmlFor="name" value="Name" />
 

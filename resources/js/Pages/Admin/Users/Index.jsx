@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import UserAvatar from '@/Components/UserAvatar';
 
 export default function UsersIndex({ users, roles, filters = {} }) {
     const items = users?.data ?? [];
@@ -95,29 +96,33 @@ export default function UsersIndex({ users, roles, filters = {} }) {
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roles</th>
-                            <th className="px-6 py-3" />
-                        </tr>
+              <tr>
+                <th className="px-4 py-3" />
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roles</th>
+                <th className="px-6 py-3" />
+              </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {items.map((user) => (
-                            <tr key={user.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                        <span>{user.name}</span>
-                                        {user.is_banned && (
-                                            <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded">BANNED</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    {(user.roles || []).map((r) => r.name).join(', ')}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <tr key={user.id}>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <UserAvatar user={user} size={8} />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <span>{user.name}</span>
+                                {user.is_banned && (
+                                  <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded">BANNED</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {(user.roles || []).map((r) => r.name).join(', ')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
                                     <button onClick={() => openModal(user)} className="px-3 py-1 bg-amber-500 text-white rounded">Manage Roles</button>
                               {/* Ban button: hide/disable for current user or admins */}
                               {(() => {

@@ -8,13 +8,19 @@ function initials(name) {
 }
 
 export default function UserAvatar({ user, size = 8 }) {
-    const sClass = `h-${size} w-${size}`; // Tailwind sizes dynamic not ideal but acceptable for default sizes
-    const bg = 'bg-gray-600';
+    const px = size * 4;
     const name = user?.name ?? '';
     const text = initials(name);
 
+    if (user?.avatar_url) {
+        return (
+            <img src={user.avatar_url} alt={name} className="rounded-full object-cover" style={{ width: `${px}px`, height: `${px}px` }} />
+        );
+    }
+
+    const bg = 'bg-gray-600';
     return (
-        <div className={`inline-flex items-center justify-center ${bg} text-white rounded-full`} style={{ width: `${size * 4}px`, height: `${size * 4}px` }} aria-hidden>
+        <div className={`inline-flex items-center justify-center ${bg} text-white rounded-full`} style={{ width: `${px}px`, height: `${px}px` }} aria-hidden>
             <span className="text-sm font-semibold">{text}</span>
         </div>
     );

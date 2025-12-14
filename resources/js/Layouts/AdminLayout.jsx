@@ -52,6 +52,11 @@ export default function AdminLayout({ children, header }) {
                 </nav>
             </aside>
 
+            {/* Mobile backdrop to close sidebar */}
+            {open && (
+                <div onClick={() => setOpen(false)} className="md:hidden fixed inset-0 z-20 bg-black/40"></div>
+            )}
+
             {/* Content area */}
             <div className="flex-1 min-h-screen md:ml-64">
                 {/* Topbar for mobile */}
