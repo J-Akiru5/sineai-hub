@@ -4,13 +4,15 @@ import Hero from '@/Components/Premiere/Hero';
 import { Head } from '@inertiajs/react';
 import CinemaCard from '@/Components/Premiere/CinemaCard';
 
+const ROW_SCROLL_FACTOR = 0.8;
+
 export default function Index({ featured, featuredProject, newArrivals, trending }) {
     const newArrivalsRef = useRef(null);
     const trendingRef = useRef(null);
 
     const scrollRow = (ref, direction = 1) => {
         if (!ref?.current) return;
-        const scrollAmount = ref.current.clientWidth * 0.8 * direction;
+        const scrollAmount = ref.current.clientWidth * ROW_SCROLL_FACTOR * direction;
         ref.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     };
 

@@ -1,11 +1,21 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 
+const resolveGenre = (project) => project?.genre ?? project?.category ?? project?.category_name ?? 'Feature';
+const DEFAULT_BADGES = {
+    quality: '4K Ultra',
+    audio: 'Dolby Atmos',
+};
+
 export default function Hero({ featuredProject }) {
     if (!featuredProject) return null;
 
     const bgUrl = featuredProject.thumbnail_url || featuredProject.video_url || null;
-    const genre = featuredProject.genre || featuredProject.category || featuredProject.category_name || 'Feature';
+    const badges = [
+        featuredProject?.quality || DEFAULT_BADGES.quality,
+        featuredProject?.audio || DEFAULT_BADGES.audio,
+        resolveGenre(featuredProject),
+    ].filter(Boolean);
 
     return (
         <section className="relative w-full h-[85vh] text-white overflow-hidden">
@@ -19,7 +29,7 @@ export default function Hero({ featuredProject }) {
             </div>
 
             {/* Foreground content */}
-            <div className="relative z-10 h-full flex items-end px-6 sm:px-10 lg:px-16" style={{ paddingBottom: '30%' }}>
+            <div className="relative z-10 h-full flex items-end px-6 sm:px-10 lg:px-16 pb-[30%]">
                 <div className="max-w-4xl space-y-5">
                     <div className="flex items-center gap-3 text-xs uppercase tracking-[0.35em] text-amber-200 font-semibold">
                         <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur">Premiere</span>
@@ -30,15 +40,11 @@ export default function Hero({ featuredProject }) {
                     </h1>
 
                     <div className="flex items-center flex-wrap gap-3 text-sm">
-                        <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur">
-                            4K Ultra
-                        </span>
-                        <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur">
-                            Dolby Atmos
-                        </span>
-                        <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur">
-                            {genre}
-                        </span>
+                        {badges.map((badge, idx) => (
+                            <span key={`${badge}-${idx}`} className="px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur">
+                                {badge}
+                            </span>
+                        ))}
                     </div>
 
                     <p className="text-lg text-gray-100/90 max-w-3xl line-clamp-3 drop-shadow-[0_5px_18px_rgba(0,0,0,0.65)]">
