@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import supabase from '@/supabase';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import { Link, usePage } from '@inertiajs/react';
@@ -66,11 +66,8 @@ export default function Authenticated({ user, header, children }) {
     const isAdmin = (currentUser?.roles || []).some(r => r.name === 'admin' || r.name === 'super-admin');
 
     useEffect(() => {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        if (!supabaseUrl || !supabaseKey) return;
-
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        // Skip if Supabase is not configured (handled by shared supabase client)
+        if (!supabase?.channel) return;
 
         const channel = supabase
             .channel('public:messages')
