@@ -42,77 +42,93 @@ export default function Show({ project, suggestedVideos, comments }) {
         <CinemaLayout>
             <Head title={project.title} />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-12 gap-6">
-                    {/* Main column: 75% width (9/12) */}
-                    <div className="col-span-12 lg:col-span-9">
-                        <div className="bg-black relative">
-                            <video
-                                ref={videoRef}
-                                src={project.video_url}
-                                controls
-                                autoPlay
-                                onPlay={() => setIsPaused(false)}
-                                onPause={() => setIsPaused(true)}
-                                className="w-full h-[60vh] lg:h-[70vh] bg-black"
-                                style={{ objectFit: 'cover' }}
-                            />
+            <div className="w-full bg-black text-white">
+                <div className="max-w-[98vw] mx-auto min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-10 py-10 relative overflow-hidden">
+                    <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),rgba(0,0,0,0.6)_45%,rgba(0,0,0,0.95)_90%)]" />
 
-                            {/* Overlay */}
-                            <div
-                                onClick={() => {
-                                    // toggle play when overlay clicked
-                                    if (videoRef?.current) {
-                                        if (videoRef.current.paused) {
-                                            videoRef.current.play();
-                                        } else {
-                                            videoRef.current.pause();
-                                        }
-                                    }
-                                }}
-                                className={`absolute inset-0 transition-opacity ${isPaused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                                <div className="absolute bottom-0 left-0 p-8 pb-24 text-white max-w-[60%] pointer-events-none">
-                                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 [text-shadow:0_2px_10px_rgba(0,0,0,0.8)]">{project.title}</h1>
-                                    <p className="text-amber-200 line-clamp-3 [text-shadow:0_2px_10px_rgba(0,0,0,0.8)]">{project.description}</p>
-                                </div>
+                    <div className="relative w-full max-w-6xl aspect-video rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black">
+                        <div className="absolute inset-0 -z-10 flex items-center justify-center">
+                            <div className="relative w-[115%] max-w-[1800px] aspect-video rounded-[32px] overflow-hidden blur-3xl saturate-150 opacity-60 scale-110">
+                                {project?.video_url ? (
+                                    <video
+                                        src={project.video_url}
+                                        muted
+                                        loop
+                                        autoPlay
+                                        playsInline
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <img src={project.thumbnail_url} alt={project.title} className="absolute inset-0 w-full h-full object-cover" />
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
                             </div>
-
                         </div>
 
-                        <div className="mt-6 text-white">
-                            <div className="flex items-center gap-4 mt-3">
-                                <div className="h-12 w-12 rounded-full bg-slate-700 overflow-hidden">
-                                    {project.user?.avatar_url ? (
-                                        <img src={project.user.avatar_url} alt={project.user.name} className="h-full w-full object-cover" />
-                                    ) : (
-                                        <div className="h-full w-full flex items-center justify-center text-amber-300">{project.user?.name?.[0] ?? 'U'}</div>
-                                    )}
-                                </div>
+                        <video
+                            ref={videoRef}
+                            src={project.video_url}
+                            controls
+                            autoPlay
+                            onPlay={() => setIsPaused(false)}
+                            onPause={() => setIsPaused(true)}
+                            className="relative z-10 w-full h-full bg-black object-cover"
+                        />
 
-                                <div>
-                                    <div className="text-sm text-amber-300">by {project.user?.name}</div>
-                                    <div className="text-xs text-slate-400">{project.views_count ?? 0} views • {new Date(project.created_at).toLocaleDateString()}</div>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 text-amber-200">
-                                {project.description}
-                            </div>
-
-                            <div className="mt-4 flex items-center gap-3">
-                                <button className="px-3 py-2 bg-amber-500 text-black rounded">Add to Playlist</button>
-                                <button className="px-3 py-2 bg-slate-800 text-amber-200 rounded">Report</button>
-                            </div>
-
-                            <div className="mt-6">
-                                <CommentSection comments={comments} projectId={project.id} />
+                        {/* Overlay */}
+                        <div
+                            onClick={() => {
+                                // toggle play when overlay clicked
+                                if (videoRef?.current) {
+                                    if (videoRef.current.paused) {
+                                        videoRef.current.play();
+                                    } else {
+                                        videoRef.current.pause();
+                                    }
+                                }
+                            }}
+                            className={`absolute inset-0 transition-opacity ${isPaused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+                            <div className="absolute bottom-0 left-0 p-8 pb-16 text-white max-w-[60%] pointer-events-none">
+                                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 [text-shadow:0_4px_16px_rgba(0,0,0,0.9)]">{project.title}</h1>
+                                <p className="text-amber-200 line-clamp-3 [text-shadow:0_3px_12px_rgba(0,0,0,0.8)]">{project.description}</p>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Suggestions column: 25% width (3/12) */}
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pb-12 grid grid-cols-12 gap-8">
+                    <div className="col-span-12 lg:col-span-9">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-slate-700 overflow-hidden">
+                                {project.user?.avatar_url ? (
+                                    <img src={project.user.avatar_url} alt={project.user.name} className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-amber-300">{project.user?.name?.[0] ?? 'U'}</div>
+                                )}
+                            </div>
+
+                            <div>
+                                <div className="text-sm text-amber-300">by {project.user?.name}</div>
+                                <div className="text-xs text-slate-400">{project.views_count ?? 0} views • {new Date(project.created_at).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 text-amber-200 leading-relaxed">
+                            {project.description}
+                        </div>
+
+                        <div className="mt-4 flex items-center gap-3">
+                            <button className="px-3 py-2 bg-amber-500 text-black rounded">Add to Playlist</button>
+                            <button className="px-3 py-2 bg-slate-800 text-amber-200 rounded">Report</button>
+                        </div>
+
+                        <div className="mt-6">
+                            <CommentSection comments={comments} projectId={project.id} />
+                        </div>
+                    </div>
+
                     <aside className="col-span-12 lg:col-span-3">
                         <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto pr-2">
                             <SuggestedVideos videos={suggestedVideos} />
