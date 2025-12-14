@@ -6,7 +6,9 @@ import CommentSection from '@/Components/Premiere/CommentSection';
 
 const sanitizeMediaUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) return url;
+    const isHttp = /^https?:\/\//i.test(url);
+    const isSafeRelative = /^\/[a-zA-Z0-9/_\-.]*$/.test(url);
+    if (isHttp || isSafeRelative) return url;
     return null;
 };
 
@@ -68,7 +70,7 @@ export default function Show({ project, suggestedVideos, comments }) {
                                     width: GLOW_SCALE_WIDTH,
                                     maxWidth: GLOW_MAX_WIDTH,
                                     borderRadius: GLOW_RADIUS,
-                                    ...(glowMedia ? { backgroundImage: `url('${glowMedia}')` } : {}),
+                                    ...(glowMedia ? { backgroundImage: `url('${encodeURI(glowMedia)}')` } : {}),
                                 }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
