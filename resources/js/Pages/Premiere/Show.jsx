@@ -4,11 +4,20 @@ import { Head } from '@inertiajs/react';
 import SuggestedVideos from '@/Components/Premiere/SuggestedVideos';
 import CommentSection from '@/Components/Premiere/CommentSection';
 
+const sanitizeMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) return url;
+    return null;
+};
+
 export default function Show({ project, suggestedVideos, comments }) {
     const [isPaused, setIsPaused] = useState(true);
     const videoRef = useRef(null);
     const THEATER_MAX_WIDTH = '98vw';
-    const glowMedia = project?.thumbnail_url || project?.video_url || null;
+    const GLOW_SCALE_WIDTH = '115%';
+    const GLOW_MAX_WIDTH = '1800px';
+    const GLOW_RADIUS = '32px';
+    const glowMedia = sanitizeMediaUrl(project?.thumbnail_url || project?.video_url || null);
 
     useEffect(() => {
         function onKey(e) {
@@ -54,8 +63,13 @@ export default function Show({ project, suggestedVideos, comments }) {
                     <div className="relative w-full max-w-6xl aspect-video rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black">
                         <div className="absolute inset-0 -z-10 flex items-center justify-center">
                             <div
-                                className="relative w-[115%] max-w-[1800px] aspect-video rounded-[32px] overflow-hidden blur-3xl saturate-150 opacity-60 scale-110 bg-center bg-cover"
-                                style={glowMedia ? { backgroundImage: `url('${glowMedia}')` } : {}}
+                                className="relative aspect-video overflow-hidden blur-3xl saturate-150 opacity-60 scale-110 bg-center bg-cover"
+                                style={{
+                                    width: GLOW_SCALE_WIDTH,
+                                    maxWidth: GLOW_MAX_WIDTH,
+                                    borderRadius: GLOW_RADIUS,
+                                    ...(glowMedia ? { backgroundImage: `url('${glowMedia}')` } : {}),
+                                }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
                             </div>
