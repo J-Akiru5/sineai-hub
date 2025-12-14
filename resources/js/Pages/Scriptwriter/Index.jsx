@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
+
+// Utility to generate unique IDs
+let blockIdCounter = Date.now();
+const generateBlockId = () => ++blockIdCounter;
 
 export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     // State
@@ -14,8 +18,8 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
 
     // Block-based state management
     const [blocks, setBlocks] = useState([
-        { id: Date.now(), type: 'scene-heading', content: 'INT. COFFEE SHOP - DAY' },
-        { id: Date.now() + 1, type: 'action', content: 'The room is silent.' }
+        { id: generateBlockId(), type: 'scene-heading', content: 'INT. COFFEE SHOP - DAY' },
+        { id: generateBlockId(), type: 'action', content: 'The room is silent.' }
     ]);
 
     const blockRefs = useRef({});
@@ -29,19 +33,24 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                     : activeScript.content;
                 
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    setBlocks(parsed);
+                    // Ensure each block has a unique ID
+                    const blocksWithIds = parsed.map(block => ({
+                        ...block,
+                        id: block.id || generateBlockId()
+                    }));
+                    setBlocks(blocksWithIds);
                 } else {
                     // Default blocks if content is not in expected format
                     setBlocks([
-                        { id: Date.now(), type: 'scene-heading', content: 'INT. SCENE 1 - DAY' },
-                        { id: Date.now() + 1, type: 'action', content: '' }
+                        { id: generateBlockId(), type: 'scene-heading', content: 'INT. SCENE 1 - DAY' },
+                        { id: generateBlockId(), type: 'action', content: '' }
                     ]);
                 }
             } catch (e) {
                 // If parsing fails, initialize with default blocks
                 setBlocks([
-                    { id: Date.now(), type: 'scene-heading', content: 'INT. SCENE 1 - DAY' },
-                    { id: Date.now() + 1, type: 'action', content: '' }
+                    { id: generateBlockId(), type: 'scene-heading', content: 'INT. SCENE 1 - DAY' },
+                    { id: generateBlockId(), type: 'action', content: '' }
                 ]);
             }
         }
@@ -50,7 +59,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     // Create New Script
     const createNewScript = async () => {
         try {
-            const res = await axios.post(route('scriptwriter.store'));
+            const res = await axios.post(window.route('scriptwriter.store'));
             const newScript = res.data.script;
             setScripts([newScript, ...scripts]);
             setActiveScript(newScript);
@@ -60,16 +69,19 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     };
 
     // Auto-Save Logic (Debounced)
-    const handleAutoSave = debounce((blocksData) => {
-        if (!activeScript) return;
-        setIsSaving(true);
-        axios.put(route('scriptwriter.update', activeScript.id), {
-            content: JSON.stringify(blocksData),
-            title: activeScript.title
-        }).then(() => {
-            setIsSaving(false);
-        }).catch(err => console.error("Save failed", err));
-    }, 2000);
+    const handleAutoSave = useCallback(
+        debounce((blocksData) => {
+            if (!activeScript) return;
+            setIsSaving(true);
+            axios.put(window.route('scriptwriter.update', activeScript.id), {
+                content: JSON.stringify(blocksData),
+                title: activeScript.title
+            }).then(() => {
+                setIsSaving(false);
+            }).catch(err => console.error("Save failed", err));
+        }, 2000),
+        [activeScript]
+    );
 
     // Save blocks when they change
     useEffect(() => {
@@ -113,7 +125,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
             e.preventDefault();
             const newBlockType = getNextBlockType(blockType);
             const newBlock = {
-                id: Date.now(),
+                id: generateBlockId(),
                 type: newBlockType,
                 content: ''
             };
