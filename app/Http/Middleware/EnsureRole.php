@@ -21,9 +21,16 @@ class EnsureRole
         }
 
         // 2. Check if the user has the required role
-        // We assume your User model has the hasRole() method we planned earlier.
-        // If not, we will check that next.
-        if (! $request->user()->hasRole($role)) {
+        // Super-admin has access to everything admin can access
+        $user = $request->user();
+        $hasAccess = $user->hasRole($role);
+        
+        // If checking for 'admin', also allow 'super-admin'
+        if (!$hasAccess && $role === 'admin') {
+            $hasAccess = $user->hasRole('super-admin');
+        }
+        
+        if (!$hasAccess) {
             abort(403, 'Unauthorized. You do not have the ' . $role . ' role.');
         }
 

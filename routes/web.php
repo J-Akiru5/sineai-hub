@@ -70,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Chat routes
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
+    Route::get('/chat/{channel}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/chat/messages', [ChatController::class, 'store'])->name('chat.messages');
 
     // AI Assistant route to display page

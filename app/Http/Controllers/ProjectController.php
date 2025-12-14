@@ -162,8 +162,12 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        // Only owner can delete
-        if (Auth::id() !== $project->user_id) {
+        $user = Auth::user();
+        $isAdmin = $user && method_exists($user, 'hasRole') && 
+                   ($user->hasRole('admin') || $user->hasRole('super-admin'));
+        
+        // Only owner or admin can delete
+        if (Auth::id() !== $project->user_id && !$isAdmin) {
             abort(403);
         }
 
@@ -199,8 +203,12 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
-        // Only owner can edit
-        if (Auth::id() !== $project->user_id) {
+        $user = Auth::user();
+        $isAdmin = $user && method_exists($user, 'hasRole') && 
+                   ($user->hasRole('admin') || $user->hasRole('super-admin'));
+        
+        // Only owner or admin can edit
+        if (Auth::id() !== $project->user_id && !$isAdmin) {
             abort(403);
         }
 
@@ -216,7 +224,11 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
-        if (Auth::id() !== $project->user_id) {
+        $user = Auth::user();
+        $isAdmin = $user && method_exists($user, 'hasRole') && 
+                   ($user->hasRole('admin') || $user->hasRole('super-admin'));
+        
+        if (Auth::id() !== $project->user_id && !$isAdmin) {
             abort(403);
         }
 

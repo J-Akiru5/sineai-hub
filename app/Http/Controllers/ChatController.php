@@ -35,8 +35,19 @@ class ChatController extends Controller
                   });
             })->get();
 
+        // Allow the client to request a specific channel via query param (e.g. /chat?channel=2)
+        $requestedChannelId = $request->query('channel');
+
         // prefer the "General" channel as default when available, otherwise fall back to the first
         $defaultChannel = Channel::where('name', 'General')->first() ?? $channels->first();
+
+        // If a channel was requested, and the user has access to it, prefer that as the default
+        if ($requestedChannelId) {
+            $maybe = $channels->firstWhere('id', $requestedChannelId);
+            if ($maybe) {
+                $defaultChannel = $maybe;
+            }
+        }
 
         $messages = [];
         $users = []; // <-- Initialize an empty array for users

@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import UserAvatar from '@/Components/UserAvatar';
 import { Head, useForm } from '@inertiajs/react';
 import supabase from '@/supabase';
+import { router } from '@inertiajs/react';
 
 // Accept initial messages and users from the server (messages prop is aliased to initialMessages)
 export default function ChatIndex({ auth, channels = [], messages: initialMessages = [], users: initialUsers = {}, defaultChannelId = null }) {
@@ -22,6 +23,38 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
     useEffect(() => {
         setData('channel_id', activeChannel);
     }, [activeChannel]);
+
+    // When activeChannel changes, load the historic messages for that channel
+    const loadChannelMessages = async (channelId) => {
+        if (!channelId) {
+            setMessages([]);
+            return;
+        }
+
+        try {
+            const res = await fetch(route('chat.show', channelId));
+            if (!res.ok) throw new Error('Failed to load messages');
+            const json = await res.json();
+            const loaded = json.messages || [];
+
+            // build users map from loaded messages
+            const usersMap = {};
+            loaded.forEach((m) => {
+                if (m.user) usersMap[m.user.id] = m.user;
+            });
+
+            setUsers((prev) => ({ ...prev, ...usersMap }));
+            setMessages(loaded);
+
+            // update URL so refresh will preserve the selected channel
+            const url = new URL(window.location.href);
+            url.searchParams.set('channel', channelId);
+            window.history.replaceState({}, '', url.toString());
+
+        } catch (e) {
+            console.error('Failed to load channel messages', e);
+        }
+    };
 
     // update channel list when prop changes
     useEffect(() => {
@@ -109,7 +142,7 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                             <div className="space-y-2">
                                 {channelList.map((c) => (
                                     <div key={c.id} className={`group p-2 rounded cursor-pointer ${c.id === activeChannel ? 'bg-white/5 border-l-4 border-amber-500 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                                        <button className="w-full text-left" onClick={() => { setActiveChannel(c.id); setMessages([]); setShowSidebar(false); }}>
+                                        <button className="w-full text-left" onClick={async () => { setActiveChannel(c.id); await loadChannelMessages(c.id); setShowSidebar(false); }}>
                                             <div className="font-medium text-sm truncate">{c.name}</div>
                                             <div className="text-xs text-amber-200/80 truncate">{c.description ?? ''}</div>
                                         </button>

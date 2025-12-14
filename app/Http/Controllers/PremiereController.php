@@ -42,6 +42,13 @@ class PremiereController extends Controller
 
     public function show(Project $project)
     {
+        // Check if project exists and has valid video (not deleted)
+        if (!$project || !$project->video_url) {
+            return Inertia::render('Premiere/VideoNotFound', [
+                'message' => 'This video is no longer available.',
+            ]);
+        }
+
         // eager-load user and comments relationship
         $project->load(['user', 'comments.user']);
 
@@ -53,10 +60,13 @@ class PremiereController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $userId = auth()->id();
+        $user = auth()->user();
+        $userId = $user?->id;
+        $isAdmin = $user && method_exists($user, 'hasRole') && 
+                   ($user->hasRole('admin') || $user->hasRole('super-admin'));
 
-        // If not owner, enforce public + approved
-        if ($userId !== $project->user_id) {
+        // If not owner and not admin, enforce public + approved
+        if ($userId !== $project->user_id && !$isAdmin) {
             if ($project->visibility !== 'public' || $project->moderation_status !== 'approved') {
                 abort(403);
             }
