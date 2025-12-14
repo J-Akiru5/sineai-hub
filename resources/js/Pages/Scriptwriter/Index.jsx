@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
@@ -29,14 +29,25 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
 
     const blockRefs = useRef({});
 
-    // Derived state: Extract scenes for navigation
-    const scenes = blocks
-        .map((block, index) => ({ ...block, originalIndex: index }))
-        .filter(block => block.type === 'scene-heading')
-        .map((scene, sceneIndex) => ({
-            ...scene,
-            sceneNumber: sceneIndex + 1
-        }));
+    // Derived state: Extract scenes for navigation (memoized for performance)
+    const scenes = useMemo(() => {
+        return blocks
+            .map((block, index) => ({ ...block, originalIndex: index }))
+            .filter(block => block.type === 'scene-heading')
+            .map((scene, sceneIndex) => ({
+                ...scene,
+                sceneNumber: sceneIndex + 1
+            }));
+    }, [blocks]);
+
+    // Scene number map for O(1) lookups (memoized)
+    const sceneNumberMap = useMemo(() => {
+        const map = new Map();
+        scenes.forEach(scene => {
+            map.set(scene.id, scene.sceneNumber);
+        });
+        return map;
+    }, [scenes]);
 
     // Initialize blocks from activeScript
     useEffect(() => {
@@ -306,10 +317,9 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
         window.print();
     };
 
-    // Get scene number for a block
+    // Get scene number for a block (O(1) lookup)
     const getSceneNumber = (blockId) => {
-        const sceneIndex = scenes.findIndex(scene => scene.id === blockId);
-        return sceneIndex >= 0 ? sceneIndex + 1 : null;
+        return sceneNumberMap.get(blockId) || null;
     };
 
     // Hint Timer
