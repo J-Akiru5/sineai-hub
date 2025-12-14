@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import Modal from '@/Components/Modal';
 
 // Utility to generate unique IDs
 let clipIdCounter = Date.now();
@@ -9,6 +10,18 @@ const generateClipId = () => `clip-${++clipIdCounter}`;
 // Constants
 const PIXELS_PER_SECOND = 20; // Scale: 20px per second of video
 const SEEK_THRESHOLD = 0.5; // Threshold in seconds to avoid constant seeking
+
+// Export status messages for the "technical" animation
+const EXPORT_MESSAGES = [
+    'Analyzing timeline...',
+    'Encoding Audio...',
+    'Stitching Tracks...',
+    'Rendering Frames...',
+    'Applying Effects...',
+    'Finalizing Container...',
+    'Uploading to Cloud...',
+    'Upload Complete'
+];
 
 export default function Editor({ auth }) {
     // =====================
@@ -30,6 +43,17 @@ export default function Editor({ auth }) {
     
     // Animation frame ref for playback loop
     const playbackIntervalRef = useRef(null);
+    
+    // =====================
+    // Export Modal State
+    // =====================
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportResolution, setExportResolution] = useState('1080p');
+    const [exportFormat, setExportFormat] = useState('MP4');
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportProgress, setExportProgress] = useState(0);
+    const [exportMessage, setExportMessage] = useState('');
+    const [exportComplete, setExportComplete] = useState(false);
     
     // Calculate total timeline duration
     const totalDuration = clips.reduce((sum, clip) => sum + clip.duration, 0);
@@ -234,6 +258,68 @@ export default function Editor({ auth }) {
         addClip(randomAsset);
     };
     
+    // =====================
+    // Export Workflow
+    // =====================
+    const openExportModal = () => {
+        setShowExportModal(true);
+        setExportProgress(0);
+        setExportMessage('');
+        setExportComplete(false);
+        setIsExporting(false);
+    };
+    
+    const closeExportModal = () => {
+        if (!isExporting) {
+            setShowExportModal(false);
+            // Reset export state when closing
+            setExportProgress(0);
+            setExportMessage('');
+            setExportComplete(false);
+        }
+    };
+    
+    const startExport = () => {
+        setIsExporting(true);
+        setExportProgress(0);
+        setExportComplete(false);
+        
+        // Simulate export with progress bar and messages
+        const totalDuration = 4000; // 4 seconds
+        const messageInterval = totalDuration / EXPORT_MESSAGES.length;
+        let messageIndex = 0;
+        
+        // Update messages rapidly
+        const messageTimer = setInterval(() => {
+            if (messageIndex < EXPORT_MESSAGES.length) {
+                setExportMessage(EXPORT_MESSAGES[messageIndex]);
+                messageIndex++;
+            } else {
+                clearInterval(messageTimer);
+            }
+        }, messageInterval);
+        
+        // Update progress bar smoothly
+        const startTime = Date.now();
+        const progressTimer = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min((elapsed / totalDuration) * 100, 100);
+            setExportProgress(progress);
+            
+            if (progress >= 100) {
+                clearInterval(progressTimer);
+                clearInterval(messageTimer);
+                setExportComplete(true);
+                setIsExporting(false);
+            }
+        }, 50);
+    };
+    
+    // Get the first clip URL for the download button (facade)
+    const getDownloadUrl = () => {
+        return clips.length > 0 ? clips[0].url : '#';
+    };
+    
     return (
         <AuthenticatedLayout
             auth={auth}
@@ -241,7 +327,7 @@ export default function Editor({ auth }) {
         >
             <Head title="Video Editor" />
             
-            <div className="h-[calc(100vh-64px)] w-full flex flex-col bg-zinc-900">
+            <div className="h-[calc(100vh-64px)] w-full flex flex-col bg-zinc-900 relative">
                 
                 {/* Top Bar - Controls */}
                 <div className="bg-zinc-800 border-b border-zinc-700 px-6 py-3 flex items-center justify-between">
@@ -261,6 +347,13 @@ export default function Editor({ auth }) {
                         <span className="text-amber-300 font-mono text-lg">
                             {formatTime(globalTime)} / {formatTime(totalDuration)}
                         </span>
+                        <button
+                            onClick={openExportModal}
+                            disabled={clips.length === 0}
+                            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            🎬 Export Video
+                        </button>
                     </div>
                 </div>
                 
@@ -422,7 +515,174 @@ export default function Editor({ auth }) {
                         ))}
                     </div>
                 </div>
+                
+                {/* Glass Overlay - Blocks timeline interaction during export */}
+                {isExporting && (
+                    <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm z-40 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="animate-spin w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
+                            <p className="text-amber-300 text-lg font-semibold">Exporting...</p>
+                            <p className="text-zinc-400 text-sm mt-1">{exportMessage}</p>
+                        </div>
+                    </div>
+                )}
             </div>
+            
+            {/* ===================== */}
+            {/* Export Modal */}
+            {/* ===================== */}
+            <Modal show={showExportModal} onClose={closeExportModal} maxWidth="md">
+                <div className="bg-zinc-900 p-6">
+                    {!exportComplete ? (
+                        <>
+                            <h2 className="text-xl font-bold text-amber-100 mb-4">
+                                🎬 Render Settings
+                            </h2>
+                            
+                            {!isExporting ? (
+                                <>
+                                    {/* Resolution Option */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                            Resolution
+                                        </label>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => setExportResolution('1080p')}
+                                                className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                                                    exportResolution === '1080p'
+                                                        ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                                        : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                                }`}
+                                            >
+                                                <div className="font-semibold">1080p</div>
+                                                <div className="text-xs opacity-70">Full HD</div>
+                                            </button>
+                                            <button
+                                                onClick={() => setExportResolution('4k')}
+                                                className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                                                    exportResolution === '4k'
+                                                        ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                                        : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                                }`}
+                                            >
+                                                <div className="font-semibold">4K</div>
+                                                <div className="text-xs opacity-70">Ultra HD</div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Format Option */}
+                                    <div className="mb-6">
+                                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                            Format
+                                        </label>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => setExportFormat('MP4')}
+                                                className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                                                    exportFormat === 'MP4'
+                                                        ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                                        : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                                }`}
+                                            >
+                                                <div className="font-semibold">MP4</div>
+                                                <div className="text-xs opacity-70">H.264 Codec</div>
+                                            </button>
+                                            <button
+                                                onClick={() => setExportFormat('MOV')}
+                                                className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                                                    exportFormat === 'MOV'
+                                                        ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                                        : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                                }`}
+                                            >
+                                                <div className="font-semibold">MOV</div>
+                                                <div className="text-xs opacity-70">ProRes Codec</div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Summary */}
+                                    <div className="bg-zinc-800/50 rounded-lg p-4 mb-6 border border-zinc-700">
+                                        <div className="text-sm text-zinc-400">Export Summary</div>
+                                        <div className="mt-2 text-amber-100">
+                                            <span className="font-semibold">{clips.length}</span> clip{clips.length !== 1 ? 's' : ''} • 
+                                            <span className="font-semibold ml-1">{formatTime(totalDuration)}</span> duration • 
+                                            <span className="font-semibold ml-1">{exportResolution}</span> • 
+                                            <span className="font-semibold ml-1">{exportFormat}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Actions */}
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={closeExportModal}
+                                            className="flex-1 px-4 py-3 bg-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-600 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={startExport}
+                                            className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-md"
+                                        >
+                                            🚀 Start Render
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                /* Exporting State - Progress Bar */
+                                <div className="py-8">
+                                    <div className="mb-4">
+                                        <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-100 ease-linear"
+                                                style={{ width: `${exportProgress}%` }}
+                                            />
+                                        </div>
+                                        <div className="mt-2 flex justify-between text-sm">
+                                            <span className="text-zinc-400">{Math.round(exportProgress)}%</span>
+                                            <span className="text-amber-300 font-mono">{exportMessage}</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-center text-zinc-500 text-sm">
+                                        Please wait while we render your video...
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        /* Export Complete State */
+                        <div className="text-center py-6">
+                            <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-4xl">✅</span>
+                            </div>
+                            <h2 className="text-xl font-bold text-emerald-400 mb-2">
+                                Export Complete!
+                            </h2>
+                            <p className="text-zinc-400 mb-6">
+                                Your video has been rendered successfully.
+                            </p>
+                            
+                            <div className="flex flex-col gap-3">
+                                <a
+                                    href={getDownloadUrl()}
+                                    download
+                                    className="w-full px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg hover:from-amber-400 hover:to-amber-500 transition-all shadow-md text-center"
+                                >
+                                    ⬇️ Download Video
+                                </a>
+                                <Link
+                                    href={route('dashboard')}
+                                    className="w-full px-4 py-3 bg-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-600 transition-colors text-center"
+                                >
+                                    🏠 Return to Dashboard
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     );
 }
