@@ -100,7 +100,12 @@ class ProjectController extends Controller
 
     public function create()
     {
-        return Inertia::render('Projects/Create');
+        // Load categories for dropdown
+        $categories = \App\Models\Category::active()->ordered()->get(['id', 'name', 'slug', 'icon']);
+
+        return Inertia::render('Projects/Create', [
+            'categories' => $categories,
+        ]);
     }
 
     /**

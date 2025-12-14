@@ -15,6 +15,7 @@ class Project extends Model
         'user_id',
         'title',
         'description',
+        'directors_note',
         'video_path',
         'video_url',
         'thumbnail_path',
@@ -23,7 +24,28 @@ class Project extends Model
         'visibility',
         'moderation_status',
         'views_count',
+        'likes_count',
         'category',
+        'category_id',
+        'duration',
+        'release_year',
+        'content_rating',
+        'language',
+        'chapters',
+        'cast_crew',
+        'tags',
+        'is_featured',
+    ];
+
+    protected $casts = [
+        'chapters' => 'array',
+        'cast_crew' => 'array',
+        'tags' => 'array',
+        'is_featured' => 'boolean',
+        'duration' => 'integer',
+        'release_year' => 'integer',
+        'views_count' => 'integer',
+        'likes_count' => 'integer',
     ];
 
     // Note: do not append computed URL attributes. Use the raw `video_url` and
@@ -53,5 +75,47 @@ class Project extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Category relationship
+     */
+    public function categoryRelation(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    /**
+     * Users who liked this project
+     */
+    public function likes()
+    {
+        return $this->belongsToMany(User::class, 'project_likes')->withTimestamps();
+    }
+
+    /**
+     * Check if a user has liked this project
+     */
+    public function isLikedBy(?User $user): bool
+    {
+        if (!$user) return false;
+        return $this->likes()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Format duration as HH:MM:SS
+     */
+    public function getFormattedDurationAttribute(): string
+    {
+        if (!$this->duration) return '00:00';
+        
+        $hours = floor($this->duration / 3600);
+        $minutes = floor(($this->duration % 3600) / 60);
+        $seconds = $this->duration % 60;
+
+        if ($hours > 0) {
+            return sprintf('%d:%02d:%02d', $hours, $minutes, $seconds);
+        }
+        return sprintf('%d:%02d', $minutes, $seconds);
     }
 }

@@ -39,10 +39,17 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Search (public)
 Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('search.index');
+Route::get('/search/suggestions', [\App\Http\Controllers\SearchController::class, 'suggestions'])->name('search.suggestions');
 
 // Premiere discovery (public)
 Route::get('/premiere', [PremiereController::class, 'index'])->name('premiere.index');
 Route::get('/premiere/{project}', [PremiereController::class, 'show'])->name('premiere.show');
+
+// Premiere authenticated actions
+Route::middleware(['auth'])->group(function () {
+    Route::patch('/premiere/{project}', [PremiereController::class, 'update'])->name('premiere.update');
+    Route::post('/premiere/{project}/like', [PremiereController::class, 'toggleLike'])->name('premiere.toggleLike');
+});
 
 // Public AI Chat endpoint for guests (no auth) - rate limited to prevent abuse
 Route::post('/ai/guest-chat', [AiAssistantController::class, 'guestChat'])->middleware('throttle:10,1')->name('ai.guest-chat');
@@ -84,6 +91,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/ai/conversations/{conversation}', [AiAssistantController::class, 'destroy'])->name('ai.conversations.destroy');
 
     // Scriptwriter page (Cinematic UI)
+    Route::get('/scripts', [ScriptwriterController::class, 'list'])->name('scripts.index');
     Route::get('/scriptwriter', [ScriptwriterController::class, 'index'])->name('scriptwriter.index');
     Route::post('/scriptwriter/assist', [ScriptwriterController::class, 'assist'])->name('scriptwriter.assist');
     // Script CRUD
@@ -126,6 +134,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/moderation', [\App\Http\Controllers\Admin\ModerationController::class, 'index'])->name('moderation.index');
         Route::patch('/moderation/project/{project}', [\App\Http\Controllers\Admin\ModerationController::class, 'updateProjectStatus'])->name('moderation.updateProjectStatus');
         Route::patch('/moderation/flag/{flag}', [\App\Http\Controllers\Admin\ModerationController::class, 'resolveFlag'])->name('moderation.resolveFlag');
+        
+        // Category management
+        Route::get('/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])->name('categories.index');
+        Route::post('/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])->name('categories.store');
+        Route::patch('/categories/{category}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{category}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::post('/categories/reorder', [\App\Http\Controllers\Admin\CategoryController::class, 'reorder'])->name('categories.reorder');
     });
 
     // (Scriptwriter removed)
@@ -133,6 +148,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Playlists resource
     Route::resource('playlists', \App\Http\Controllers\PlaylistController::class);
     Route::post('/playlists/{playlist}/add', [\App\Http\Controllers\PlaylistController::class, 'addProject'])->name('playlists.addProject');
+    Route::post('/playlists/{playlist}/remove', [\App\Http\Controllers\PlaylistController::class, 'removeProject'])->name('playlists.removeProject');
+    Route::post('/playlists/{playlist}/reorder', [\App\Http\Controllers\PlaylistController::class, 'reorder'])->name('playlists.reorder');
 
     // Comments (project comments)
     Route::resource('comments', \App\Http\Controllers\CommentController::class)->only(['store', 'destroy']);

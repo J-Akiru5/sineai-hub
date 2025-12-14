@@ -11,6 +11,22 @@ use Illuminate\Support\Facades\Auth;
 class ScriptwriterController extends Controller
 {
     /**
+     * Display a listing of user's scripts.
+     */
+    public function list()
+    {
+        $scripts = request()->user()
+            ? Script::where('user_id', request()->user()->id)
+                ->latest()
+                ->paginate(12)
+            : collect();
+
+        return Inertia::render('Scripts/Index', [
+            'scripts' => $scripts,
+        ]);
+    }
+
+    /**
      * Render the Scriptwriter page (Inertia).
      */
     public function index()
@@ -86,20 +102,35 @@ class ScriptwriterController extends Controller
 
         $script->delete();
 
-        return response()->json(['success' => true]);
+        // Return appropriate response based on request type
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->route('scripts.index');
     }
 
     /**
-     * Return a specific script's data.
+     * Return a specific script's data and render the Scriptwriter with it as active.
      */
     public function show(Script $script, Request $request)
     {
         $user = $request->user();
         if (!$user || $script->user_id !== $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            abort(403, 'Unauthorized');
         }
 
-        return response()->json(['script' => $script]);
+        // Get all user's scripts with the requested one first
+        $scripts = Script::where('user_id', $user->id)->latest()->get();
+        
+        // Reorder so the active script is first
+        $reordered = $scripts->sortByDesc(function ($s) use ($script) {
+            return $s->id === $script->id ? 1 : 0;
+        })->values();
+
+        return Inertia::render('Scriptwriter/Index', [
+            'scripts' => $reordered,
+        ]);
     }
 
     /**
