@@ -4,22 +4,36 @@ import { Head } from '@inertiajs/react';
 import SuggestedVideos from '@/Components/Premiere/SuggestedVideos';
 import CommentSection from '@/Components/Premiere/CommentSection';
 
+const THEATER_MAX_WIDTH = '98vw';
+const GLOW_SCALE_WIDTH = '115%';
+const GLOW_MAX_WIDTH = '1800px';
+const GLOW_RADIUS = '32px';
+
 const sanitizeMediaUrl = (url) => {
     if (!url) return null;
-    const isHttp = /^https?:\/\//i.test(url);
-    const isSafeRelative = /^\/[a-zA-Z0-9/_\-.]*$/.test(url);
-    if (isHttp || isSafeRelative) return url;
+    if (!(url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) return null;
+    try {
+        const parsed = new URL(url, 'https://example.com');
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url;
+    } catch (e) {
+        return null;
+    }
     return null;
+};
+
+const escapeForCssUrl = (value) => {
+    if (!value) return null;
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+        return CSS.escape(value);
+    }
+    return value.replace(/(['"\\])/g, '\\$1');
 };
 
 export default function Show({ project, suggestedVideos, comments }) {
     const [isPaused, setIsPaused] = useState(true);
     const videoRef = useRef(null);
-    const THEATER_MAX_WIDTH = '98vw';
-    const GLOW_SCALE_WIDTH = '115%';
-    const GLOW_MAX_WIDTH = '1800px';
-    const GLOW_RADIUS = '32px';
     const glowMedia = sanitizeMediaUrl(project?.thumbnail_url || project?.video_url || null);
+    const escapedGlowMedia = escapeForCssUrl(glowMedia);
 
     useEffect(() => {
         function onKey(e) {
@@ -70,7 +84,7 @@ export default function Show({ project, suggestedVideos, comments }) {
                                     width: GLOW_SCALE_WIDTH,
                                     maxWidth: GLOW_MAX_WIDTH,
                                     borderRadius: GLOW_RADIUS,
-                                    ...(glowMedia ? { backgroundImage: `url('${encodeURI(glowMedia)}')` } : {}),
+                                    ...(escapedGlowMedia ? { backgroundImage: `url('${escapedGlowMedia}')` } : {}),
                                 }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
