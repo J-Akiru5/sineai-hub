@@ -1,5 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
+// Roasts array defined outside component for better maintainability
+const roasts = [
+    "Cut! We'll fix it in post... maybe.",
+    "That jump was shorter than a TikTok script.",
+    "Writer's block hit you hard, huh?",
+    "Even the stunt double couldn't save that one.",
+    "Your timing is worse than a buffering stream.",
+    "That performance deserves a Razzie.",
+];
+
 export default function SparkRunner() {
     const canvasRef = useRef(null);
     const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'gameover'
@@ -22,16 +32,8 @@ export default function SparkRunner() {
         score: 0,
         gameSpeed: 5,
         isRunning: false,
+        nextSpawnFrame: 1, // Track when to spawn next obstacle
     });
-
-    const roasts = [
-        "Cut! We'll fix it in post... maybe.",
-        "That jump was shorter than a TikTok script.",
-        "Writer's block hit you hard, huh?",
-        "Even the stunt double couldn't save that one.",
-        "Your timing is worse than a buffering stream.",
-        "That performance deserves a Razzie.",
-    ];
 
     const getRandomRoast = useCallback(() => {
         return roasts[Math.floor(Math.random() * roasts.length)];
@@ -57,6 +59,7 @@ export default function SparkRunner() {
             score: 0,
             gameSpeed: 5,
             isRunning: true,
+            nextSpawnFrame: 1, // First spawn happens immediately
         };
         setScore(0);
         setGameState('playing');
@@ -104,11 +107,9 @@ export default function SparkRunner() {
                 player.grounded = true;
             }
 
-            // Spawn obstacles every 100-200 frames
+            // Spawn obstacles when frameCount reaches nextSpawnFrame
             game.frameCount++;
-            const spawnInterval = Math.floor(Math.random() * 100) + 100;
-
-            if (game.frameCount % spawnInterval === 0 || game.frameCount === 1) {
+            if (game.frameCount >= game.nextSpawnFrame) {
                 const obstacleTypes = ['📄', '⏰'];
                 const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
                 game.obstacles.push({
@@ -118,6 +119,8 @@ export default function SparkRunner() {
                     height: 20,
                     type: type,
                 });
+                // Set next spawn frame (100-200 frames from now)
+                game.nextSpawnFrame = game.frameCount + Math.floor(Math.random() * 100) + 100;
             }
 
             // Update obstacles
@@ -129,7 +132,7 @@ export default function SparkRunner() {
                     game.isRunning = false;
                     setCurrentRoast(getRandomRoast());
                     setGameState('gameover');
-                    return true;
+                    return false; // Remove obstacle on collision to prevent issues on restart
                 }
 
                 // Remove off-screen obstacles and increment score
