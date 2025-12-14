@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
 
+const VIDEO_FORMATS_REGEX = /\.(mp4|webm|ogg)(\?|$)/i;
+
 export default function CinemaCard({ project }) {
     const thumb = project?.thumbnail_url || project?.video_url || '';
     const [isHovered, setIsHovered] = useState(false);
     const videoRef = useRef(null);
-    const isVideo = !!(project?.video_url && /\.(mp4|webm|ogg)(\?|$)/i.test(project.video_url));
+    const isVideo = !!(project?.video_url && VIDEO_FORMATS_REGEX.test(project.video_url));
 
     useEffect(() => {
         if (!videoRef.current) return;
         if (isHovered) {
-            videoRef.current.play().catch(() => {});
+            videoRef.current.play().catch((error) => console.warn('Video autoplay failed:', error));
         } else {
             videoRef.current.pause();
             videoRef.current.currentTime = 0;
