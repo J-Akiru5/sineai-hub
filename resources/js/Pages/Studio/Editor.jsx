@@ -6,6 +6,10 @@ import { Head } from '@inertiajs/react';
 let clipIdCounter = Date.now();
 const generateClipId = () => `clip-${++clipIdCounter}`;
 
+// Constants
+const PIXELS_PER_SECOND = 20; // Scale: 20px per second of video
+const SEEK_THRESHOLD = 0.5; // Threshold in seconds to avoid constant seeking
+
 export default function Editor({ auth }) {
     // =====================
     // TASK 1: State Structure
@@ -112,7 +116,7 @@ export default function Editor({ auth }) {
             const timeDiff = Math.abs(videoRef.current.currentTime - localTime);
             
             // Only seek if there's a significant difference (avoid constant seeking)
-            if (timeDiff > 0.5) {
+            if (timeDiff > SEEK_THRESHOLD) {
                 videoRef.current.currentTime = localTime;
             }
         }
@@ -199,7 +203,7 @@ export default function Editor({ auth }) {
     const handleTimelineClick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
-        const newTime = clickX / 20; // Scale: 20px per second
+        const newTime = clickX / PIXELS_PER_SECOND;
         
         if (newTime >= 0 && newTime <= totalDuration) {
             setGlobalTime(newTime);
@@ -347,7 +351,7 @@ export default function Editor({ auth }) {
                         className="relative bg-zinc-900 rounded-lg min-h-[80px] overflow-x-auto cursor-pointer"
                         onClick={handleTimelineClick}
                         style={{ 
-                            width: clips.length > 0 ? `${Math.max(totalDuration * 20 + 40, 100)}px` : '100%'
+                            width: clips.length > 0 ? `${Math.max(totalDuration * PIXELS_PER_SECOND + 40, 100)}px` : '100%'
                         }}
                     >
                         {/* Clips Track */}
@@ -364,8 +368,8 @@ export default function Editor({ auth }) {
                                         }
                                     `}
                                     style={{
-                                        // Width = clip.duration * 20px (arbitrary scale)
-                                        width: `${clip.duration * 20}px`,
+                                        // Width = clip.duration * PIXELS_PER_SECOND
+                                        width: `${clip.duration * PIXELS_PER_SECOND}px`,
                                         marginLeft: index === 0 ? '0' : '2px',
                                     }}
                                     onClick={(e) => {
@@ -391,8 +395,8 @@ export default function Editor({ auth }) {
                             <div
                                 className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-10"
                                 style={{
-                                    // Position: left = globalTime * 20px
-                                    left: `${globalTime * 20 + 8}px`,
+                                    // Position: left = globalTime * PIXELS_PER_SECOND
+                                    left: `${globalTime * PIXELS_PER_SECOND + 8}px`,
                                     transition: isPlaying ? 'none' : 'left 0.1s ease-out',
                                 }}
                             >
@@ -409,7 +413,7 @@ export default function Editor({ auth }) {
                                 key={i}
                                 className="inline-block"
                                 style={{ 
-                                    marginLeft: i === 0 ? '8px' : `${5 * 20 - 24}px`,
+                                    marginLeft: i === 0 ? '8px' : `${5 * PIXELS_PER_SECOND - 24}px`,
                                     minWidth: '24px'
                                 }}
                             >
