@@ -223,8 +223,8 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'video' => 'nullable|file|mimes:mp4,mov|max:512000',
-            'thumbnail' => 'nullable|image|max:2048',
+            'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime|max:512000',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'category' => 'nullable|string',
             'visibility' => ['nullable', 'in:private,unlisted,public'],
         ]);
@@ -244,7 +244,6 @@ class ProjectController extends Controller
 
             $videoPath = $request->file('video')->store('videos', 's3');
             $project->video_path = $videoPath;
-            $project->video_url = Storage::disk('s3')->url($videoPath);
         }
 
         // Optional thumbnail upload
@@ -255,11 +254,10 @@ class ProjectController extends Controller
 
             $thumbPath = $request->file('thumbnail')->store('thumbnails', 's3');
             $project->thumbnail_path = $thumbPath;
-            $project->thumbnail_url = Storage::disk('s3')->url($thumbPath);
         }
 
         $project->save();
 
-        return to_route('dashboard')->with('success', 'Project updated successfully!');
+        return to_route('projects.index')->with('success', 'Project updated successfully!');
     }
 }
