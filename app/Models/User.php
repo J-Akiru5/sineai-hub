@@ -111,4 +111,39 @@ class User extends Authenticatable
     {
         return $this->hasRole('admin') || $this->hasRole('super-admin');
     }
+
+    /**
+     * Get the user's storage quota.
+     */
+    public function storageQuota()
+    {
+        return $this->hasOne(UserStorageQuota::class);
+    }
+
+    /**
+     * Get or create storage quota for user.
+     */
+    public function getOrCreateStorageQuota(): UserStorageQuota
+    {
+        return $this->storageQuota ?? $this->storageQuota()->create([
+            'quota_bytes' => UserStorageQuota::DEFAULT_QUOTA,
+            'used_bytes' => 0,
+        ]);
+    }
+
+    /**
+     * Get the user's files.
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(UserFile::class);
+    }
+
+    /**
+     * Get the user's editor projects.
+     */
+    public function editorProjects(): HasMany
+    {
+        return $this->hasMany(EditorProject::class);
+    }
 }

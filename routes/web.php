@@ -104,9 +104,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/spark/rewrite', [\App\Http\Controllers\SparkScriptController::class, 'rewrite'])->name('spark.rewrite');
     Route::post('/spark/generate', [\App\Http\Controllers\SparkScriptController::class, 'generate'])->name('spark.generate');
 
+    // Storage Management
+    Route::get('/storage', [\App\Http\Controllers\StorageController::class, 'index'])->name('storage.index');
+    Route::post('/storage/upload', [\App\Http\Controllers\StorageController::class, 'upload'])->name('storage.upload');
+    Route::delete('/storage/{file}', [\App\Http\Controllers\StorageController::class, 'destroy'])->name('storage.destroy');
+    Route::patch('/storage/{file}/rename', [\App\Http\Controllers\StorageController::class, 'rename'])->name('storage.rename');
+    Route::patch('/storage/{file}/move', [\App\Http\Controllers\StorageController::class, 'move'])->name('storage.move');
+    Route::get('/storage/folder/{folder?}', [\App\Http\Controllers\StorageController::class, 'folder'])->name('storage.folder');
+    Route::get('/storage/type/{type}', [\App\Http\Controllers\StorageController::class, 'byType'])->name('storage.type');
+
     // Video Editor (Studio)
+    Route::get('/studio/projects', [\App\Http\Controllers\EditorProjectController::class, 'index'])->name('studio.projects');
+    Route::post('/studio/projects', [\App\Http\Controllers\EditorProjectController::class, 'store'])->name('studio.projects.store');
+    Route::get('/studio/editor/{project}', [\App\Http\Controllers\EditorProjectController::class, 'edit'])->name('studio.editor.edit');
+    Route::patch('/studio/editor/{project}', [\App\Http\Controllers\EditorProjectController::class, 'update'])->name('studio.editor.update');
+    Route::post('/studio/editor/{project}/timeline', [\App\Http\Controllers\EditorProjectController::class, 'saveTimeline'])->name('studio.editor.timeline');
+    Route::post('/studio/editor/{project}/assets', [\App\Http\Controllers\EditorProjectController::class, 'uploadAsset'])->name('studio.editor.upload');
+    Route::post('/studio/editor/{project}/assets/library', [\App\Http\Controllers\EditorProjectController::class, 'addAssetFromLibrary'])->name('studio.editor.addFromLibrary');
+    Route::delete('/studio/editor/{project}/assets/{asset}', [\App\Http\Controllers\EditorProjectController::class, 'removeAsset'])->name('studio.editor.removeAsset');
+    Route::delete('/studio/projects/{project}', [\App\Http\Controllers\EditorProjectController::class, 'destroy'])->name('studio.projects.destroy');
+    Route::post('/studio/projects/{project}/duplicate', [\App\Http\Controllers\EditorProjectController::class, 'duplicate'])->name('studio.projects.duplicate');
+    
+    // Legacy route for new project creation flow
     Route::get('/studio/editor', function () {
-        return Inertia::render('Studio/Editor');
+        return Inertia::render('Studio/Editor', [
+            'project' => null,
+            'userVideos' => auth()->user()->files()->ofType('video')->orderBy('created_at', 'desc')->get(),
+            'quota' => [
+                'remaining' => auth()->user()->getOrCreateStorageQuota()->remaining_bytes,
+                'formatted_remaining' => auth()->user()->getOrCreateStorageQuota()->formatted_remaining,
+            ],
+        ]);
     })->name('studio.editor');
 
     // Admin area routes (requires user to have the 'admin' role)
