@@ -30,7 +30,7 @@ const escapeForCssUrl = (value) => {
     if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
         return CSS.escape(value);
     }
-    return value.replace(/[^a-zA-Z0-9]/g, (char) => `\\${char}`);
+    return value.replace(/([\\'"()\s])/g, '\\$1');
 };
 
 export default function Show({ project, suggestedVideos, comments }) {
@@ -38,7 +38,7 @@ export default function Show({ project, suggestedVideos, comments }) {
     const videoRef = useRef(null);
     const glowMedia = sanitizeMediaUrl(project?.thumbnail_url || project?.video_url || null);
     const escapedGlowMedia = escapeForCssUrl(glowMedia);
-    const glowBackgroundStyle = escapedGlowMedia ? { '--glow-image': `url("${escapedGlowMedia}")` } : {};
+    const glowBackgroundStyle = escapedGlowMedia ? { '--glow-image': `url(${escapedGlowMedia})` } : {};
 
     useEffect(() => {
         function onKey(e) {
@@ -89,7 +89,8 @@ export default function Show({ project, suggestedVideos, comments }) {
                                     width: GLOW_SCALE_WIDTH,
                                     maxWidth: GLOW_MAX_WIDTH,
                                     borderRadius: GLOW_RADIUS,
-                                    ...(glowBackgroundStyle['--glow-image'] ? { ...glowBackgroundStyle, backgroundImage: 'var(--glow-image)' } : {}),
+                                    ...glowBackgroundStyle,
+                                    backgroundImage: glowBackgroundStyle['--glow-image'] ? 'var(--glow-image)' : undefined,
                                 }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
