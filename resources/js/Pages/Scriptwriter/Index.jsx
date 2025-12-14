@@ -1,65 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
+
+// Utility to generate unique IDs
+let blockIdCounter = Date.now();
+const generateBlockId = () => ++blockIdCounter;
 
 export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     // State
     const [scripts, setScripts] = useState(initialScripts);
     const [activeScript, setActiveScript] = useState(scripts.length > 0 ? scripts[0] : null);
     const [isSaving, setIsSaving] = useState(false);
-    const [menuPos, setMenuPos] = useState({ top: 0, left: 0, show: false });
     const [showHint, setShowHint] = useState(true);
+    const [focusedBlockId, setFocusedBlockId] = useState(null);
+    
+    // Spark AI state
+    const [isRewriting, setIsRewriting] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [scenePrompt, setScenePrompt] = useState('');
 
-    // Initialize Editor
-    // helper to safely parse script content which may be stored as JSON or plain text
-    const safeParse = (content) => {
-        if (!content) return '<p></p>';
-        if (typeof content === 'object') return content; // already parsed
-        try {
-            return JSON.parse(content);
-        } catch (e) {
-            return content; // plain string/HTML
-        }
-    };
+    // Block-based state management
+    const [blocks, setBlocks] = useState([
+        { id: generateBlockId(), type: 'scene-heading', content: 'INT. COFFEE SHOP - DAY' },
+        { id: generateBlockId(), type: 'action', content: 'The room is silent.' }
+    ]);
 
-    const editor = useEditor({
-        extensions: [StarterKit],
-        content: activeScript ? safeParse(activeScript.content) : '<p>INT. SCENE HEADING - DAY</p><p>Action lines go here...</p>',
-        editorProps: {
-            attributes: {
-                class: 'prose prose-lg max-w-none focus:outline-none min-h-[calc(100vh-300px)]',
-            },
-        },
-        onUpdate: ({ editor }) => {
-            handleAutoSave(editor.getJSON());
-        },
-        onSelectionUpdate: ({ editor }) => {
-            const { empty, from, to } = editor.state.selection;
-            if (empty || from === to) {
-                setMenuPos({ ...menuPos, show: false });
-                return;
+    const blockRefs = useRef({});
+
+    // Derived state: Extract scenes for navigation (memoized for performance)
+    const scenes = useMemo(() => {
+        return blocks
+            .map((block, index) => ({ ...block, originalIndex: index }))
+            .filter(block => block.type === 'scene-heading')
+            .map((scene, sceneIndex) => ({
+                ...scene,
+                sceneNumber: sceneIndex + 1
+            }));
+    }, [blocks]);
+
+    // Scene number map for O(1) lookups (memoized)
+    const sceneNumberMap = useMemo(() => {
+        const map = new Map();
+        scenes.forEach(scene => {
+            map.set(scene.id, scene.sceneNumber);
+        });
+        return map;
+    }, [scenes]);
+
+    // Initialize blocks from activeScript
+    useEffect(() => {
+        if (activeScript && activeScript.content) {
+            try {
+                const parsed = typeof activeScript.content === 'string' 
+                    ? JSON.parse(activeScript.content) 
+                    : activeScript.content;
+                
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    // Ensure each block has a unique ID
+                    const blocksWithIds = parsed.map(block => ({
+                        ...block,
+                        id: block.id || generateBlockId()
+                    }));
+                    setBlocks(blocksWithIds);
+                } else {
+                    // Default blocks if content is not in expected format
+                    setBlocks([
+                        { id: generateBlockId(), type: 'scene-heading', content: 'INT. SCENE 1 - DAY' },
+                        { id: generateBlockId(), type: 'action', content: '' }
+                    ]);
+                }
+            } catch (e) {
+                // If parsing fails, initialize with default blocks
+                setBlocks([
+                    { id: generateBlockId(), type: 'scene-heading', content: 'INT. SCENE 1 - DAY' },
+                    { id: generateBlockId(), type: 'action', content: '' }
+                ]);
             }
-
-            // Calculate position for the "Magic Menu"
-            const view = editor.view;
-            const { top, left, right } = view.coordsAtPos(from);
-            // Center the menu above the selection
-            setMenuPos({
-                top: top - 50, // 50px above cursor
-                left: left,
-                show: true
-            });
         }
-    });
+    }, [activeScript]);
 
     // Create New Script
     const createNewScript = async () => {
         try {
-            const res = await axios.post(route('scriptwriter.store'));
+            const res = await axios.post(window.route('scriptwriter.store'));
             const newScript = res.data.script;
             setScripts([newScript, ...scripts]);
             setActiveScript(newScript);
@@ -69,46 +94,232 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     };
 
     // Auto-Save Logic (Debounced)
-    const handleAutoSave = debounce((content) => {
-        if (!activeScript) return;
-        setIsSaving(true);
-        axios.put(route('scriptwriter.update', activeScript.id), {
-            content: content,
-            title: activeScript.title
-        }).then(() => {
-            setIsSaving(false);
-        }).catch(err => console.error("Save failed", err));
-    }, 2000);
+    const handleAutoSave = useCallback(
+        debounce((blocksData) => {
+            if (!activeScript) return;
+            setIsSaving(true);
+            axios.put(window.route('scriptwriter.update', activeScript.id), {
+                content: JSON.stringify(blocksData),
+                title: activeScript.title
+            }).then(() => {
+                setIsSaving(false);
+            }).catch(err => console.error("Save failed", err));
+        }, 2000),
+        [activeScript]
+    );
 
-    // AI Assist Handler
-    const handleAiAssist = async (action) => {
-        if (!editor) return;
-        const { from, to } = editor.state.selection;
-        const text = editor.state.doc.textBetween(from, to, ' ');
+    // Save blocks when they change
+    useEffect(() => {
+        if (blocks.length > 0) {
+            handleAutoSave(blocks);
+        }
+    }, [blocks]);
 
-        setMenuPos(prev => ({ ...prev, show: false })); // Hide menu while processing
+    // Predictive "Enter" logic
+    const getNextBlockType = (currentType) => {
+        const flowMap = {
+            'scene-heading': 'action',
+            'character': 'dialogue',
+            'parenthetical': 'dialogue',
+            'dialogue': 'character',
+            'transition': 'scene-heading',
+            'action': 'action'
+        };
+        return flowMap[currentType] || 'action';
+    };
 
+    // Tab cycling logic
+    const getNextTypeOnTab = (currentType) => {
+        const tabCycle = {
+            'action': 'character',
+            'character': 'transition',
+            'transition': 'action',
+            'dialogue': 'parenthetical',
+            'parenthetical': 'dialogue',
+            'scene-heading': 'action'
+        };
+        return tabCycle[currentType] || currentType;
+    };
+
+    // Handle key events
+    const handleKeyDown = (e, blockId, blockType) => {
+        const blockIndex = blocks.findIndex(b => b.id === blockId);
+        
+        // Enter key
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const newBlockType = getNextBlockType(blockType);
+            const newBlock = {
+                id: generateBlockId(),
+                type: newBlockType,
+                content: ''
+            };
+            
+            const newBlocks = [
+                ...blocks.slice(0, blockIndex + 1),
+                newBlock,
+                ...blocks.slice(blockIndex + 1)
+            ];
+            setBlocks(newBlocks);
+            
+            // Focus new block after render
+            setTimeout(() => {
+                blockRefs.current[newBlock.id]?.focus();
+            }, 0);
+        }
+        
+        // Tab key - cycle block type
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const newType = getNextTypeOnTab(blockType);
+            const newBlocks = blocks.map(block => 
+                block.id === blockId ? { ...block, type: newType } : block
+            );
+            setBlocks(newBlocks);
+        }
+        
+        // Backspace - delete empty block
+        if (e.key === 'Backspace' && blocks[blockIndex].content === '' && blocks.length > 1) {
+            e.preventDefault();
+            const newBlocks = blocks.filter(b => b.id !== blockId);
+            setBlocks(newBlocks);
+            
+            // Focus previous block
+            if (blockIndex > 0) {
+                const prevBlock = blocks[blockIndex - 1];
+                setTimeout(() => {
+                    blockRefs.current[prevBlock.id]?.focus();
+                }, 0);
+            }
+        }
+    };
+
+    // Update block content
+    const updateBlockContent = (blockId, newContent) => {
+        const newBlocks = blocks.map(block => 
+            block.id === blockId ? { ...block, content: newContent } : block
+        );
+        setBlocks(newBlocks);
+    };
+
+    // Change block type from toolbar
+    const changeBlockType = (newType) => {
+        if (focusedBlockId) {
+            const newBlocks = blocks.map(block => 
+                block.id === focusedBlockId ? { ...block, type: newType } : block
+            );
+            setBlocks(newBlocks);
+        }
+    };
+
+    // Get block styling classes
+    const getBlockClasses = (type) => {
+        const baseClasses = 'w-full bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-amber-500/20 rounded px-2 py-1 transition-all';
+        const typeClasses = {
+            'scene-heading': 'font-bold uppercase text-base',
+            'action': 'text-base',
+            'character': 'text-center uppercase font-semibold w-1/2 mx-auto text-base',
+            'dialogue': 'text-center w-3/4 mx-auto text-base',
+            'parenthetical': 'text-center w-1/3 mx-auto italic text-sm',
+            'transition': 'text-right uppercase font-semibold text-base'
+        };
+        return `${baseClasses} ${typeClasses[type] || ''}`;
+    };
+
+    // Spark AI: Rewrite focused block
+    const handleSparkRewrite = async (tone) => {
+        if (!focusedBlockId) {
+            alert('Please select a block first by clicking on it.');
+            return;
+        }
+
+        const block = blocks.find(b => b.id === focusedBlockId);
+        if (!block || !block.content.trim()) {
+            alert('The selected block is empty. Please add some content first.');
+            return;
+        }
+
+        setIsRewriting(true);
         try {
-            // Insert placeholder
-            editor.chain().focus().insertContent(` [Spark is thinking...] `).run();
-
-            const response = await axios.post(route('scriptwriter.assist'), {
-                selected_text: text,
-                action: action
+            const response = await axios.post(window.route('spark.rewrite'), {
+                content: block.content,
+                type: block.type,
+                tone: tone
             });
 
-            // Undo placeholder and insert real content
-            editor.commands.undo();
-
-            if (action === 'rewrite_dialogue') {
-                editor.chain().focus().deleteSelection().insertContent(response.data.suggestion).run();
-            } else {
-                editor.chain().focus().insertContentAfter(`\n\n${response.data.suggestion}`).run();
-            }
+            // Update the block with the rewritten content
+            const newBlocks = blocks.map(b => 
+                b.id === focusedBlockId 
+                    ? { ...b, content: response.data.rewrittenContent } 
+                    : b
+            );
+            setBlocks(newBlocks);
         } catch (error) {
-            alert("Spark encountered an error. Please try again.");
-            editor.commands.undo();
+            console.error('Rewrite error:', error);
+            alert(error.response?.data?.error || 'Failed to rewrite. Please try again.');
+        } finally {
+            setIsRewriting(false);
         }
+    };
+
+    // Spark AI: Generate new scene
+    const handleSparkGenerate = async () => {
+        if (!scenePrompt.trim()) {
+            alert('Please describe the scene you want to generate.');
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            // Get last 3 blocks as context
+            const contextBlocks = blocks.slice(-3);
+            const context = contextBlocks.map(b => `${b.type}: ${b.content}`).join('\n');
+
+            const response = await axios.post(window.route('spark.generate'), {
+                prompt: scenePrompt,
+                context: context
+            });
+
+            // Add IDs to generated blocks and append to current script
+            const generatedBlocks = response.data.blocks.map(block => ({
+                ...block,
+                id: generateBlockId()
+            }));
+
+            setBlocks([...blocks, ...generatedBlocks]);
+            setScenePrompt(''); // Clear the prompt
+
+            // Scroll to the newly generated content
+            setTimeout(() => {
+                const lastBlock = generatedBlocks[generatedBlocks.length - 1];
+                blockRefs.current[lastBlock.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        } catch (error) {
+            console.error('Generate error:', error);
+            alert(error.response?.data?.error || 'Failed to generate scene. Please try again.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    // Scene Navigation: Scroll to specific scene block
+    const scrollToScene = (blockId) => {
+        const element = blockRefs.current[blockId];
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.focus();
+            setFocusedBlockId(blockId);
+        }
+    };
+
+    // PDF Export: Trigger browser print
+    const handleExportPDF = () => {
+        window.print();
+    };
+
+    // Get scene number for a block (O(1) lookup)
+    const getSceneNumber = (blockId) => {
+        return sceneNumberMap.get(blockId) || null;
     };
 
     // Hint Timer
@@ -117,122 +328,318 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
         return () => clearTimeout(timer);
     }, []);
 
-    // Update editor when activeScript changes, but avoid unnecessary updates
-    useEffect(() => {
-        if (editor && activeScript) {
-            const newContent = safeParse(activeScript.content);
-
-            try {
-                const current = editor.getJSON();
-                if (JSON.stringify(current) !== JSON.stringify(newContent)) {
-                    editor.commands.setContent(newContent);
-                }
-            } catch (err) {
-                // If getJSON fails (editor empty or content is string), just set content
-                editor.commands.setContent(newContent);
-            }
-        }
-    }, [activeScript, editor]);
-
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Scriptwriter Studio</h2>}
+            header={null}
         >
             <Head title="Scriptwriter" />
 
-            {/* Standard Page Container (Matches Spark/Dashboard) */}
-            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-6">
-                {/* The "App Box" - Assistant-style Contained */}
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg flex flex-col md:flex-row h-[70vh]">
+            {/* Print Styles for PDF Export */}
+            <style>{`
+                @media print {
+                    @page {
+                        size: letter;
+                        margin: 1in;
+                    }
+                    
+                    body {
+                        background: white !important;
+                    }
+                    
+                    /* Hide UI elements */
+                    nav, .print\\:hidden {
+                        display: none !important;
+                    }
+                    
+                    /* Ensure black text */
+                    * {
+                        color: black !important;
+                    }
+                    
+                    /* Page breaks for scene headings */
+                    .print\\:break-before-page:not(:first-child) {
+                        page-break-before: always;
+                    }
+                    
+                    /* Full width paper */
+                    .print\\:w-full {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                    }
+                    
+                    /* Remove shadows */
+                    .print\\:shadow-none {
+                        box-shadow: none !important;
+                    }
+                    
+                    /* Remove padding */
+                    .print\\:p-0 {
+                        padding: 0 !important;
+                    }
+                    
+                    /* Remove margin-top */
+                    .print\\:mt-0 {
+                        margin-top: 0 !important;
+                    }
+                    
+                    /* Ensure proper font for screenplay */
+                    input[type="text"] {
+                        border: none !important;
+                        outline: none !important;
+                        background: transparent !important;
+                    }
+                }
+            `}</style>
 
-                    {/* Sidebar - Scripts List */}
-                    <div className="w-full md:w-64 bg-slate-900 border-r border-white/10 flex-shrink-0 flex flex-col z-20">
-                        <div className="p-4 border-b border-white/10">
-                            <button
-                                onClick={createNewScript}
-                                className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 font-bold rounded hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg"
+            {/* Full-Width Studio Layout Container */}
+            <div className="h-[calc(100vh-64px)] w-full flex bg-zinc-100">
+
+                {/* Left Pane - Scene Navigator */}
+                <div className="w-64 bg-white border-r border-zinc-300 flex-shrink-0 flex flex-col print:hidden">
+                    <div className="p-4 border-b border-zinc-200">
+                        <button
+                            onClick={createNewScript}
+                            className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded hover:from-amber-400 hover:to-amber-500 transition-all shadow-md mb-2"
+                        >
+                            + New Script
+                        </button>
+                        <button
+                            onClick={handleExportPDF}
+                            className="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded hover:from-blue-400 hover:to-blue-500 transition-all shadow-md"
+                        >
+                            📄 Export PDF
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                        <h3 className="px-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Scenes ({scenes.length})</h3>
+                        {scenes.map((scene) => (
+                            <div
+                                key={scene.id}
+                                onClick={() => scrollToScene(scene.id)}
+                                className="p-3 rounded cursor-pointer transition-colors hover:bg-zinc-50 border-l-2 border-transparent hover:border-amber-500"
                             >
-                                + New Script
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                            <h3 className="px-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Your Scripts</h3>
-                            {scripts.map(script => (
-                                <div
-                                    key={script.id}
-                                    onClick={() => setActiveScript(script)}
-                                    className={`p-3 rounded cursor-pointer transition-colors ${activeScript?.id === script.id
-                                        ? 'bg-white/10 text-amber-100 border-l-4 border-amber-500'
-                                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                                        }`}
-                                >
-                                    <div className="font-medium truncate">{script.title || 'Untitled Script'}</div>
-                                    <div className="text-xs opacity-50">{new Date(script.created_at).toLocaleDateString()}</div>
+                                <div className="flex items-start gap-2">
+                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex-shrink-0">
+                                        {scene.sceneNumber}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-sm text-zinc-900 truncate">
+                                            {scene.content || `Scene ${scene.sceneNumber}`}
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
-                            {scripts.length === 0 && (
-                                <div className="text-center text-slate-600 text-sm py-4">No scripts yet.</div>
-                            )}
-                        </div>
+                            </div>
+                        ))}
+                        {scenes.length === 0 && (
+                            <div className="text-center text-zinc-400 text-sm py-6">
+                                No scenes yet. Add a Scene Heading block to get started.
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Center Pane - Editor */}
+                <div className="flex-1 overflow-y-auto flex justify-center p-8 relative">
+                    
+                    {/* Floating Toolbar */}
+                    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 flex gap-2 bg-zinc-800 rounded-full px-4 py-2 shadow-lg print:hidden">
+                        <button 
+                            aria-label="Insert scene heading"
+                            onClick={() => changeBlockType('scene-heading')}
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
+                            Scene Heading
+                        </button>
+                        <button 
+                            aria-label="Insert action line"
+                            onClick={() => changeBlockType('action')}
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
+                            Action
+                        </button>
+                        <button 
+                            aria-label="Insert character name"
+                            onClick={() => changeBlockType('character')}
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
+                            Character
+                        </button>
+                        <button 
+                            aria-label="Insert dialogue"
+                            onClick={() => changeBlockType('dialogue')}
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
+                            Dialogue
+                        </button>
                     </div>
 
-                    {/* Editor Area */}
-                    <div className="flex-1 flex flex-col relative bg-slate-950 overflow-hidden">
-
-                        {/* Top Bar: Title & Status */}
-                        <div className="h-14 border-b border-white/10 bg-slate-900/50 backdrop-blur flex items-center justify-between px-6 flex-shrink-0">
+                    {/* The "Paper" Component - Responsive wrapper */}
+                    <div className="bg-white shadow-lg min-h-[11in] w-full max-w-[8.5in] p-6 md:p-12 font-mono text-zinc-900 mt-16 print:shadow-none print:p-0 print:mt-0 print:w-full print:max-w-full">
+                        {/* Title bar inside paper */}
+                        <div className="mb-6 pb-4 border-b border-zinc-200 flex items-center justify-between print:hidden">
                             <input 
                                 value={activeScript?.title || ''}
                                 onChange={(e) => setActiveScript({ ...activeScript, title: e.target.value })}
-                                onBlur={() => handleAutoSave(editor.getJSON())} // Save title on blur
-                                className="bg-transparent border-none text-xl font-bold text-white focus:ring-0 placeholder-slate-600 w-full"
+                                onBlur={() => handleAutoSave(blocks)}
+                                className="bg-transparent border-none text-xl font-bold text-zinc-900 focus:ring-0 placeholder-zinc-400 w-full font-sans"
                                 placeholder="Untitled Script"
                             />
-                            <div className="text-xs font-mono text-amber-500 animate-pulse">
-                                {isSaving ? 'Saving...' : 'Saved'}
+                            <div className="text-xs text-amber-600 ml-4 flex-shrink-0">
+                                {isSaving ? 'Saving...' : '✓ Saved'}
                             </div>
                         </div>
 
-                        {/* Editor Scroll Container */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-12 relative cursor-text" onClick={() => editor?.commands.focus()}>
-                            <div className="max-w-4xl mx-auto bg-white text-black min-h-[1000px] shadow-2xl rounded-sm p-8 md:p-16 relative">
-                                <EditorContent editor={editor} />
-                            </div>
+                        {/* Block-based Editor */}
+                        <div className="space-y-2">
+                            {blocks.map((block, index) => {
+                                const sceneNumber = block.type === 'scene-heading' ? getSceneNumber(block.id) : null;
+                                return (
+                                    <div key={block.id} className="relative flex items-start gap-2">
+                                        {/* Scene Number Badge (only for scene headings) */}
+                                        {sceneNumber && (
+                                            <div className="flex-shrink-0 w-8 pt-1 print:hidden">
+                                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold">
+                                                    {sceneNumber}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {!sceneNumber && <div className="flex-shrink-0 w-8 print:hidden"></div>}
+                                        
+                                        <input
+                                            ref={el => blockRefs.current[block.id] = el}
+                                            type="text"
+                                            value={block.content}
+                                            onChange={(e) => updateBlockContent(block.id, e.target.value)}
+                                            onKeyDown={(e) => handleKeyDown(e, block.id, block.type)}
+                                            onFocus={() => setFocusedBlockId(block.id)}
+                                            className={`${getBlockClasses(block.type)} ${block.type === 'scene-heading' ? 'print:break-before-page' : ''} flex-1`}
+                                            placeholder={`${block.type.replace('-', ' ')}...`}
+                                        />
+                                    </div>
+                                );
+                            })}
                         </div>
+                    </div>
 
-                        {/* The Manual "Magic Menu" (Floating) */}
-                        {menuPos.show && (
-                            <div
-                                className="fixed z-50 flex gap-1 bg-slate-800 border border-amber-500/30 rounded-lg shadow-2xl p-1 animate-in fade-in zoom-in-95 duration-100"
-                                style={{ top: `${menuPos.top}px`, left: `${menuPos.left}px` }}
+                    {/* Pro Tip Bubble */}
+                    {showHint && (
+                        <div className="fixed bottom-6 left-6 z-40 bg-zinc-800 text-zinc-200 text-sm p-4 rounded-lg border border-zinc-700 shadow-xl max-w-xs print:hidden">
+                            <button 
+                                onClick={() => setShowHint(false)}
+                                className="absolute top-2 right-2 text-zinc-400 hover:text-white"
                             >
-                                <button onClick={() => handleAiAssist('rewrite_dialogue')} className="px-3 py-1.5 hover:bg-amber-600 text-white text-xs font-medium rounded flex items-center gap-2 transition-colors">
-                                    ✨ Rewrite
-                                </button>
-                                <button onClick={() => handleAiAssist('describe_scene')} className="px-3 py-1.5 hover:bg-blue-600 text-white text-xs font-medium rounded flex items-center gap-2 transition-colors">
-                                    👁 Describe
-                                </button>
-                                <button onClick={() => handleAiAssist('suggest_next')} className="px-3 py-1.5 hover:bg-emerald-600 text-white text-xs font-medium rounded flex items-center gap-2 transition-colors">
-                                    ➡️ Next
-                                </button>
+                                ✕
+                            </button>
+                            <p className="flex items-start gap-2">
+                                <span className="text-xl">💡</span>
+                                <span><strong>Pro Tip:</strong> Use Enter to add new blocks, Tab to cycle block types, and Backspace on empty blocks to delete them!</span>
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Pane - Spark AI Tools */}
+                <div className="w-80 bg-white border-l border-zinc-300 flex-shrink-0 flex flex-col print:hidden">
+                    <div className="p-4 border-b border-zinc-200">
+                        <h3 className="font-semibold text-lg text-zinc-900">✨ Spark AI</h3>
+                        <p className="text-xs text-zinc-500 mt-1">AI-powered writing assistant</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        
+                        {/* Rewrite Section */}
+                        {focusedBlockId && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">Rewrite Block</h4>
+                                <p className="text-xs text-zinc-500 mb-2">Select a tone to rewrite the focused block:</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => handleSparkRewrite('witty')}
+                                        disabled={isRewriting}
+                                        className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-400 hover:to-purple-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRewriting ? '...' : '😄 Witty'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleSparkRewrite('dramatic')}
+                                        disabled={isRewriting}
+                                        className="p-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-400 hover:to-red-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRewriting ? '...' : '🎭 Dramatic'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleSparkRewrite('concise')}
+                                        disabled={isRewriting}
+                                        className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-400 hover:to-blue-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRewriting ? '...' : '✂️ Concise'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleSparkRewrite('aggressive')}
+                                        disabled={isRewriting}
+                                        className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-400 hover:to-orange-500 transition-all shadow-sm text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRewriting ? '...' : '💪 Aggressive'}
+                                    </button>
+                                </div>
                             </div>
                         )}
 
-                        {/* Pro Tip Bubble */}
-                        <div className="absolute bottom-6 left-6 z-40 group">
-                            <div className="w-12 h-12 bg-slate-800 border border-amber-500/50 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer hover:scale-110 transition-transform" onClick={() => setShowHint(true)}>
-                                <span className="text-2xl">💡</span>
-                            </div>
-                            {showHint && (
-                                <div className="absolute left-14 bottom-0 w-64 bg-slate-800 text-slate-200 text-sm p-3 rounded-lg border border-white/10 shadow-xl mb-2">
-                                    <p><strong>Pro Tip:</strong> Highlight any text in your script to summon Spark for rewrites or scene descriptions!</p>
-                                </div>
-                            )}
+                        {/* Scene Generator Section */}
+                        <div className="space-y-2 pt-4 border-t border-zinc-200">
+                            <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">Generate Scene</h4>
+                            <textarea
+                                value={scenePrompt}
+                                onChange={(e) => setScenePrompt(e.target.value)}
+                                placeholder="Describe the scene you want to generate..."
+                                className="w-full px-3 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm resize-none"
+                                rows="3"
+                                disabled={isGenerating}
+                            />
+                            <button
+                                onClick={handleSparkGenerate}
+                                disabled={isGenerating || !scenePrompt.trim()}
+                                className="w-full p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isGenerating ? '✨ Generating...' : '✨ Generate Scene'}
+                            </button>
+                            <p className="text-xs text-zinc-500 italic">Tip: Spark will use your recent script as context.</p>
                         </div>
 
+                        {/* Smart Formatting Guide */}
+                        <div className="pt-4 border-t border-zinc-200">
+                            <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide">Smart Formatting</h4>
+                            <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3 text-xs text-zinc-700 space-y-2">
+                                <div>
+                                    <p className="font-semibold">⏎ Enter</p>
+                                    <p className="text-zinc-600">Auto-advance to next block type</p>
+                                </div>
+                                <div>
+                                    <p className="font-semibold">⇥ Tab</p>
+                                    <p className="text-zinc-600">Cycle through block types</p>
+                                </div>
+                                <div>
+                                    <p className="font-semibold">⌫ Backspace</p>
+                                    <p className="text-zinc-600">Delete empty blocks</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Block Types Reference */}
+                        <div className="pt-4 border-t border-zinc-200">
+                            <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wide mb-2">Block Types</h4>
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-zinc-700 space-y-1">
+                                <p><span className="font-semibold">Scene Heading:</span> UPPERCASE, bold</p>
+                                <p><span className="font-semibold">Action:</span> Standard width</p>
+                                <p><span className="font-semibold">Character:</span> Centered, UPPERCASE</p>
+                                <p><span className="font-semibold">Dialogue:</span> Centered, 75% width</p>
+                                <p><span className="font-semibold">Parenthetical:</span> Centered, italic</p>
+                                <p><span className="font-semibold">Transition:</span> Right-aligned, UPPERCASE</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </AuthenticatedLayout>
     );
