@@ -180,22 +180,34 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                     
                     {/* Floating Toolbar */}
                     <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 flex gap-2 bg-zinc-800 rounded-full px-4 py-2 shadow-lg">
-                        <button className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors">
+                        <button 
+                            aria-label="Insert scene heading"
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
                             Scene Heading
                         </button>
-                        <button className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors">
+                        <button 
+                            aria-label="Insert action line"
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
                             Action
                         </button>
-                        <button className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors">
+                        <button 
+                            aria-label="Insert character name"
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
                             Character
                         </button>
-                        <button className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors">
+                        <button 
+                            aria-label="Insert dialogue"
+                            className="px-4 py-1.5 text-white text-sm font-medium hover:bg-zinc-700 rounded-full transition-colors"
+                        >
                             Dialogue
                         </button>
                     </div>
 
-                    {/* The "Paper" Component */}
-                    <div className="bg-white shadow-lg min-h-[11in] w-[8.5in] p-12 font-mono text-zinc-900 mt-16">
+                    {/* The "Paper" Component - Responsive wrapper */}
+                    <div className="bg-white shadow-lg min-h-[11in] w-full max-w-[8.5in] p-6 md:p-12 font-mono text-zinc-900 mt-16">
                         {/* Title bar inside paper */}
                         <div className="mb-6 pb-4 border-b border-zinc-200 flex items-center justify-between">
                             <input 
