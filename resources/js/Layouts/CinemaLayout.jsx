@@ -14,9 +14,9 @@ export default function CinemaLayout({ children, header }) {
     }, []);
 
     return (
-        <div className="bg-gradient-to-b from-[#4b0f0f] via-[#2b0505] to-black text-white min-h-screen">
-            <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${scrolled ? 'bg-black/80 border-b border-white/6' : 'bg-black/10'}`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/40 via-slate-950 to-black">
+            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all ${scrolled ? 'bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-lg' : 'bg-transparent'}`}>
+                <div className="px-6 lg:px-10">
                     <div className="h-16 flex items-center justify-between">
                         <Link href={route('premiere.index')} className="flex items-center gap-3">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-amber-400">
