@@ -34,6 +34,7 @@ class PremiereController extends Controller
 
         return Inertia::render('Premiere/Index', [
             'featured' => $featured,
+            'featuredProject' => $featured,
             'newArrivals' => $newArrivals,
             'trending' => $trending,
         ]);

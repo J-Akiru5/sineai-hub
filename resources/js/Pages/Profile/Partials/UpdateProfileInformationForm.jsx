@@ -15,6 +15,10 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
     const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         name: user.name,
         email: user.email,
+        pen_name: user.pen_name || '',
+        studio_name: user.studio_name || '',
+        location: user.location || '',
+        contact_number: user.contact_number || '',
         avatar: null,
         _method: 'patch',
     });
@@ -34,7 +38,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+                <h2 className="text-lg font-medium text-amber-100">Profile Information</h2>
 
                 <p className="mt-1 text-sm text-gray-600">
                     Update your account's profile information and email address.
@@ -75,6 +79,62 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                     />
 
                     <InputError className="mt-2" message={errors.name} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="pen_name" value="Pen Name / Screen Name" />
+
+                    <TextInput
+                        id="pen_name"
+                        className="mt-1 block w-full"
+                        value={data.pen_name}
+                        onChange={(e) => setData('pen_name', e.target.value)}
+                        autoComplete="off"
+                    />
+
+                    <InputError className="mt-2" message={errors.pen_name} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="studio_name" value="Studio Name" />
+
+                    <TextInput
+                        id="studio_name"
+                        className="mt-1 block w-full"
+                        value={data.studio_name}
+                        onChange={(e) => setData('studio_name', e.target.value)}
+                        autoComplete="organization"
+                    />
+
+                    <InputError className="mt-2" message={errors.studio_name} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="location" value="Location" />
+
+                    <TextInput
+                        id="location"
+                        className="mt-1 block w-full"
+                        value={data.location}
+                        onChange={(e) => setData('location', e.target.value)}
+                        autoComplete="street-address"
+                    />
+
+                    <InputError className="mt-2" message={errors.location} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="contact_number" value="Contact Number" />
+
+                    <TextInput
+                        id="contact_number"
+                        className="mt-1 block w-full"
+                        value={data.contact_number}
+                        onChange={(e) => setData('contact_number', e.target.value)}
+                        autoComplete="tel"
+                    />
+
+                    <InputError className="mt-2" message={errors.contact_number} />
                 </div>
 
                 <div>

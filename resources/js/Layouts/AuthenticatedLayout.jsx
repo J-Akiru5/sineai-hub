@@ -3,10 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import { Link, usePage } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 
 export default function Authenticated({ user, header, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
-    const { auth } = usePage().props;
+    const props = usePage().props;
+    const { auth } = props;
     const currentUser = user ?? auth?.user ?? {};
 
     const [unreadCount, setUnreadCount] = useState(0);
@@ -40,6 +42,21 @@ export default function Authenticated({ user, header, children }) {
             try { supabase.removeChannel(channel); } catch (e) { }
         };
     }, [auth]);
+
+    useEffect(() => {
+        console.log('flash', props.flash);
+        if (props.flash && props.flash.success) {
+            Swal.fire({
+                icon: 'success',
+                title: props.flash.success,
+                background: '#1e293b',
+                color: '#fff',
+                confirmButtonColor: '#f59e0b',
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        }
+    }, [props.flash]);
 
     return (
         <div className="min-h-screen bg-slate-950 relative">

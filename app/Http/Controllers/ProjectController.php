@@ -43,7 +43,7 @@ class ProjectController extends Controller
         if ($request->hasFile('thumbnail')) {
             $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
             $endpoint = env('DO_SPACES_ENDPOINT');
-            $thumbnailUrl = "{$endpoint}/{$thumbPath}";
+            $thumbnailUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$thumbPath}";
         }
 
         // Determine flags/metadata
@@ -216,7 +216,6 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
-        // Only owner can update
         if (Auth::id() !== $project->user_id) {
             abort(403);
         }
@@ -224,77 +223,43 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime|max:512000',
+            'video' => 'nullable|file|mimes:mp4,mov|max:512000',
             'thumbnail' => 'nullable|image|max:2048',
-            'is_premiere_public' => 'boolean',
             'category' => 'nullable|string',
             'visibility' => ['nullable', 'in:private,unlisted,public'],
         ]);
 
-        // Allow longer-running uploads if user replaces video
-        @set_time_limit(300);
-
-        // Handle optional video replacement
-        if ($request->hasFile('video')) {
-            $user = Auth::user();
-            $videoPath = $request->file('video')->store('user-' . $user->id, 'digitalocean');
-            $bucket = env('DO_SPACES_BUCKET');
-            $videoUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$videoPath}";
-
-            // try to delete old video
-            try {
-                $endpoint = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
-                if (!empty($project->video_url)) {
-                    $oldPath = str_replace($endpoint . '/', '', $project->video_url);
-                    if ($oldPath && Storage::disk('digitalocean')->exists($oldPath)) {
-                        Storage::disk('digitalocean')->delete($oldPath);
-                    }
-                }
-            } catch (\Exception $e) {
-                Log::warning('Failed to delete old video: ' . $e->getMessage());
-            }
-
-            $project->video_url = $videoUrl;
-        }
-
-        // Handle optional thumbnail replacement
-        if ($request->hasFile('thumbnail')) {
-            $user = isset($user) ? $user : Auth::user();
-            $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
-            $endpoint = env('DO_SPACES_ENDPOINT');
-            $thumbnailUrl = "{$endpoint}/{$thumbPath}";
-
-            try {
-                $endpointTrim = rtrim(env('DO_SPACES_ENDPOINT', ''), '/');
-                if (!empty($project->thumbnail_url)) {
-                    $oldThumb = str_replace($endpointTrim . '/', '', $project->thumbnail_url);
-                    if ($oldThumb && Storage::disk('digitalocean')->exists($oldThumb)) {
-                        Storage::disk('digitalocean')->delete($oldThumb);
-                    }
-                }
-            } catch (\Exception $e) {
-                Log::warning('Failed to delete old thumbnail: ' . $e->getMessage());
-            }
-
-            $project->thumbnail_url = $thumbnailUrl;
-        }
-
-        // Update basic fields
+        // Update text fields
         $project->title = $validated['title'];
         $project->description = $validated['description'] ?? null;
         $project->category = $validated['category'] ?? null;
         $project->visibility = $validated['visibility'] ?? 'private';
 
-        // Handle is_premiere_public explicitly (checkbox may be absent when unchecked)
-        $project->is_premiere_public = $request->boolean('is_premiere_public', false);
+        // Optional video upload
+        if ($request->hasFile('video')) {
+            // Delete old video if present
+            if ($project->video_path && Storage::disk('s3')->exists($project->video_path)) {
+                Storage::disk('s3')->delete($project->video_path);
+            }
+
+            $videoPath = $request->file('video')->store('videos', 's3');
+            $project->video_path = $videoPath;
+            $project->video_url = Storage::disk('s3')->url($videoPath);
+        }
+
+        // Optional thumbnail upload
+        if ($request->hasFile('thumbnail')) {
+            if ($project->thumbnail_path && Storage::disk('s3')->exists($project->thumbnail_path)) {
+                Storage::disk('s3')->delete($project->thumbnail_path);
+            }
+
+            $thumbPath = $request->file('thumbnail')->store('thumbnails', 's3');
+            $project->thumbnail_path = $thumbPath;
+            $project->thumbnail_url = Storage::disk('s3')->url($thumbPath);
+        }
 
         $project->save();
 
-        try {
-            \App\Services\Logger::log('CONTENT', 'Project Updated', "User " . auth()->user()?->name . " updated project: {$project->title}");
-        } catch (\Throwable $ex) {
-        }
-
-        return Redirect::route('projects.my')->with('success', 'Project updated successfully.');
+        return to_route('dashboard')->with('success', 'Project updated successfully!');
     }
 }
