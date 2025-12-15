@@ -72,7 +72,7 @@ RUN mkdir -p /var/www/public
 RUN rm -f /etc/nginx/conf.d/default.conf
 RUN cat > /etc/nginx/conf.d/default.conf <<'EOF'
 server {
-    listen 8000;
+    listen 0.0.0.0:8000;
     server_name _;
     root /var/www/public;
 
