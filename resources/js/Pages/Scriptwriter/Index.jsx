@@ -404,8 +404,8 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
             setShowProjectModal(false);
             setSyncStatus('synced');
         } catch (error) {
-            console.error('Failed to sync to project:', error);
-            alert(error.response?.data?.error || 'Failed to sync to project');
+            console.error('Failed to link to project:', error);
+            alert(error.response?.data?.error || 'Failed to link to project');
         } finally {
             setSyncingProject(false);
         }
@@ -532,7 +532,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                             disabled={!activeScript}
                         >
                             <Link2 className="w-4 h-4" />
-                            Sync to Project
+                            Link to Project
                         </button>
                         <button
                             onClick={handleExportPDF}
@@ -895,8 +895,8 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                                     <Link2 className="w-5 h-5 text-purple-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-white">Sync to Project</h3>
-                                    <p className="text-sm text-slate-400">Link this script to one of your projects</p>
+                                    <h3 className="text-xl font-bold text-white">Link to Project</h3>
+                                    <p className="text-sm text-slate-400">Connect this script to one of your video projects</p>
                                 </div>
                             </div>
                             <button
@@ -917,7 +917,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                                 <div className="text-center py-12">
                                     <Film className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                                     <p className="text-slate-400 mb-2">No projects found</p>
-                                    <p className="text-sm text-slate-500">Create a project first to sync your script</p>
+                                        <p className="text-sm text-slate-500">Create a video project first to link your script</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-3">

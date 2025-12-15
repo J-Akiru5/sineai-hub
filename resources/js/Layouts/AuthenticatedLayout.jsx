@@ -223,7 +223,7 @@ export default function Authenticated({ user, header, children }) {
                                                     <Dropdown.Link href={route('ai.assistant')} className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}>
                                                         <SparklesIcon /> {t('nav.spark_assistant')}
                                                     </Dropdown.Link>
-                                                    <Dropdown.Link href={route('scriptwriter.index')} className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}>
+                                                    <Dropdown.Link href={route('scripts.index')} className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}>
                                                         <span>📝</span> {t('nav.scriptwriter')}
                                                     </Dropdown.Link>
                                                 </Dropdown.Content>
@@ -364,7 +364,7 @@ export default function Authenticated({ user, header, children }) {
 
                             <MobileSectionLabel isDark={isDark}>{t('nav.ai_tools')}</MobileSectionLabel>
                             <MobileNavLink href={route('ai.assistant')} icon={SparklesIcon} active={route().current('ai.assistant')} isDark={isDark}>{t('nav.spark_assistant')}</MobileNavLink>
-                            <MobileNavLink href={route('scriptwriter.index')} active={route().current('scriptwriter.*')} isDark={isDark}>
+                            <MobileNavLink href={route('scripts.index')} active={route().current('scriptwriter.*') || route().current('scripts.*')} isDark={isDark}>
                                 <span className="mr-2">📝</span> {t('nav.scriptwriter')}
                             </MobileNavLink>
 

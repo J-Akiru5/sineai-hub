@@ -121,8 +121,10 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        // eager load user relation for the frontend
-        $project->load('user');
+        // eager load user relation and scripts for the frontend
+        $project->load(['user', 'scripts' => function ($query) {
+            $query->latest()->select('id', 'title', 'project_id', 'created_at', 'updated_at');
+        }]);
 
         // Access control: if not owner, ensure public & approved
         $userId = Auth::id();

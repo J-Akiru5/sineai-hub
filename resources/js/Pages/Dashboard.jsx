@@ -277,7 +277,7 @@ export default function Dashboard({
                                         <Clock className="w-3 h-3" />
                                         On Deck
                                     </h3>
-                                    <Link href={route('scriptwriter.index')} className={`text-xs hover:text-amber-500 transition-colors flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    <Link href={route('scripts.index')} className={`text-xs hover:text-amber-500 transition-colors flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                         View all <ChevronRight className="w-3 h-3" />
                                     </Link>
                                 </div>
@@ -298,7 +298,7 @@ export default function Dashboard({
                                             {scripts.slice(0, 3).map((script) => (
                                                 <Link
                                                     key={script.id}
-                                                    href={route('scriptwriter.index')}
+                                                    href={route('scriptwriter.show', script.id)}
                                                     className={`flex items-center gap-4 p-3 rounded-xl border transition-all group ${
                                                         isDark 
                                                             ? 'bg-white/5 hover:bg-white/10 border-white/5 hover:border-amber-500/20' 

@@ -28,20 +28,30 @@ class ScriptwriterController extends Controller
     }
 
     /**
-     * Render the Scriptwriter page (Inertia).
+     * Auto-create a new script and redirect to the editor.
+     * This makes scriptwriter.index the "quick start" route.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $scripts = request()->user()
-            ? Script::where('user_id', request()->user()->id)
-                ->with('project:id,title,thumbnail_url')
-                ->latest()
-                ->get()
-            : collect();
+        $user = $request->user();
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
 
-        return Inertia::render('Scriptwriter/Index', [
-            'scripts' => $scripts,
+        // Create default content for new scripts
+        $defaultContent = [
+            ['type' => 'scene-heading', 'content' => 'INT. UNTITLED - DAY'],
+            ['type' => 'action', 'content' => '']
+        ];
+
+        $script = Script::create([
+            'user_id' => $user->id,
+            'title' => 'Untitled Script',
+            'content' => $defaultContent,
         ]);
+
+        // Redirect to the editor with the newly created script
+        return redirect()->route('scriptwriter.show', $script);
     }
 
     /**
