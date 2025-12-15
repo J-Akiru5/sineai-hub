@@ -2,15 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { FileText, Plus, Trash2, Edit3, Clock, ChevronRight, Sparkles, Search } from 'lucide-react';
 import { useState } from 'react';
-import Swal from 'sweetalert2';
-
-const swalTheme = {
-    background: '#1e293b',
-    color: '#f1f5f9',
-    confirmButtonColor: '#f59e0b',
-    cancelButtonColor: '#475569',
-    iconColor: '#f59e0b',
-};
+import { showDeleteConfirm, showSuccess, swalTheme } from '@/Utils/swal';
 
 export default function ScriptsIndex({ auth, scripts }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -22,33 +14,16 @@ export default function ScriptsIndex({ auth, scripts }) {
         (script.title || 'Untitled').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleDelete = (script) => {
-        Swal.fire({
-            ...swalTheme,
-            title: 'Delete Script?',
-            html: `<p class="text-slate-400">This will permanently delete "<span class="text-white font-medium">${script.title || 'Untitled Script'}</span>".</p><p class="text-red-400 text-sm mt-2">This action cannot be undone.</p>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Delete',
-            confirmButtonColor: '#dc2626',
-            cancelButtonText: 'Cancel',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                router.delete(route('scriptwriter.destroy', script.id), {
-                    onSuccess: () => {
-                        Swal.fire({
-                            ...swalTheme,
-                            title: 'Deleted!',
-                            text: 'Your script has been removed.',
-                            icon: 'success',
-                            timer: 2000,
-                            timerProgressBar: true,
-                            showConfirmButton: false,
-                        });
-                    }
-                });
-            }
-        });
+    const handleDelete = async (script) => {
+        const result = await showDeleteConfirm(script.title || 'Untitled Script');
+        
+        if (result.isConfirmed) {
+            router.delete(route('scriptwriter.destroy', script.id), {
+                onSuccess: () => {
+                    showSuccess('Deleted!', 'Your script has been removed.');
+                }
+            });
+        }
     };
 
     const formatDate = (dateString) => {

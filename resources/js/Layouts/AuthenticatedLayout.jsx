@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import supabase from '@/supabase';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
+import { ThemeToggle } from '@/Components/ThemeToggle';
+import { LanguageSelector } from '@/Components/LanguageSelector';
+import { useTheme } from '@/Contexts/ThemeContext';
+import { useLanguage } from '@/Contexts/LanguageContext';
 import { Link, usePage } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 
@@ -253,6 +257,12 @@ export default function Authenticated({ user, header, children }) {
                                                 </span>
                                             )}
                                         </Link>
+
+                                        {/* Theme Toggle */}
+                                        <ThemeToggle className="hidden sm:flex" />
+
+                                        {/* Language Selector */}
+                                        <LanguageSelector className="hidden sm:flex" />
 
                                         {/* Settings */}
                                         <Link 

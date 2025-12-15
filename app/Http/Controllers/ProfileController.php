@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\Logger;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,11 +63,13 @@ class ProfileController extends Controller
             'social_links.youtube' => ['nullable', 'string', 'max:255'],
             'social_links.tiktok' => ['nullable', 'string', 'max:255'],
             'social_links.linkedin' => ['nullable', 'string', 'max:255'],
+            'social_links.facebook' => ['nullable', 'string', 'max:255'],
             // Also accept individual social fields from form
             'social_twitter' => ['nullable', 'string', 'max:255'],
             'social_youtube' => ['nullable', 'string', 'max:255'],
             'social_instagram' => ['nullable', 'string', 'max:255'],
             'social_tiktok' => ['nullable', 'string', 'max:255'],
+            'social_facebook' => ['nullable', 'string', 'max:255'],
         ]);
 
         // Build social_links array from individual fields if present
@@ -83,9 +86,12 @@ class ProfileController extends Controller
         if ($request->filled('social_tiktok')) {
             $socialLinks['tiktok'] = $validated['social_tiktok'];
         }
+        if ($request->filled('social_facebook')) {
+            $socialLinks['facebook'] = $validated['social_facebook'];
+        }
 
         // Remove individual social fields from validated data
-        unset($validated['social_twitter'], $validated['social_youtube'], $validated['social_instagram'], $validated['social_tiktok']);
+        unset($validated['social_twitter'], $validated['social_youtube'], $validated['social_instagram'], $validated['social_tiktok'], $validated['social_facebook']);
 
         // Set the social_links
         $validated['social_links'] = !empty($socialLinks) ? $socialLinks : null;
@@ -158,11 +164,7 @@ class ProfileController extends Controller
         $user->save();
 
         // Log profile update
-        activity()
-            ->causedBy($user)
-            ->performedOn($user)
-            ->withProperties(['updated_fields' => array_keys($validated)])
-            ->log('Profile updated');
+        Logger::log('PROFILE', 'Profile updated', 'User updated their profile information');
 
         return Redirect::route('profile.edit')->with('success', 'Profile updated successfully.');
     }
@@ -179,10 +181,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         // Log deletion
-        activity()
-            ->causedBy($user)
-            ->withProperties(['email' => $user->email, 'name' => $user->name])
-            ->log('Account deleted');
+        Logger::log('ACCOUNT', 'Account deleted', "User {$user->email} deleted their account");
 
         Auth::logout();
 

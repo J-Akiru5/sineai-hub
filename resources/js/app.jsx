@@ -6,6 +6,8 @@ import AOS from 'aos';
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { ThemeProvider } from '@/Contexts/ThemeContext';
+import { LanguageProvider } from '@/Contexts/LanguageContext';
 
 const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
 
@@ -15,7 +17,16 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        // Get initial locale from server
+        const initialLocale = props.initialPage?.props?.locale || 'en';
+
+        root.render(
+            <ThemeProvider>
+                <LanguageProvider initialLocale={initialLocale}>
+                    <App {...props} />
+                </LanguageProvider>
+            </ThemeProvider>
+        );
 
         // Initialize AOS for scroll animations (matches nefa template usage)
         try {

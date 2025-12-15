@@ -6,6 +6,7 @@ import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
+import { showConfirm, showError } from '@/Utils/swal';
 
 export default function DeleteUserForm({ className }) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
@@ -22,8 +23,19 @@ export default function DeleteUserForm({ className }) {
         password: '',
     });
 
-    const confirmUserDeletion = () => {
-        setConfirmingUserDeletion(true);
+    const confirmUserDeletion = async () => {
+        const result = await showConfirm({
+            title: 'Delete Account?',
+            html: '<p class="text-slate-400">This action is <span class="text-red-400 font-medium">permanent and cannot be undone</span>. All your data, projects, and content will be lost forever.</p>',
+            confirmText: 'Yes, I understand',
+            cancelText: 'Cancel',
+            icon: 'warning',
+            isDanger: true,
+        });
+
+        if (result.isConfirmed) {
+            setConfirmingUserDeletion(true);
+        }
     };
 
     const deleteUser = (e) => {
@@ -32,7 +44,10 @@ export default function DeleteUserForm({ className }) {
         destroy(route('profile.destroy'), {
             preserveScroll: true,
             onSuccess: () => closeModal(),
-            onError: () => passwordInput.current.focus(),
+            onError: () => {
+                passwordInput.current.focus();
+                showError('Incorrect Password', 'The password you entered is incorrect.');
+            },
             onFinish: () => reset(),
         });
     };
