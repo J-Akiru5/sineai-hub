@@ -59,11 +59,20 @@ export default function Authenticated({ user, header, children }) {
     const { auth } = props;
     const currentUser = user ?? auth?.user ?? {};
 
-    const [unreadCount, setUnreadCount] = useState(0);
+    // Initialize unread count from server data if available
+    const initialUnreadCount = props?.unreadNotificationsCount ?? 0;
+    const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
     const isAdmin = (currentUser?.roles || []).some(r => r.name === 'admin' || r.name === 'super-admin');
+
+    // Sync with server-provided count when it changes
+    useEffect(() => {
+        if (props?.unreadNotificationsCount !== undefined) {
+            setUnreadCount(props.unreadNotificationsCount);
+        }
+    }, [props?.unreadNotificationsCount]);
 
     useEffect(() => {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

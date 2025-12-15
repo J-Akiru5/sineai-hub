@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Swal from 'sweetalert2';
+import { Search, Hash, RefreshCw, Plus, Filter } from 'lucide-react';
 
 // SweetAlert2 theme for admin panel
 const swalTheme = {
@@ -12,8 +13,11 @@ const swalTheme = {
     iconColor: '#f59e0b',
 };
 
-export default function ChannelsIndex({ channels, roles }) {
+export default function ChannelsIndex({ channels, roles, filters = {} }) {
     const items = channels?.data ?? [];
+    const [search, setSearch] = useState(filters.search || '');
+    const [restrictionFilter, setRestrictionFilter] = useState(filters.restriction || '');
+    const debounceRef = useRef(null);
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState(null);
     const [name, setName] = useState('');
@@ -103,14 +107,59 @@ export default function ChannelsIndex({ channels, roles }) {
         });
     }
 
+    // Search with debounce
+    useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            router.get(route('admin.channels.index'), {
+                search: search || undefined,
+                restriction: restrictionFilter || undefined,
+            }, { preserveState: true, replace: true });
+        }, 400);
+        return () => clearTimeout(debounceRef.current);
+    }, [search]);
+
+    // Immediate filter change
+    useEffect(() => {
+        router.get(route('admin.channels.index'), {
+            search: search || undefined,
+            restriction: restrictionFilter || undefined,
+        }, { preserveState: true, replace: true });
+    }, [restrictionFilter]);
+
     return (
         <AdminLayout header={<h1 className="text-2xl font-semibold">Channel Management</h1>}>
-            <div className="flex items-center justify-between mb-6">
-                <div className="text-slate-400">Manage chat channels and role restrictions.</div>
+            {/* Search & Filter Toolbar */}
+            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search channels..."
+                            className="pl-10 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-colors w-64"
+                        />
+                    </div>
+                    <select
+                        value={restrictionFilter}
+                        onChange={(e) => setRestrictionFilter(e.target.value)}
+                        className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-colors"
+                    >
+                        <option value="">All Channels</option>
+                        <option value="public">Public Only</option>
+                        <option value="restricted">Restricted Only</option>
+                    </select>
+                    <button
+                        onClick={() => router.get(route('admin.channels.index'), {}, { preserveState: true, replace: true })}
+                        className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Refresh
+                    </button>
+                </div>
                 <button onClick={openCreate} className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-white rounded-xl font-medium transition-colors flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
+                    <Plus className="w-5 h-5" />
                     Create Channel
                 </button>
             </div>

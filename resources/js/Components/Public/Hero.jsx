@@ -1,15 +1,26 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import { Activity, FileText, Play, Users } from 'lucide-react';
+import { Activity, FileText, Play, Users, Sparkles } from 'lucide-react';
 
-// Mock live activity data
-const liveActivities = [
-    { id: 1, icon: FileText, text: "Justin just published a script", time: "2m ago" },
-    { id: 2, icon: Play, text: "New Premiere starting in 5m", time: "Now" },
-    { id: 3, icon: Users, text: "3 new members joined", time: "10m ago" },
+// Icon mapping for activity types
+const activityIcons = {
+    script: FileText,
+    premiere: Play,
+    members: Users,
+    system: Sparkles,
+};
+
+// Default activities as fallback
+const defaultActivities = [
+    { id: 'welcome', type: 'system', text: "Welcome to SineAI Hub", time: "Now" },
+    { id: 'community', type: 'members', text: "Join our growing community", time: "" },
+    { id: 'create', type: 'script', text: "Start creating your scripts", time: "" },
 ];
 
-export default function Hero() {
+export default function Hero({ liveActivities = [] }) {
+    // Use provided activities or fallback to defaults
+    const activities = liveActivities.length > 0 ? liveActivities : defaultActivities;
+
     return (
         <section className="relative overflow-hidden min-h-screen">
 
@@ -64,8 +75,8 @@ export default function Hero() {
                                 </span>
                             </div>
                             <div className="space-y-3">
-                                {liveActivities.map((activity) => {
-                                    const Icon = activity.icon;
+                                {activities.map((activity) => {
+                                    const Icon = activityIcons[activity.type] || FileText;
                                     return (
                                         <div key={activity.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 hover:border-amber-500/30 transition-all">
                                             <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -73,7 +84,7 @@ export default function Hero() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm text-amber-100/90 truncate">{activity.text}</p>
-                                                <p className="text-xs text-slate-400">{activity.time}</p>
+                                                {activity.time && <p className="text-xs text-slate-400">{activity.time}</p>}
                                             </div>
                                         </div>
                                     );
@@ -95,10 +106,15 @@ export default function Hero() {
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                         </span>
                     </div>
-                    <div className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
-                        <FileText className="w-4 h-4 text-amber-500" />
-                        <p className="text-xs text-amber-100/90 truncate">{liveActivities[0].text}</p>
-                    </div>
+                    {activities[0] && (
+                        <div className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
+                            {(() => {
+                                const Icon = activityIcons[activities[0].type] || FileText;
+                                return <Icon className="w-4 h-4 text-amber-500" />;
+                            })()}
+                            <p className="text-xs text-amber-100/90 truncate">{activities[0].text}</p>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Services\ThumbnailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -44,6 +45,13 @@ class ProjectController extends Controller
             $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
             $endpoint = env('DO_SPACES_ENDPOINT');
             $thumbnailUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$thumbPath}";
+        } else {
+            // Auto-generate thumbnail from video using FFmpeg
+            try {
+                $thumbnailUrl = ThumbnailService::generateFromVideo($videoUrl, $user->id);
+            } catch (\Exception $e) {
+                Log::warning('Auto-thumbnail generation failed: ' . $e->getMessage());
+            }
         }
 
         // Determine flags/metadata
