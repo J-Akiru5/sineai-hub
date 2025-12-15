@@ -70,10 +70,67 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache || true
 # Configure Nginx to serve the Laravel public directory with large file upload support
 RUN mkdir -p /var/www/public
 RUN rm -f /etc/nginx/conf.d/default.conf
-RUN bash -c 'cat > /etc/nginx/conf.d/default.conf <<"EOF"\nserver {\n    listen 80;\n    server_name _;\n    root /var/www/public;\n\n    # Allow large file uploads (512MB)\n    client_max_body_size 512M;\n    client_body_timeout 600s;\n    client_body_buffer_size 128k;\n\n    add_header X-Frame-Options "SAMEORIGIN";\n    add_header X-Content-Type-Options "nosniff";\n\n    index index.php index.html;\n\n    charset utf-8;\n\n    location / {\n        try_files $uri $uri/ /index.php?$query_string;\n    }\n\n    location ~ \.php$ {\n        fastcgi_pass 127.0.0.1:9000;\n        fastcgi_index index.php;\n        include fastcgi_params;\n        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n        fastcgi_split_path_info ^(.+\\.php)(/.+)$;\n        fastcgi_read_timeout 600;\n        fastcgi_send_timeout 600;\n    }\n\n    location ~ /\.ht {\n        deny all;\n    }\n}\nEOF'
+RUN cat > /etc/nginx/conf.d/default.conf <<'EOF'
+server {
+    listen 80;
+    server_name _;
+    root /var/www/public;
+
+    # Allow large file uploads (512MB)
+    client_max_body_size 512M;
+    client_body_timeout 600s;
+    client_body_buffer_size 128k;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+
+    index index.php index.html;
+
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_read_timeout 600;
+        fastcgi_send_timeout 600;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+EOF
 
 # Supervisor config: run php-fpm and nginx together
-RUN bash -c 'cat > /etc/supervisor/conf.d/supervisord.conf <<"EOF"\n[supervisord]\n nodaemon=true\n\n[program:php-fpm]\ncommand=php-fpm -F\nautostart=true\nautorestart=true\npriority=10\nredirect_stderr=true\nstdout_logfile=/dev/fd/1\nstdout_logfile_maxbytes=0\n\n[program:nginx]\ncommand=/usr/sbin/nginx -g "daemon off;"\nautostart=true\nautorestart=true\npriority=20\nredirect_stderr=true\nstdout_logfile=/dev/fd/1\nstdout_logfile_maxbytes=0\nEOF'
+RUN cat > /etc/supervisor/conf.d/supervisord.conf <<'EOF'
+[supervisord]
+nodaemon=true
+
+[program:php-fpm]
+command=php-fpm -F
+autostart=true
+autorestart=true
+priority=10
+redirect_stderr=true
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+
+[program:nginx]
+command=/usr/sbin/nginx -g "daemon off;"
+autostart=true
+autorestart=true
+priority=20
+redirect_stderr=true
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+EOF
 
 # Expose HTTP port for the DigitalOcean App Platform
 EXPOSE 80
