@@ -67,52 +67,20 @@ RUN composer dump-autoload --optimize && php artisan package:discover --ansi
 # Ensure appropriate permissions for runtime
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache || true
 
-# Configure Nginx to serve the Laravel public directory with large file upload support
+# Copy nginx config from docker directory (avoiding heredoc issues)
 RUN mkdir -p /var/www/public
-RUN rm -f /etc/nginx/conf.d/default.conf
-RUN cat > /etc/nginx/conf.d/default.conf <<'EOF'
-server {
-    listen 0.0.0.0:8000;
-    server_name _;
-    root /var/www/public;
-
-    # Allow large file uploads (512MB)
-    client_max_body_size 512M;
-    client_body_timeout 600s;
-    client_body_buffer_size 128k;
-
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-Content-Type-Options "nosniff";
-
-    index index.php index.html;
-
-    charset utf-8;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass 127.0.0.1:9000;
-        fastcgi_index index.php;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_read_timeout 600;
-        fastcgi_send_timeout 600;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-}
-EOF
+RUN rm -f /etc/nginx/conf.d/default.conf /etc/nginx/sites-enabled/default
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Supervisor config: run php-fpm and nginx together
 COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
 
+# Copy and prepare startup script
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
+
 # Expose HTTP port for the DigitalOcean App Platform
 EXPOSE 8000
 
-# Start supervisord which manages nginx and php-fpm
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
+# Start with the startup script
+CMD ["/start.sh"]
