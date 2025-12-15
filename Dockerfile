@@ -109,39 +109,10 @@ server {
 EOF
 
 # Supervisor config: run php-fpm and nginx together
-RUN cat > /etc/supervisor/supervisord.conf <<'EOF'
-[supervisord]
-nodaemon=true
-user=root
-logfile=/dev/null
-logfile_maxbytes=0
-pidfile=/tmp/supervisord.pid
-
-[program:php-fpm]
-command=php-fpm -F
-autostart=true
-autorestart=true
-priority=10
-redirect_stderr=true
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-
-[program:nginx]
-command=/usr/sbin/nginx -g "daemon off;"
-autostart=true
-autorestart=true
-priority=20
-redirect_stderr=true
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-EOF
+COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Expose HTTP port for the DigitalOcean App Platform
 EXPOSE 80
 
 # Start supervisord which manages nginx and php-fpm
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
