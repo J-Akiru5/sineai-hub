@@ -48,17 +48,55 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'username' => ['nullable', 'string', 'max:30', 'alpha_dash', Rule::unique('users')->ignore($user->id)],
+            'pen_name' => ['nullable', 'string', 'max:100'],
+            'studio_name' => ['nullable', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:500'],
             'headline' => ['nullable', 'string', 'max:100'],
             'location' => ['nullable', 'string', 'max:100'],
-            'website' => ['nullable', 'url', 'max:255'],
+            'contact_number' => ['nullable', 'string', 'max:50'],
+            'website' => ['nullable', 'string', 'max:255'],
+            // Accept social links in both formats
             'social_links' => ['nullable', 'array'],
             'social_links.twitter' => ['nullable', 'string', 'max:255'],
             'social_links.instagram' => ['nullable', 'string', 'max:255'],
             'social_links.youtube' => ['nullable', 'string', 'max:255'],
             'social_links.tiktok' => ['nullable', 'string', 'max:255'],
             'social_links.linkedin' => ['nullable', 'string', 'max:255'],
+            // Also accept individual social fields from form
+            'social_twitter' => ['nullable', 'string', 'max:255'],
+            'social_youtube' => ['nullable', 'string', 'max:255'],
+            'social_instagram' => ['nullable', 'string', 'max:255'],
+            'social_tiktok' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Build social_links array from individual fields if present
+        $socialLinks = $validated['social_links'] ?? [];
+        if ($request->filled('social_twitter')) {
+            $socialLinks['twitter'] = $validated['social_twitter'];
+        }
+        if ($request->filled('social_youtube')) {
+            $socialLinks['youtube'] = $validated['social_youtube'];
+        }
+        if ($request->filled('social_instagram')) {
+            $socialLinks['instagram'] = $validated['social_instagram'];
+        }
+        if ($request->filled('social_tiktok')) {
+            $socialLinks['tiktok'] = $validated['social_tiktok'];
+        }
+
+        // Remove individual social fields from validated data
+        unset($validated['social_twitter'], $validated['social_youtube'], $validated['social_instagram'], $validated['social_tiktok']);
+
+        // Set the social_links
+        $validated['social_links'] = !empty($socialLinks) ? $socialLinks : null;
+
+        // Validate website URL format - allow empty or properly formatted URLs
+        if (!empty($validated['website'])) {
+            // Add https:// if no protocol is specified
+            if (!preg_match('/^https?:\/\//', $validated['website'])) {
+                $validated['website'] = 'https://' . $validated['website'];
+            }
+        }
 
         // Fill validated fields
         $user->fill($validated);

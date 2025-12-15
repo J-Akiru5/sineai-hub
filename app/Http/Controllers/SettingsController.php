@@ -35,7 +35,10 @@ class SettingsController extends Controller
             'notify_mentions' => 'boolean',
             'notify_messages' => 'boolean',
             'notify_system' => 'boolean',
+            'notify_project_updates' => 'boolean',
             'email_notifications' => 'boolean',
+            'push_notifications' => 'boolean',
+            'digest_frequency' => 'in:realtime,daily,weekly,never',
         ]);
 
         $settings = $request->user()->getOrCreateSettings();
@@ -50,13 +53,16 @@ class SettingsController extends Controller
     public function updatePrivacy(Request $request)
     {
         $validated = $request->validate([
-            'profile_visibility' => 'in:public,followers,private',
+            'profile_visibility' => 'in:public,followers,private,hidden',
             'show_email' => 'boolean',
             'show_social_links' => 'boolean',
-            'allow_messages' => 'boolean',
+            'allow_messages' => 'in:everyone,followers,nobody',
             'show_activity' => 'boolean',
+            'show_online_status' => 'boolean',
         ]);
 
+        // Convert allow_messages to boolean if it's still expected as boolean in DB
+        // Otherwise keep as string
         $settings = $request->user()->getOrCreateSettings();
         $settings->update($validated);
 
@@ -71,7 +77,9 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'theme' => 'in:dark,light,system',
             'accent_color' => 'in:amber,blue,emerald,rose,purple,orange',
+            'language' => 'in:en,es,fr,de,ja,ko,zh',
             'reduce_motion' => 'boolean',
+            'reduced_motion' => 'boolean',
         ]);
 
         $settings = $request->user()->getOrCreateSettings();
@@ -87,8 +95,9 @@ class SettingsController extends Controller
     {
         $validated = $request->validate([
             'autoplay' => 'boolean',
-            'default_quality' => 'in:auto,1080p,720p,480p,360p',
+            'default_quality' => 'in:auto,2160,1080p,1080,720p,720,480p,480,360p,360',
             'theater_mode' => 'boolean',
+            'playback_speed' => 'in:0.25,0.5,0.75,1,1.25,1.5,1.75,2',
         ]);
 
         $settings = $request->user()->getOrCreateSettings();
