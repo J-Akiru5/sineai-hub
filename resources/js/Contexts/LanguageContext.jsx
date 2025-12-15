@@ -70,6 +70,7 @@ const translations = {
         'common.close': 'Close',
         'common.upload': 'Upload',
         'common.download': 'Download',
+        'common.all_rights_reserved': 'All rights reserved.',
         
         // Profile
         'profile.title': 'Profile Information',
@@ -177,6 +178,7 @@ const translations = {
         'common.close': 'Isara',
         'common.upload': 'Mag-upload',
         'common.download': 'Mag-download',
+        'common.all_rights_reserved': 'Lahat ng karapatan ay nakalaan.',
         
         // Profile
         'profile.title': 'Impormasyon ng Profile',
