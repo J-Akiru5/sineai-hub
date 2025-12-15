@@ -454,7 +454,7 @@ export default function Dashboard({
                                         <Activity className="w-3 h-3" />
                                         Recent Projects
                                     </h3>
-                                    <Link href={route('projects.index')} className={`text-xs hover:text-amber-500 transition-colors flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    <Link href={route('premiere.index')} className={`text-xs hover:text-amber-500 transition-colors flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                         View all <ChevronRight className="w-3 h-3" />
                                     </Link>
                                 </div>

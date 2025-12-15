@@ -161,10 +161,7 @@ export default function Authenticated({ user, header, children }) {
                                             <NavLink href={route('dashboard')} active={route().current('dashboard')} icon={HomeIcon} isDark={isDark}>
                                                 {t('nav.dashboard')}
                                             </NavLink>
-                                            <NavLink href={route('projects.index')} active={route().current('projects.index') || route().current('projects.show')} icon={FolderIcon} isDark={isDark}>
-                                                {t('nav.projects')}
-                                            </NavLink>
-                                            <NavLink href={route('premiere.index')} active={route().current('premiere.*')} icon={FilmIcon} isDark={isDark}>
+                                            <NavLink href={route('premiere.index')} active={route().current('premiere.*') || route().current('projects.show')} icon={FilmIcon} isDark={isDark}>
                                                 {t('nav.premiere')}
                                             </NavLink>
 
@@ -351,8 +348,7 @@ export default function Authenticated({ user, header, children }) {
                             {/* Navigation Links */}
                             <MobileSectionLabel isDark={isDark}>Navigate</MobileSectionLabel>
                             <MobileNavLink href={route('dashboard')} icon={HomeIcon} active={route().current('dashboard')} isDark={isDark}>{t('nav.dashboard')}</MobileNavLink>
-                            <MobileNavLink href={route('projects.index')} icon={FolderIcon} active={route().current('projects.index') || route().current('projects.show')} isDark={isDark}>{t('nav.projects')}</MobileNavLink>
-                            <MobileNavLink href={route('premiere.index')} icon={FilmIcon} active={route().current('premiere.*')} isDark={isDark}>{t('nav.premiere')}</MobileNavLink>
+                            <MobileNavLink href={route('premiere.index')} icon={FilmIcon} active={route().current('premiere.*') || route().current('projects.show')} isDark={isDark}>{t('nav.premiere')}</MobileNavLink>
 
                             <MobileSectionLabel isDark={isDark}>{t('nav.studio')}</MobileSectionLabel>
                             <MobileNavLink href={route('projects.my')} icon={FolderIcon} active={route().current('projects.my')} isDark={isDark}>{t('nav.my_projects')}</MobileNavLink>

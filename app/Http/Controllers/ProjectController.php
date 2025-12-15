@@ -79,7 +79,7 @@ class ProjectController extends Controller
             } catch (\Throwable $logEx) {
             }
 
-            return Redirect::route('projects.index')->with('success', 'Project created successfully!');
+            return Redirect::route('premiere.index')->with('success', 'Project created successfully!');
         } catch (\Exception $e) {
             // Log the error
             \Illuminate\Support\Facades\Log::error('Project store error: ' . $e->getMessage(), [
@@ -144,18 +144,13 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * @deprecated Projects index is now handled by PremiereController
+     * This method redirects to Premiere for backwards compatibility
+     */
     public function index()
     {
-        // Only return projects that are public and approved for the public gallery
-        $projects = Project::with('user')
-            ->where('visibility', 'public')
-            ->where('moderation_status', 'approved')
-            ->latest()
-            ->get();
-
-        return Inertia::render('Projects/Index', [
-            'projects' => $projects,
-        ]);
+        return Redirect::route('premiere.index');
     }
 
     /**
@@ -208,7 +203,7 @@ class ProjectController extends Controller
 
         $project->delete();
 
-        return Redirect::route('projects.index')->with('success', 'Project deleted.');
+        return Redirect::route('premiere.index')->with('success', 'Project deleted.');
     }
 
     /**

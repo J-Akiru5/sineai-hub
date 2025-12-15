@@ -61,8 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Routes for our Projects feature
-    Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+    // Routes for our Projects feature (Projects Gallery removed - use Premiere)
     Route::get('/my-projects', [ProjectController::class, 'myProjects'])->name('projects.my');
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');

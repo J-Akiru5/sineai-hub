@@ -53,8 +53,8 @@ export default function Show({ auth, project }) {
 
                                 <div className="mt-6">
                                     <div className="flex items-center gap-3">
-                                        <Link href={route('projects.index')} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-slate-900 font-semibold rounded-lg shadow-md">
-                                            Back to Gallery
+                                        <Link href={route('premiere.index')} className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-slate-900 font-semibold rounded-lg shadow-md">
+                                            Back to Premiere
                                         </Link>
 
                                         {auth?.user?.id === project.user_id && (
