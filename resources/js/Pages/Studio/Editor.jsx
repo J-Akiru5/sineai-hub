@@ -36,16 +36,31 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // clips: Array of { id, assetId, url, duration, startTime, name }
+  // clips: Array of { id, assetId, url, duration, startTime, name, startOffset, endOffset }
+  // startOffset: seconds from the beginning of the source asset to trim
+  // endOffset: seconds from the end of the source asset to trim
   const [clips, setClips] = useState(() => {
     if (project?.timeline_data?.clips) {
-      return project.timeline_data.clips;
+      return project.timeline_data.clips.map(clip => ({
+        ...clip,
+        startOffset: clip.startOffset ?? 0,
+        endOffset: clip.endOffset ?? 0,
+      }));
     }
     return [];
   });
 
   // Assets from project
   const [assets, setAssets] = useState(project?.assets || []);
+  
+  // Audio tracks: Array of { id, url, duration, startTime, volume, name }
+  // Separate from video clips for independent audio control
+  const [audioTracks, setAudioTracks] = useState(() => {
+    if (project?.timeline_data?.audioTracks) {
+      return project.timeline_data.audioTracks;
+    }
+    return [];
+  });
     
     // Playback state
     const [isPlaying, setIsPlaying] = useState(false);
@@ -57,6 +72,9 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
   const [showSettings, setShowSettings] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Tool state for NLE operations
+  const [activeTool, setActiveTool] = useState('select'); // 'select', 'blade', 'trim'
 
   // Export Modal State
     const [showExportModal, setShowExportModal] = useState(false);
@@ -95,6 +113,46 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
       }
     };
   }, [clips]);
+
+  // Keyboard shortcuts for NLE tools
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only handle shortcuts when not typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'b':
+          // Blade/Split tool
+          setActiveTool('blade');
+          e.preventDefault();
+          break;
+        case 'a':
+          // Arrow/Selection tool
+          setActiveTool('select');
+          e.preventDefault();
+          break;
+        case 'v':
+          // Alternative selection tool (common in NLE apps)
+          setActiveTool('select');
+          e.preventDefault();
+          break;
+        case ' ':
+          // Spacebar: Play/Pause
+          if (clips.length > 0) {
+            togglePlayPause();
+            e.preventDefault();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []); // Empty dependency array - handler doesn't need to change
 
   // Save timeline to backend
   const saveTimeline = async () => {
@@ -140,7 +198,7 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
         },
         body: JSON.stringify({
-          timeline_data: { clips, tracks: [] },
+          timeline_data: { clips, audioTracks, tracks: [] },
         }),
       });
 
@@ -159,6 +217,21 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
   const handleAssetUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !project?.id) return;
+
+    // Check for incompatible video formats
+    const incompatibleFormats = ['.mkv', '.avi', '.flv', '.wmv'];
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (incompatibleFormats.includes(fileExtension)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Incompatible Format',
+        text: `${fileExtension} files are not supported in web browsers. Please use MP4, WebM, or MOV formats.`,
+        background: '#1e293b',
+        color: '#fef3c7',
+      });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     // Check quota
     if (file.size > quota?.remaining) {
@@ -221,6 +294,8 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
         duration: asset.duration_seconds || 10,
         startTime,
         name: asset.name,
+        startOffset: 0,  // No trimming by default
+        endOffset: 0,    // No trimming by default
       };
 
     setClips(prev => [...prev, newClip]);
@@ -273,6 +348,49 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
     });
   };
 
+  // Split/Blade clip at current time
+  const splitClipAtTime = (clipId, splitTime) => {
+    setClips(prev => {
+      const clipIndex = prev.findIndex(c => c.id === clipId);
+      if (clipIndex === -1) return prev;
+      
+      const clip = prev[clipIndex];
+      const localSplitTime = splitTime - clip.startTime;
+      
+      // Validate split time is within clip bounds
+      if (localSplitTime <= 0 || localSplitTime >= clip.duration) return prev;
+      
+      // Create two new clips from the split
+      const firstClip = {
+        ...clip,
+        id: generateClipId(),
+        duration: localSplitTime,
+        // First clip keeps startOffset, adds endOffset
+        endOffset: (clip.endOffset || 0) + (clip.duration - localSplitTime),
+      };
+      
+      const secondClip = {
+        ...clip,
+        id: generateClipId(),
+        duration: clip.duration - localSplitTime,
+        // Second clip adds startOffset, keeps endOffset
+        startOffset: (clip.startOffset || 0) + localSplitTime,
+      };
+      
+      // Replace original clip with two new clips
+      const newClips = [...prev];
+      newClips.splice(clipIndex, 1, firstClip, secondClip);
+      
+      // Recalculate all startTimes from scratch
+      let currentStart = 0;
+      return newClips.map(c => {
+        const updated = { ...c, startTime: currentStart };
+        currentStart += c.duration;
+        return updated;
+      });
+    });
+  };
+
   // Playback logic
     const findActiveClip = useCallback((time) => {
         for (const clip of clips) {
@@ -300,14 +418,16 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
       if (activeClip.id !== activeClipId) {
           setActiveClipId(activeClip.id);
           videoRef.current.src = activeClip.url;
-          const localTime = globalTime - activeClip.startTime;
+          // Apply startOffset: seek to the trimmed start position
+          const localTime = globalTime - activeClip.startTime + (activeClip.startOffset || 0);
             videoRef.current.currentTime = localTime;
 
             if (isPlaying) {
                 videoRef.current.play().catch(console.error);
             }
         } else {
-            const localTime = globalTime - activeClip.startTime;
+            // Apply startOffset when calculating local time
+            const localTime = globalTime - activeClip.startTime + (activeClip.startOffset || 0);
           const timeDiff = Math.abs(videoRef.current.currentTime - localTime);
             if (timeDiff > SEEK_THRESHOLD) {
                 videoRef.current.currentTime = localTime;
@@ -326,7 +446,10 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
                     if (videoRef.current && activeClipId) {
                         const currentClip = clips.find(c => c.id === activeClipId);
                         if (currentClip) {
-                            const newGlobalTime = currentClip.startTime + videoRef.current.currentTime;
+                            // Calculate global time accounting for startOffset
+                            const localVideoTime = videoRef.current.currentTime;
+                            const trimmedLocalTime = localVideoTime - (currentClip.startOffset || 0);
+                            const newGlobalTime = currentClip.startTime + trimmedLocalTime;
                             setGlobalTime(newGlobalTime);
                         }
                     }
@@ -372,7 +495,18 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
         const clickX = e.clientX - rect.left;
       const newTime = clickX / PIXELS_PER_SECOND;
         if (newTime >= 0 && newTime <= totalDuration) {
-            setGlobalTime(newTime);
+            if (activeTool === 'blade') {
+                // Find clip at this time and split it
+                const clipToSplit = findActiveClip(newTime);
+                if (clipToSplit) {
+                    splitClipAtTime(clipToSplit.id, newTime);
+                    // Switch back to select tool after split
+                    setActiveTool('select');
+                }
+            } else {
+                // Default behavior: seek to time
+                setGlobalTime(newTime);
+            }
         }
     };
 
@@ -498,7 +632,7 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
                     type="file"
                     onChange={handleAssetUpload}
                     className="hidden"
-                    accept="video/*,audio/*,image/*"
+                    accept="video/mp4,video/webm,video/quicktime,audio/*,image/*"
                     disabled={uploading}
                   />
                 </label>
@@ -577,6 +711,7 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
                                 ref={videoRef}
                                 className="w-full h-full object-contain"
                                 playsInline
+                                crossOrigin="anonymous"
                             />
                             
                             {clips.length === 0 && (
@@ -624,12 +759,41 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
             {/* Timeline */}
             <div className="bg-zinc-800 border-t border-zinc-700 p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Timeline</h3>
+                <div className="flex items-center gap-4">
+                  <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Timeline</h3>
+                  {/* Tool Indicator */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setActiveTool('select')}
+                      className={`px-3 py-1 rounded text-xs font-medium transition ${
+                        activeTool === 'select' 
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50' 
+                          : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+                      }`}
+                      title="Select Tool (V or A)"
+                    >
+                      Select
+                    </button>
+                    <button
+                      onClick={() => setActiveTool('blade')}
+                      className={`px-3 py-1 rounded text-xs font-medium transition ${
+                        activeTool === 'blade' 
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' 
+                          : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+                      }`}
+                      title="Blade/Split Tool (B)"
+                    >
+                      Blade
+                    </button>
+                  </div>
+                </div>
                 <span className="text-xs text-zinc-500">{clips.length} clips</span>
               </div>
 
               <div
-                className="relative bg-zinc-900 rounded-lg min-h-[80px] overflow-x-auto cursor-pointer"
+                className={`relative bg-zinc-900 rounded-lg min-h-[80px] overflow-x-auto ${
+                  activeTool === 'blade' ? 'cursor-crosshair' : 'cursor-pointer'
+                }`}
                 onClick={handleTimelineClick}
                 style={{ width: clips.length > 0 ? `${Math.max(totalDuration * PIXELS_PER_SECOND + 40, 100)}px` : '100%' }}
               >
