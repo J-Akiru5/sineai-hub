@@ -103,6 +103,14 @@ class Project extends Model
     }
 
     /**
+     * Scripts associated with this project
+     */
+    public function scripts(): HasMany
+    {
+        return $this->hasMany(Script::class);
+    }
+
+    /**
      * Format duration as HH:MM:SS
      */
     public function getFormattedDurationAttribute(): string

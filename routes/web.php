@@ -98,6 +98,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/scriptwriter/assist', [ScriptwriterController::class, 'assist'])->name('scriptwriter.assist');
     // Script CRUD
     Route::post('/scriptwriter', [ScriptwriterController::class, 'store'])->name('scriptwriter.store');
+    // Script project linking - must be before {script} routes
+    Route::get('/scriptwriter/api/user-projects', [ScriptwriterController::class, 'getUserProjects'])->name('scriptwriter.userProjects');
+    Route::post('/scriptwriter/{script}/attach-project', [ScriptwriterController::class, 'attachProject'])->name('scriptwriter.attachProject');
     Route::get('/scriptwriter/{script}', [ScriptwriterController::class, 'show'])->name('scriptwriter.show');
     Route::put('/scriptwriter/{script}', [ScriptwriterController::class, 'update'])->name('scriptwriter.update');
     Route::delete('/scriptwriter/{script}', [ScriptwriterController::class, 'destroy'])->name('scriptwriter.destroy');
