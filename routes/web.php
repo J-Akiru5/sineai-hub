@@ -26,6 +26,12 @@ use Inertia\Inertia;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+// Health check endpoint for container orchestration
+Route::get('/health', function () {
+    return response()->json(['status' => 'healthy', 'timestamp' => now()->toIso8601String()]);
+});
+
 Route::get('/phpinfo', function () {
     return phpinfo();
 });

@@ -18,91 +18,113 @@ class ProjectController extends Controller
         // Allow longer-running uploads (5 minutes) to prevent cURL timeout for large files
         @set_time_limit(300);
 
-        // Validate the incoming request data
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'video' => 'required|file|mimetypes:video/mp4,video/quicktime|max:512000', // max 500MB
-            'thumbnail' => 'nullable|image|max:2048', // optional thumbnail, max 2MB
-            'is_premiere_public' => 'boolean',
-            'category' => 'nullable|string',
-            'visibility' => ['nullable', 'in:private,unlisted,public'],
-        ]);
-
         // Get the authenticated user
         $user = Auth::user();
+        $videoPath = null;
+        $thumbPath = null;
 
-        // handle file upload to DigitalOcean Spaces
-        // We will store the files in a directory named after the user's ID
-        $videoPath = $request->file('video')->store('user-' . $user->id, 'digitalocean');
-
-        // Get the CDN endpoint from the .env file and append the file path.
-        $bucket = env('DO_SPACES_BUCKET');
-        $videoUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$videoPath}";
-
-        $thumbnailUrl = null;
-        if ($request->hasFile('thumbnail')) {
-            $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
-            $endpoint = env('DO_SPACES_ENDPOINT');
-            $thumbnailUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$thumbPath}";
-        } else {
-            // Auto-generate thumbnail from video using FFmpeg
-            try {
-                $thumbnailUrl = ThumbnailService::generateFromVideo($videoUrl, $user->id);
-            } catch (\Exception $e) {
-                Log::warning('Auto-thumbnail generation failed: ' . $e->getMessage());
-            }
-        }
-
-        // Determine flags/metadata
-        $isPremierePublic = $request->boolean('is_premiere_public', false);
-        $category = $validated['category'] ?? null;
-        $visibility = $validated['visibility'] ?? 'private';
-
-        // Create a new project record in the database
-        $project = $user->projects()->create([
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'video_url' => $videoUrl,
-            'thumbnail_url' => $thumbnailUrl,
-            'is_premiere_public' => $isPremierePublic,
-            'category' => $category,
-            'visibility' => $visibility,
-            // 'status' defaults to 'published' as per our schema
-        ]);
-
-        // Redirect the user back to the projects page with a success message
         try {
+            // Validate the incoming request data
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'video' => 'required|file|mimetypes:video/mp4,video/quicktime|max:512000', // max 500MB
+                'thumbnail' => 'nullable|image|max:2048', // optional thumbnail, max 2MB
+                'is_premiere_public' => 'boolean',
+                'category' => 'nullable|string',
+                'visibility' => ['nullable', 'in:private,unlisted,public'],
+            ]);
+
+            // Check if DigitalOcean Spaces is configured
+            if (!env('DO_SPACES_KEY') || !env('DO_SPACES_SECRET') || !env('DO_SPACES_BUCKET')) {
+                Log::error('DigitalOcean Spaces not configured', [
+                    'has_key' => !empty(env('DO_SPACES_KEY')),
+                    'has_secret' => !empty(env('DO_SPACES_SECRET')),
+                    'has_bucket' => !empty(env('DO_SPACES_BUCKET')),
+                ]);
+                return Redirect::back()->withInput()->with('error', 'File storage is not properly configured. Please contact the administrator.');
+            }
+
+            // handle file upload to DigitalOcean Spaces
+            // We will store the files in a directory named after the user's ID
+            $videoPath = $request->file('video')->store('user-' . $user->id, 'digitalocean');
+            
+            if (!$videoPath) {
+                throw new \Exception('Failed to upload video file to storage.');
+            }
+
+            // Get the CDN endpoint from the .env file and append the file path.
+            $bucket = env('DO_SPACES_BUCKET');
+            $videoUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$videoPath}";
+
+            $thumbnailUrl = null;
+            if ($request->hasFile('thumbnail')) {
+                $thumbPath = $request->file('thumbnail')->store('user-' . $user->id, 'digitalocean');
+                $thumbnailUrl = "https://{$bucket}.sgp1.cdn.digitaloceanspaces.com/{$thumbPath}";
+            } else {
+                // Auto-generate thumbnail from video using FFmpeg
+                try {
+                    $thumbnailUrl = ThumbnailService::generateFromVideo($videoUrl, $user->id);
+                } catch (\Exception $e) {
+                    Log::warning('Auto-thumbnail generation failed: ' . $e->getMessage());
+                }
+            }
+
+            // Determine flags/metadata
+            $isPremierePublic = $request->boolean('is_premiere_public', false);
+            $category = $validated['category'] ?? null;
+            $visibility = $validated['visibility'] ?? 'private';
+
+            // Create a new project record in the database
+            $project = $user->projects()->create([
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'video_url' => $videoUrl,
+                'thumbnail_url' => $thumbnailUrl,
+                'is_premiere_public' => $isPremierePublic,
+                'category' => $category,
+                'visibility' => $visibility,
+            ]);
+
             // Log project creation
             try {
                 \App\Services\Logger::log('CONTENT', 'Project Uploaded', "User " . auth()->user()?->name . " uploaded a new project: {$project->title}");
             } catch (\Throwable $logEx) {
+                // Ignore logging errors
             }
 
             return Redirect::route('premiere.index')->with('success', 'Project created successfully!');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e; // Let validation exceptions bubble up normally
         } catch (\Exception $e) {
-            // Log the error
-            \Illuminate\Support\Facades\Log::error('Project store error: ' . $e->getMessage(), [
-            'exception' => $e,
-            'user_id' => isset($user) ? $user->id : null,
-            'video_path' => isset($videoPath) ? $videoPath : null,
-            'thumb_path' => isset($thumbPath) ? $thumbPath : null,
+            // Log the error with full details
+            Log::error('Project store error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id ?? null,
+                'video_path' => $videoPath ?? null,
+                'thumb_path' => $thumbPath ?? null,
             ]);
 
             // Attempt to remove the uploaded file if it exists to avoid orphaned uploads
             try {
-                if (isset($videoPath) && Storage::disk('digitalocean')->exists($videoPath)) {
+                if ($videoPath && Storage::disk('digitalocean')->exists($videoPath)) {
                     Storage::disk('digitalocean')->delete($videoPath);
                 }
                 if (isset($thumbPath) && Storage::disk('digitalocean')->exists($thumbPath)) {
                     Storage::disk('digitalocean')->delete($thumbPath);
                 }
             } catch (\Exception $deleteEx) {
-                \Illuminate\Support\Facades\Log::error('Failed to delete uploaded file after project store error: ' . $deleteEx->getMessage());
+                Log::error('Failed to delete uploaded file after project store error: ' . $deleteEx->getMessage());
             }
 
-            // Redirect back with input and an error message
-            return Redirect::back()->withInput()->with('error', 'An unexpected error occurred while creating the project. Please try again.');
+            // Return a more helpful error message
+            $errorMessage = app()->environment('local') 
+                ? 'Error: ' . $e->getMessage() 
+                : 'An unexpected error occurred while uploading the project. Please try again.';
+
+            return Redirect::back()->withInput()->with('error', $errorMessage);
         }
     }
 
