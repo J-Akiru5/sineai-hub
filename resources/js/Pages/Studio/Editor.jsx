@@ -152,7 +152,7 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [clips.length]); // Re-create handler when clips change
+  }, []); // Empty dependency array - handler doesn't need to change
 
   // Save timeline to backend
   const saveTimeline = async () => {
@@ -373,7 +373,6 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
         ...clip,
         id: generateClipId(),
         duration: clip.duration - localSplitTime,
-        startTime: clip.startTime + localSplitTime,
         // Second clip adds startOffset, keeps endOffset
         startOffset: (clip.startOffset || 0) + localSplitTime,
       };
@@ -382,7 +381,7 @@ export default function Editor({ auth, project, userVideos = [], quota }) {
       const newClips = [...prev];
       newClips.splice(clipIndex, 1, firstClip, secondClip);
       
-      // Recalculate startTimes
+      // Recalculate all startTimes from scratch
       let currentStart = 0;
       return newClips.map(c => {
         const updated = { ...c, startTime: currentStart };
