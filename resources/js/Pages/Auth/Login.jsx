@@ -70,14 +70,12 @@ export default function Login({ status, canResetPassword }) {
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <div className="block mt-4">
+                <div className="mt-4 flex items-center justify-between">
                     <label className="flex items-center">
                         <Checkbox name="remember" value={data.remember} onChange={handleOnChange} />
                         <span className="ml-2 text-sm text-slate-300">Remember me</span>
                     </label>
-                </div>
 
-                <div className="flex items-center justify-end mt-4">
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
@@ -86,17 +84,19 @@ export default function Login({ status, canResetPassword }) {
                             Forgot your password?
                         </Link>
                     )}
+                </div>
 
+                <div className="mt-6 flex justify-end">
                     <button
                         type="submit"
                         disabled={processing}
-                        className="ml-4 w-full sm:w-auto justify-center bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-amber-900/20 transition-all disabled:opacity-50"
+                        className="w-full sm:w-auto justify-center bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-amber-900/20 transition-all disabled:opacity-50"
                     >
                         Log in
                     </button>
                 </div>
-                {/* Don't have an account link */}
-                <div className="mt-4 text-center">
+
+                <div className="mt-6 text-center">
                     <p className="text-sm text-slate-400">
                         Don't have an account?{' '}
                         <Link href={route('register')} className="text-amber-400 font-semibold hover:text-amber-500">
