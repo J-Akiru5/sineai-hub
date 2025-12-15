@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, router, usePage, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Swal from 'sweetalert2';
+import { Search, Shield, RefreshCw, Flag, CheckCircle, XCircle } from 'lucide-react';
 
 // SweetAlert2 theme for admin panel
 const swalTheme = {
@@ -12,10 +13,14 @@ const swalTheme = {
     iconColor: '#f59e0b',
 };
 
-export default function ModerationIndex({ pendingProjects = [], openFlags = [], approvedProjects = null, rejectedProjects = null }) {
+export default function ModerationIndex({ pendingProjects = [], openFlags = [], approvedProjects = null, rejectedProjects = null, filters = {} }) {
     const [tab, setTab] = useState('approval');
     const [rejectModal, setRejectModal] = useState({ open: false, project: null, reason: '' });
     const { props } = usePage();
+
+    // Search state
+    const [search, setSearch] = useState(filters?.search || '');
+    const debounceRef = useRef(null);
 
     // normalize collections (support plain arrays or paginated objects)
     const pending = Array.isArray(pendingProjects) ? pendingProjects : pendingProjects?.data ?? [];
@@ -25,6 +30,18 @@ export default function ModerationIndex({ pendingProjects = [], openFlags = [], 
 
     // helper for tab button classes
     const tabClass = (t) => `px-4 py-2 -mb-px border-b-2 rounded-t font-medium transition-all ${tab === t ? 'border-amber-500 bg-amber-500/10 text-amber-500' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`;
+
+    // Search with debounce
+    useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            router.get(route('admin.moderation.index'), {
+                search: search || undefined,
+                tab: tab,
+            }, { preserveState: true, replace: true });
+        }, 400);
+        return () => clearTimeout(debounceRef.current);
+    }, [search]);
 
     function approveProject(projectId, title) {
         Swal.fire({
@@ -221,7 +238,51 @@ export default function ModerationIndex({ pendingProjects = [], openFlags = [], 
     }
 
     return (
-        <AdminLayout header={<h1 className="text-2xl font-semibold">Moderation</h1>}>
+        <AdminLayout header={
+            <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-xl text-amber-100 leading-tight flex items-center gap-2">
+                    <Shield className="w-6 h-6 text-amber-400" />
+                    Content Moderation
+                </h2>
+            </div>
+        }>
+            <Head title="Moderation" />
+
+            {/* Search & Filter Toolbar */}
+            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search projects or users..."
+                            className="pl-10 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-colors w-72"
+                        />
+                    </div>
+                    <button
+                        onClick={() => {
+                            setSearch('');
+                            router.get(route('admin.moderation.index'), {}, { preserveState: true, replace: true });
+                        }}
+                        className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Refresh
+                    </button>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                    <span className="flex items-center gap-1.5 text-amber-400">
+                        <Flag className="w-4 h-4" />
+                        {pending.length} Pending
+                    </span>
+                    <span className="flex items-center gap-1.5 text-red-400">
+                        <XCircle className="w-4 h-4" />
+                        {flags.length} Reports
+                    </span>
+                </div>
+            </div>
+
             <div className="mb-6">
                 <div className="flex items-center gap-2 border-b border-slate-700/50">
                     <button onClick={() => setTab('approval')} className={tabClass('approval')}>Approval Queue</button>

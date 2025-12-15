@@ -3,6 +3,7 @@ import CinemaLayout from '@/Layouts/CinemaLayout';
 import { Head, router, usePage } from '@inertiajs/react';
 import SuggestedVideos from '@/Components/Premiere/SuggestedVideos';
 import PremiereSidebar from '@/Components/Premiere/PremiereSidebar';
+import UserBadge, { UserPosition } from '@/Components/UserBadge';
 import supabase from '@/supabase';
 import Swal from 'sweetalert2';
 import {
@@ -82,6 +83,12 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
     const [activeChapter, setActiveChapter] = useState(null);
     const [showDetailsExpanded, setShowDetailsExpanded] = useState(false);
 
+    // New playlist creation state
+    const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
+    const [newPlaylistName, setNewPlaylistName] = useState('');
+    const [newPlaylistPrivate, setNewPlaylistPrivate] = useState(false);
+    const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+
     // Director's note editing
     const [editingNote, setEditingNote] = useState(false);
     const [directorsNote, setDirectorsNote] = useState(project.directors_note || '');
@@ -90,6 +97,12 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
     // Chapters editing
     const [editingChapters, setEditingChapters] = useState(false);
     const [chapters, setChapters] = useState(project.chapters || []);
+
+    // Tags editing
+    const [editingTags, setEditingTags] = useState(false);
+    const [projectTags, setProjectTags] = useState(project.tags || []);
+    const [newTag, setNewTag] = useState('');
+    const [savingTags, setSavingTags] = useState(false);
 
     // Like state
     const [hasLiked, setHasLiked] = useState(initialHasLiked);
@@ -442,6 +455,50 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
         setChapters(updated);
     };
 
+    // Tags Management
+    const addTag = () => {
+        const tag = newTag.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
+        if (tag && !projectTags.includes(tag)) {
+            setProjectTags([...projectTags, tag]);
+            setNewTag('');
+        }
+    };
+
+    const removeTag = (tagToRemove) => {
+        setProjectTags(projectTags.filter(t => t !== tagToRemove));
+    };
+
+    const saveTags = () => {
+        setSavingTags(true);
+        router.patch(route('premiere.update', project.id), {
+            tags: projectTags,
+        }, {
+            onSuccess: () => {
+                setEditingTags(false);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Tags Updated',
+                    text: 'Your tags have been saved.',
+                    background: '#1e293b',
+                    color: '#fff',
+                    confirmButtonColor: '#f59e0b',
+                    timer: 2000,
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to update tags.',
+                    background: '#1e293b',
+                    color: '#fff',
+                });
+            },
+            onFinish: () => setSavingTags(false),
+            preserveScroll: true,
+        });
+    };
+
     // Playlist Modal
     const openPlaylistModal = async () => {
         if (!isAuthenticated) {
@@ -467,6 +524,50 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
         } finally {
             setLoadingPlaylists(false);
         }
+    };
+
+    // Create new playlist and add current video
+    const createPlaylistAndAdd = async () => {
+        if (!newPlaylistName.trim()) return;
+        
+        setCreatingPlaylist(true);
+        router.post(route('playlists.store'), {
+            title: newPlaylistName,
+            visibility: newPlaylistPrivate ? 'private' : 'public',
+        }, {
+            onSuccess: async () => {
+                // Reload playlists and add video to the new one
+                try {
+                    const res = await fetch(route('playlists.index'), { headers: { 'Accept': 'application/json' } });
+                    const data = await res.json();
+                    const playlists = data.data || [];
+                    setUserPlaylists(playlists);
+                    
+                    // Find the newly created playlist (most recent)
+                    if (playlists.length > 0) {
+                        const newPlaylist = playlists[0];
+                        addToPlaylist(newPlaylist.id);
+                    }
+                } catch (e) {
+                    console.error('Failed to add to new playlist', e);
+                }
+                
+                setNewPlaylistName('');
+                setNewPlaylistPrivate(false);
+                setShowCreatePlaylist(false);
+                setCreatingPlaylist(false);
+            },
+            onError: () => {
+                setCreatingPlaylist(false);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Failed to create playlist',
+                    background: '#1e293b',
+                    color: '#fff',
+                });
+            },
+            preserveScroll: true,
+        });
     };
 
     const addToPlaylist = (playlistId) => {
@@ -517,7 +618,7 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
 
     const upNextItems = suggestedVideos?.slice?.(0, 3) || [];
     const castCrew = project.cast_crew || [];
-    const tags = project.tags || [];
+    const tags = projectTags;
 
     return (
         <CinemaLayout>
@@ -833,7 +934,14 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
 
                         {/* Sidebar */}
                         <div className={`${sidebarOpen ? 'w-full lg:w-80 xl:w-96' : 'hidden'} transition-all`}>
-                            {sidebarOpen && <PremiereSidebar comments={comments} projectId={project.id} />}
+                            {sidebarOpen && <PremiereSidebar 
+                                comments={comments} 
+                                projectId={project.id} 
+                                notes={chapters.length > 0 ? chapters.map(ch => ({
+                                    time: formatTime(ch.time),
+                                    note: ch.title
+                                })) : directorsNote ? [{ time: '0:00', note: directorsNote }] : []}
+                            />}
                         </div>
                     </div>
 
@@ -853,10 +961,11 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
                                     </div>
                                     <div>
                                         <h2 className="text-2xl font-bold text-white mb-1">{project.title}</h2>
-                                        <div className="flex items-center gap-4 text-sm text-amber-300/80">
-                                            <span className="flex items-center gap-1">
+                                        <div className="flex items-center gap-4 text-sm text-amber-300/80 flex-wrap">
+                                            <span className="flex items-center gap-1.5">
                                                 <User className="w-4 h-4" />
                                                 {project.user?.name}
+                                                <UserBadge user={project.user} size="xs" showLabel={false} />
                                             </span>
                                             <span className="flex items-center gap-1">
                                                 <Eye className="w-4 h-4" />
@@ -867,6 +976,9 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
                                                 {new Date(project.created_at).toLocaleDateString()}
                                             </span>
                                         </div>
+                                        {project.user?.position && (
+                                            <UserPosition user={project.user} className="mt-1" />
+                                        )}
                                     </div>
                                 </div>
 
@@ -927,15 +1039,64 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
                                 )}
 
                                 {/* Tags */}
-                                {tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-4">
-                                        {tags.map((tag, i) => (
-                                            <span key={i} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-amber-300/80">
-                                                #{tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
+                                <div className="mt-4">
+                                    {editingTags ? (
+                                        <div className="space-y-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                {projectTags.map((tag, i) => (
+                                                    <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-white/10 border border-white/10 rounded-full text-sm text-amber-300">
+                                                        #{tag}
+                                                        <button onClick={() => removeTag(tag)} className="ml-1 text-red-400 hover:text-red-300">
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={newTag}
+                                                    onChange={(e) => setNewTag(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                                                    placeholder="Add tag (e.g., drama, action)"
+                                                    className="flex-1 rounded-lg bg-slate-800/50 border border-white/10 text-white focus:border-amber-400 focus:ring-amber-400 px-3 py-2 text-sm"
+                                                />
+                                                <button onClick={addTag} className="px-3 py-2 bg-amber-500/20 text-amber-300 rounded-lg hover:bg-amber-500/30 text-sm">
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => setEditingTags(false)} className="px-3 py-1.5 text-sm bg-slate-700 text-white rounded-lg hover:bg-slate-600">
+                                                    Cancel
+                                                </button>
+                                                <button onClick={saveTags} disabled={savingTags} className="px-3 py-1.5 text-sm bg-amber-500 text-black rounded-lg hover:bg-amber-400 disabled:opacity-50">
+                                                    {savingTags ? 'Saving...' : 'Save Tags'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2 items-center">
+                                            {tags.length > 0 ? (
+                                                tags.map((tag, i) => (
+                                                    <span key={i} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-amber-300/80">
+                                                        #{tag}
+                                                    </span>
+                                                ))
+                                            ) : isOwner ? (
+                                                <span className="text-sm text-slate-400">No tags yet. Add some to help others find your content!</span>
+                                            ) : null}
+                                            {isOwner && (
+                                                <button
+                                                    onClick={() => setEditingTags(true)}
+                                                    className="px-3 py-1 bg-white/5 border border-dashed border-white/20 rounded-full text-sm text-amber-300/60 hover:border-amber-400/50 hover:text-amber-300 transition flex items-center gap-1"
+                                                >
+                                                    <Edit3 className="w-3 h-3" />
+                                                    Edit Tags
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -1121,34 +1282,88 @@ export default function Show({ project, suggestedVideos, comments, isOwner, hasL
 
             {/* Playlist Modal */}
             {showPlaylistModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowPlaylistModal(false)}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => { setShowPlaylistModal(false); setShowCreatePlaylist(false); }}>
                     <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xl font-semibold text-white">Save to Playlist</h3>
-                            <button onClick={() => setShowPlaylistModal(false)} className="p-1 text-slate-400 hover:text-white">
+                            <button onClick={() => { setShowPlaylistModal(false); setShowCreatePlaylist(false); }} className="p-1 text-slate-400 hover:text-white">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
+                        {/* Create New Playlist Button/Form */}
+                        {!showCreatePlaylist ? (
+                            <button
+                                onClick={() => setShowCreatePlaylist(true)}
+                                className="w-full mb-4 p-4 rounded-xl border-2 border-dashed border-amber-400/50 hover:border-amber-400 bg-amber-400/5 hover:bg-amber-400/10 transition flex items-center gap-3"
+                            >
+                                <Plus className="w-5 h-5 text-amber-400" />
+                                <span className="font-semibold text-amber-200">Create New Playlist</span>
+                            </button>
+                        ) : (
+                            <div className="mb-4 p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                                <input
+                                    type="text"
+                                    value={newPlaylistName}
+                                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                                    placeholder="Playlist name"
+                                    className="w-full rounded-lg bg-slate-800/50 border border-white/10 text-white focus:border-amber-400 focus:ring-amber-400 p-3"
+                                    autoFocus
+                                />
+                                <div className="flex items-center gap-3">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={newPlaylistPrivate}
+                                            onChange={(e) => setNewPlaylistPrivate(e.target.checked)}
+                                            className="rounded border-white/20 bg-slate-800 text-amber-500 focus:ring-amber-400"
+                                        />
+                                        <span className="text-sm text-slate-300">Private playlist</span>
+                                    </label>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={createPlaylistAndAdd}
+                                        disabled={creatingPlaylist || !newPlaylistName.trim()}
+                                        className="flex-1 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg font-semibold hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {creatingPlaylist ? 'Creating...' : 'Create & Add'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowCreatePlaylist(false)}
+                                        className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {loadingPlaylists ? (
                             <div className="py-8 text-center text-amber-200">Loading playlists...</div>
-                        ) : userPlaylists.length === 0 ? (
-                            <div className="py-8 text-center">
-                                <p className="text-slate-400 mb-4">You don't have any playlists yet.</p>
-                                    <a href={route('playlists.index')} className="inline-block px-4 py-2 bg-amber-500 text-slate-900 rounded-lg font-semibold hover:bg-amber-400">
-                                        Create Playlist
-                                    </a>
-                                </div>
-                            ) : (
-                                <div className="space-y-2 max-h-96 overflow-y-auto">
-                                    {userPlaylists.map((pl) => (
-                                        <button
-                                            key={pl.id}
-                                            onClick={() => addToPlaylist(pl.id)}
+                        ) : userPlaylists.length === 0 && !showCreatePlaylist ? (
+                            <div className="py-4 text-center">
+                                <p className="text-slate-400">You don't have any playlists yet.</p>
+                                <p className="text-sm text-slate-500 mt-1">Create one above to get started!</p>
+                            </div>
+                        ) : userPlaylists.length > 0 && (
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                                <p className="text-xs text-slate-400 mb-2">Or add to existing playlist:</p>
+                                {userPlaylists.map((pl) => (
+                                    <button
+                                        key={pl.id}
+                                        onClick={() => addToPlaylist(pl.id)}
                                         className="w-full text-left p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/50 transition"
                                     >
-                                        <div className="font-semibold text-white">{pl.title}</div>
-                                        <div className="text-xs text-slate-400">{pl.projects_count || 0} videos</div>
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="font-semibold text-white">{pl.title}</div>
+                                                <div className="text-xs text-slate-400">{pl.projects_count || 0} videos</div>
+                                            </div>
+                                            {pl.visibility === 'private' && (
+                                                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">Private</span>
+                                            )}
+                                        </div>
                                     </button>
                                 ))}
                             </div>

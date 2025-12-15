@@ -59,25 +59,44 @@ class UserController extends Controller
     }
 
     /**
-     * Update the roles assigned to the given user.
+     * Update the user profile and roles.
      */
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
             'roles' => ['nullable', 'array'],
             'roles.*' => ['integer', 'exists:roles,id'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'position' => ['nullable', 'string', 'max:255'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:100'],
         ]);
 
-        $roleIds = $validated['roles'] ?? [];
+        // Update basic info if provided
+        if (!empty($validated['name'])) {
+            $user->name = $validated['name'];
+        }
+        if (!empty($validated['email'])) {
+            $user->email = $validated['email'];
+        }
+        
+        // Update position and tags
+        $user->position = $validated['position'] ?? null;
+        $user->tags = $validated['tags'] ?? null;
+        $user->save();
 
-        $user->roles()->sync($roleIds);
+        // Sync roles if provided
+        if (isset($validated['roles'])) {
+            $user->roles()->sync($validated['roles']);
+        }
 
         try {
-            \App\Services\Logger::log('USER_MGMT', 'ROLES_UPDATED', sprintf('%s updated roles for %s', auth()->user()?->name ?? 'System', $user->email));
+            \App\Services\Logger::log('USER_MGMT', 'USER_UPDATED', sprintf('%s updated user %s', auth()->user()?->name ?? 'System', $user->email));
         } catch (\Throwable $e) {
         }
 
-        return redirect()->back()->with('success', 'User roles updated.');
+        return redirect()->back()->with('success', 'User updated successfully.');
     }
 
     /**
@@ -119,6 +138,9 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', 'integer', 'exists:roles,id'],
+            'position' => ['nullable', 'string', 'max:255'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:100'],
         ]);
 
         // Default password (informational) - using a safe hashed default
@@ -128,6 +150,8 @@ class UserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($defaultPassword),
+            'position' => $validated['position'] ?? null,
+            'tags' => $validated['tags'] ?? null,
         ]);
 
         // Attach role

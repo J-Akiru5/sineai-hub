@@ -1,10 +1,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import UserBadge, { UserPosition } from '@/Components/UserBadge';
+import UserAvatar from '@/Components/UserAvatar';
 import {
     Upload, MessageCircle, Sparkles, Eye, FolderOpen, FileText, Play,
     TrendingUp, Clock, ChevronRight, Film, Clapperboard, Quote, Star,
     Users, Activity, Zap
 } from 'lucide-react';
+import SparkRunner from '@/Components/SparkRunner';
 
 // Motivational quotes for filmmakers
 const quotes = [
@@ -35,9 +39,21 @@ export default function Dashboard({
     const scripts = recentScripts || [];
     const channels = unreadChannels || [];
     const todaysQuote = getTodaysQuote();
+    const [showGame, setShowGame] = useState(false);
 
     // Mock trending project if not provided
     const trending = trendingProject || (projects.length > 0 ? projects[0] : null);
+
+    // Close modal on Escape key press
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && showGame) {
+                setShowGame(false);
+            }
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [showGame]);
 
     return (
         <AuthenticatedLayout
@@ -62,12 +78,28 @@ export default function Dashboard({
 
                                 <div className="relative z-10">
                                     <div className="flex items-start justify-between mb-6">
-                                        <div>
-                                            <p className="text-amber-500/80 text-sm font-medium uppercase tracking-wider mb-2">Welcome back</p>
-                                            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-1">
-                                                {auth?.user?.name ?? 'Creator'}
-                                            </h1>
-                                            <p className="text-slate-400">Ready to create something amazing?</p>
+                                        <div className="flex items-start gap-4">
+                                            {/* User Avatar */}
+                                            <div className="relative">
+                                                <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-lg" />
+                                                <UserAvatar 
+                                                    user={auth?.user} 
+                                                    size={16} 
+                                                    className="relative ring-2 ring-amber-500/30"
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <p className="text-amber-500/80 text-sm font-medium uppercase tracking-wider mb-1">Welcome back</p>
+                                                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-1 flex items-center gap-3 flex-wrap">
+                                                    {auth?.user?.name ?? 'Creator'}
+                                                    <UserBadge user={auth?.user} size="md" />
+                                                </h1>
+                                                <UserPosition user={auth?.user} className="text-sm" />
+                                                {!auth?.user?.position && (
+                                                    <p className="text-slate-400 text-sm">Ready to create something amazing?</p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
                                             <Clapperboard className="w-6 h-6 text-white" />
@@ -432,6 +464,41 @@ export default function Dashboard({
                     </div>
                 </div>
             </div>
+
+            {/* Easter Egg Trigger Button */}
+            <button
+                onClick={() => setShowGame(true)}
+                className="fixed bottom-6 right-6 z-40 opacity-30 hover:opacity-100 transition-opacity duration-300 focus:outline-none"
+                aria-label="Play Spark Runner"
+                title="Secret Game"
+            >
+                <img
+                    src="/images/spark-head.png"
+                    alt="Spark"
+                    className="w-10 h-10 object-cover rounded-full"
+                />
+            </button>
+
+            {/* Easter Egg Game Modal */}
+            {showGame && (
+                <div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowGame(false);
+                    }}
+                >
+                    <div className="relative bg-slate-900/90 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 shadow-2xl">
+                        <button
+                            onClick={() => setShowGame(false)}
+                            className="absolute top-3 right-3 text-slate-400 hover:text-white focus:outline-none text-xl"
+                            aria-label="Close game"
+                        >
+                            ✕
+                        </button>
+                        <SparkRunner />
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }

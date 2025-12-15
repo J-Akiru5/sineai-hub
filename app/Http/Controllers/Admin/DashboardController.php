@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Project;
 use App\Models\Channel;
 use App\Models\ContentFlag;
+use App\Models\SiteVisit;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -30,6 +31,11 @@ class DashboardController extends Controller
         $pendingApprovalCount = Project::where('moderation_status', 'pending')->count();
 
         $openReportsCount = ContentFlag::where('status', 'open')->count();
+
+        // Site visits statistics
+        $totalSiteVisits = SiteVisit::getTotalVisits();
+        $todaySiteVisits = SiteVisit::getTodayVisits();
+        $visitsOverTime = SiteVisit::getVisitsLastDays(7);
 
         $now = Carbon::now();
         $start = $now->copy()->subMonths(5)->startOfMonth(); // 6 months including current
@@ -85,6 +91,9 @@ class DashboardController extends Controller
             'totalPublicProjects' => $totalPublicProjects,
             'pendingApprovalCount' => $pendingApprovalCount,
             'openReportsCount' => $openReportsCount,
+            'totalSiteVisits' => $totalSiteVisits,
+            'todaySiteVisits' => $todaySiteVisits,
+            'visitsOverTime' => $visitsOverTime,
         ]);
     }
 }

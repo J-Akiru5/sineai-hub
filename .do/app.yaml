@@ -1,0 +1,111 @@
+spec:
+  name: sineai-hub
+  region: sgp
+  services:
+    - name: web
+      github:
+        repo: your-username/sineai-hub
+        branch: main
+        deploy_on_push: true
+      build_command: |
+        composer install --no-dev --optimize-autoloader
+        npm ci && npm run build
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
+      run_command: heroku-php-apache2 public/
+      http_port: 8080
+      instance_count: 1
+      instance_size_slug: basic-xs
+      envs:
+        - key: APP_NAME
+          value: SineAI Hub
+        - key: APP_ENV
+          value: production
+        - key: APP_DEBUG
+          value: "false"
+        - key: APP_URL
+          value: ${APP_URL}
+        - key: APP_KEY
+          type: SECRET
+          value: ${APP_KEY}
+        - key: LOG_CHANNEL
+          value: errorlog
+        - key: DB_CONNECTION
+          value: pgsql
+        - key: DATABASE_URL
+          type: SECRET
+          value: ${db.DATABASE_URL}
+        - key: CACHE_DRIVER
+          value: redis
+        - key: SESSION_DRIVER
+          value: redis
+        - key: QUEUE_CONNECTION
+          value: redis
+        - key: REDIS_URL
+          type: SECRET
+          value: ${redis.REDIS_URL}
+        - key: FILESYSTEM_DISK
+          value: do_spaces
+        - key: DO_SPACES_KEY
+          type: SECRET
+          value: ${DO_SPACES_KEY}
+        - key: DO_SPACES_SECRET
+          type: SECRET
+          value: ${DO_SPACES_SECRET}
+        - key: DO_SPACES_ENDPOINT
+          value: ${DO_SPACES_ENDPOINT}
+        - key: DO_SPACES_REGION
+          value: ${DO_SPACES_REGION}
+        - key: DO_SPACES_BUCKET
+          value: ${DO_SPACES_BUCKET}
+        - key: DO_SPACES_CDN
+          value: ${DO_SPACES_CDN}
+        - key: VITE_SUPABASE_URL
+          value: ${VITE_SUPABASE_URL}
+        - key: VITE_SUPABASE_ANON_KEY
+          type: SECRET
+          value: ${VITE_SUPABASE_ANON_KEY}
+      routes:
+        - path: /
+  databases:
+    - name: db
+      engine: PG
+      version: "15"
+      size: db-s-1vcpu-1gb
+      num_nodes: 1
+    - name: redis
+      engine: REDIS
+      version: "7"
+      size: db-s-1vcpu-1gb
+      num_nodes: 1
+
+# Worker for queue processing (optional but recommended)
+  workers:
+    - name: queue-worker
+      github:
+        repo: your-username/sineai-hub
+        branch: main
+        deploy_on_push: true
+      build_command: composer install --no-dev --optimize-autoloader
+      run_command: php artisan queue:work --tries=3 --timeout=90
+      instance_count: 1
+      instance_size_slug: basic-xxs
+      envs:
+        - key: APP_ENV
+          value: production
+        - key: APP_KEY
+          type: SECRET
+          value: ${APP_KEY}
+        - key: DB_CONNECTION
+          value: pgsql
+        - key: DATABASE_URL
+          type: SECRET
+          value: ${db.DATABASE_URL}
+        - key: REDIS_URL
+          type: SECRET
+          value: ${redis.REDIS_URL}
+        - key: CACHE_DRIVER
+          value: redis
+        - key: QUEUE_CONNECTION
+          value: redis

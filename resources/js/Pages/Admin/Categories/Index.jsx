@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
@@ -11,14 +11,19 @@ import {
     Check,
     X,
     Save,
-    Palette
+    Palette,
+    Search,
+    RefreshCw
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-export default function Index({ auth, categories }) {
+export default function Index({ auth, categories, filters = {} }) {
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [draggedItem, setDraggedItem] = useState(null);
+    const [search, setSearch] = useState(filters.search || '');
+    const [statusFilter, setStatusFilter] = useState(filters.status || '');
+    const debounceRef = useRef(null);
 
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         name: '',
@@ -160,6 +165,26 @@ export default function Index({ auth, categories }) {
         return colors[color] || colors.amber;
     };
 
+    // Search with debounce
+    useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            router.get(route('admin.categories.index'), {
+                search: search || undefined,
+                status: statusFilter || undefined,
+            }, { preserveState: true, replace: true });
+        }, 400);
+        return () => clearTimeout(debounceRef.current);
+    }, [search]);
+
+    // Immediate filter change
+    useEffect(() => {
+        router.get(route('admin.categories.index'), {
+            search: search || undefined,
+            status: statusFilter || undefined,
+        }, { preserveState: true, replace: true });
+    }, [statusFilter]);
+
     return (
         <AdminLayout
             auth={auth}
@@ -169,17 +194,48 @@ export default function Index({ auth, categories }) {
                         <Tag className="w-6 h-6 text-amber-400" />
                         Category Management
                     </h2>
-                    <button
-                        onClick={() => setShowCreate(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-semibold hover:from-amber-400 hover:to-amber-500 transition"
-                    >
-                        <Plus className="w-5 h-5" />
-                        Add Category
-                    </button>
                 </div>
             }
         >
             <Head title="Categories" />
+
+            {/* Search & Filter Toolbar */}
+            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search categories..."
+                            className="pl-10 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-colors w-64"
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-colors"
+                    >
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <button
+                        onClick={() => router.get(route('admin.categories.index'), {}, { preserveState: true, replace: true })}
+                        className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Refresh
+                    </button>
+                </div>
+                <button
+                    onClick={() => setShowCreate(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-semibold hover:from-amber-400 hover:to-amber-500 transition"
+                >
+                    <Plus className="w-5 h-5" />
+                    Add Category
+                </button>
+            </div>
 
             <div className="py-6">
                 <div className="max-w-5xl mx-auto sm:px-6 lg:px-8">
