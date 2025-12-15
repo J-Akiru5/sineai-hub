@@ -56,19 +56,19 @@ class SearchController extends Controller
             ->where(function ($q) use ($searchTerms, $query) {
                 // Full phrase match (highest priority via ordering)
                 $q->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($query) . '%'])
-                  ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($query) . '%'])
-                  ->orWhereRaw('LOWER(category) LIKE ?', ['%' . strtolower($query) . '%']);
+                  ->orWhereRaw('LOWER(COALESCE(description, \'\')) LIKE ?', ['%' . strtolower($query) . '%'])
+                  ->orWhereRaw('LOWER(COALESCE(category, \'\')) LIKE ?', ['%' . strtolower($query) . '%']);
                 
                 // Individual term matches
                 foreach ($searchTerms as $term) {
                     if (strlen($term) >= 2) {
                         $q->orWhereRaw('LOWER(title) LIKE ?', ['%' . $term . '%'])
-                          ->orWhereRaw('LOWER(description) LIKE ?', ['%' . $term . '%']);
+                          ->orWhereRaw('LOWER(COALESCE(description, \'\')) LIKE ?', ['%' . $term . '%']);
                     }
                 }
                 
-                // Search in JSON tags field
-                $q->orWhereRaw("LOWER(COALESCE(tags, '[]')) LIKE ?", ['%' . strtolower($query) . '%']);
+                // Search in JSON tags field - use COALESCE with text cast for PostgreSQL
+                $q->orWhereRaw("LOWER(COALESCE(tags::text, '[]')) LIKE ?", ['%' . strtolower($query) . '%']);
             })
             // Order by relevance: exact title match first, then views
             ->orderByRaw("CASE WHEN LOWER(title) = ? THEN 0 WHEN LOWER(title) LIKE ? THEN 1 ELSE 2 END", [

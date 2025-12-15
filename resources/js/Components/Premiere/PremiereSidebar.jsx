@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import CommentSection from '@/Components/Premiere/CommentSection';
 
-const DEFAULT_NOTES = [
-    { time: '0:30', note: 'This shot took 15 takes!' },
-    { time: '1:10', note: 'Lighting was adjusted in post for this scene.' },
-    { time: '2:45', note: 'Improvised dialogue moment.' },
-];
-
-export default function PremiereSidebar({ comments, projectId, notes = DEFAULT_NOTES, playlistMode = false, playlistItems = [] }) {
+export default function PremiereSidebar({ comments, projectId, notes = [], playlistMode = false, playlistItems = [] }) {
     const defaultTab = playlistMode ? 'queue' : 'chat';
     const [activeTab, setActiveTab] = useState(defaultTab);
 
@@ -59,12 +53,18 @@ export default function PremiereSidebar({ comments, projectId, notes = DEFAULT_N
 
                 {activeTab === 'notes' && (
                     <div className="space-y-3">
-                        {notes.map((item, idx) => (
-                            <div key={`${item.time}-${idx}`} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                                <div className="text-xs uppercase tracking-wide text-amber-300">{item.time}</div>
-                                <div className="text-sm text-slate-100 mt-1">{item.note}</div>
+                        {notes.length === 0 ? (
+                            <div className="text-sm text-slate-400 text-center py-8">
+                                No director's notes available for this video.
                             </div>
-                        ))}
+                        ) : (
+                            notes.map((item, idx) => (
+                                <div key={`${item.time}-${idx}`} className="p-3 rounded-lg bg-white/5 border border-white/10">
+                                    <div className="text-xs uppercase tracking-wide text-amber-300">{item.time}</div>
+                                    <div className="text-sm text-slate-100 mt-1">{item.note}</div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 )}
             </div>

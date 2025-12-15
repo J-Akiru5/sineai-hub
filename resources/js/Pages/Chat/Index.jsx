@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, Fragment, useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import UserAvatar from '@/Components/UserAvatar';
+import UserBadge, { UserBadgeCompact } from '@/Components/UserBadge';
 import { Head, useForm, router } from '@inertiajs/react';
 import supabase from '@/supabase';
 import { Transition, Popover } from '@headlessui/react';
@@ -508,7 +509,8 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                                 <UserAvatar user={u} size={6} />
                                                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
                                             </div>
-                                            <span className="text-sm text-slate-300 truncate">{u.name}</span>
+                                            <span className="text-sm text-slate-300 truncate flex-1">{u.name}</span>
+                                            <UserBadgeCompact user={u} />
                                         </div>
                                     ))}
                                     {onlineUsers.size === 0 && (
@@ -525,7 +527,10 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                         <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-white truncate">{auth.user?.name}</div>
+                                        <div className="text-sm font-medium text-white truncate flex items-center gap-1.5">
+                                            {auth.user?.name}
+                                            <UserBadgeCompact user={auth.user} />
+                                        </div>
                                         <div className="text-xs text-green-400">Online</div>
                                     </div>
                                 </div>

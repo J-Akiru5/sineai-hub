@@ -28,6 +28,8 @@ class User extends Authenticatable
         'location',
         'contact_number',
         'is_approved',
+        'position',
+        'tags',
     ];
 
     /**
@@ -48,6 +50,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'tags' => 'array',
     ];
 
     /**
@@ -145,5 +148,13 @@ class User extends Authenticatable
     public function editorProjects(): HasMany
     {
         return $this->hasMany(EditorProject::class);
+    }
+
+    /**
+     * Get the user's playlists.
+     */
+    public function playlists(): HasMany
+    {
+        return $this->hasMany(Playlist::class);
     }
 }

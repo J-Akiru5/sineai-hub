@@ -199,6 +199,32 @@ Route::post('/language', function (Request $request) {
     session(['locale' => $locale]);
     return back(303);
 })->name('language');
+
+    // Settings
+    Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings/notifications', [\App\Http\Controllers\SettingsController::class, 'updateNotifications'])->name('settings.notifications');
+    Route::put('/settings/privacy', [\App\Http\Controllers\SettingsController::class, 'updatePrivacy'])->name('settings.privacy');
+    Route::put('/settings/appearance', [\App\Http\Controllers\SettingsController::class, 'updateAppearance'])->name('settings.appearance');
+    Route::post('/settings/avatar', [\App\Http\Controllers\SettingsController::class, 'updateAvatar'])->name('settings.avatar');
+    Route::post('/settings/banner', [\App\Http\Controllers\SettingsController::class, 'updateBanner'])->name('settings.banner');
+    Route::put('/settings/profile', [\App\Http\Controllers\SettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::delete('/settings/account', [\App\Http\Controllers\SettingsController::class, 'deleteAccount'])->name('settings.deleteAccount');
+
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::delete('/notifications/{notification}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
+});
+
+// Public creator profile (public route)
+Route::get('/creator/{identifier}', [\App\Http\Controllers\CreatorController::class, 'show'])->name('creator.show');
+
+// Follow actions (authenticated)
+Route::middleware(['auth'])->group(function () {
+    Route::post('/creator/{user}/follow', [\App\Http\Controllers\CreatorController::class, 'follow'])->name('creator.follow');
+    Route::delete('/creator/{user}/follow', [\App\Http\Controllers\CreatorController::class, 'unfollow'])->name('creator.unfollow');
 });
 
 require __DIR__.'/auth.php';

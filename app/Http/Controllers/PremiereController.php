@@ -158,6 +158,8 @@ class PremiereController extends Controller
             'chapters' => 'nullable|array',
             'chapters.*.time' => 'required_with:chapters|integer|min:0',
             'chapters.*.title' => 'required_with:chapters|string|max:255',
+            'tags' => 'nullable|array|max:10',
+            'tags.*' => 'string|max:50',
         ]);
 
         $project->update($validated);

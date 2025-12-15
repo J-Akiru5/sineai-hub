@@ -1,5 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import UserBadge, { UserPosition } from '@/Components/UserBadge';
+import UserAvatar from '@/Components/UserAvatar';
 import {
     Upload, MessageCircle, Sparkles, Eye, FolderOpen, FileText, Play,
     TrendingUp, Clock, ChevronRight, Film, Clapperboard, Quote, Star,
@@ -62,12 +64,28 @@ export default function Dashboard({
 
                                 <div className="relative z-10">
                                     <div className="flex items-start justify-between mb-6">
-                                        <div>
-                                            <p className="text-amber-500/80 text-sm font-medium uppercase tracking-wider mb-2">Welcome back</p>
-                                            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-1">
-                                                {auth?.user?.name ?? 'Creator'}
-                                            </h1>
-                                            <p className="text-slate-400">Ready to create something amazing?</p>
+                                        <div className="flex items-start gap-4">
+                                            {/* User Avatar */}
+                                            <div className="relative">
+                                                <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-lg" />
+                                                <UserAvatar 
+                                                    user={auth?.user} 
+                                                    size={16} 
+                                                    className="relative ring-2 ring-amber-500/30"
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <p className="text-amber-500/80 text-sm font-medium uppercase tracking-wider mb-1">Welcome back</p>
+                                                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-1 flex items-center gap-3 flex-wrap">
+                                                    {auth?.user?.name ?? 'Creator'}
+                                                    <UserBadge user={auth?.user} size="md" />
+                                                </h1>
+                                                <UserPosition user={auth?.user} className="text-sm" />
+                                                {!auth?.user?.position && (
+                                                    <p className="text-slate-400 text-sm">Ready to create something amazing?</p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
                                             <Clapperboard className="w-6 h-6 text-white" />
