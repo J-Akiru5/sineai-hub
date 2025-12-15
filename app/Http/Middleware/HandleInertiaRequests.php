@@ -34,6 +34,15 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user() ? $request->user()->load('roles') : null,
             ],
+            // Unread notifications count for navbar badge
+            'unreadNotificationsCount' => function () use ($request) {
+                if ($request->user()) {
+                    return \App\Models\Notification::where('user_id', $request->user()->id)
+                        ->whereNull('read_at')
+                        ->count();
+                }
+                return 0;
+            },
             // Share translations for the current locale (loaded from resources/lang/{locale}.json)
             'translations' => function () use ($request) {
                 $locale = session('locale', config('app.locale'));

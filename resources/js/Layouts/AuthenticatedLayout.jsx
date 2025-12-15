@@ -236,12 +236,29 @@ export default function Authenticated({ user, header, children }) {
                                     {/* User Section (right) */}
                                     <div className="flex items-center gap-2 sm:gap-3">
                                         {/* Notification bell */}
-                                        <button className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden sm:block">
+                                        <Link 
+                                            href={route('notifications.index')} 
+                                            className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden sm:block"
+                                        >
                                             <BellIcon />
-                                            {unreadCount > 0 && (
-                                                <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                                            {(unreadCount > 0 || props.unreadNotificationsCount > 0) && (
+                                                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-amber-500 text-black text-xs font-bold rounded-full">
+                                                    {props.unreadNotificationsCount || unreadCount}
+                                                </span>
                                             )}
-                                        </button>
+                                        </Link>
+
+                                        {/* Settings */}
+                                        <Link 
+                                            href={route('settings.index')} 
+                                            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden sm:block"
+                                            title="Settings"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </Link>
 
                                         {/* User Dropdown - Desktop */}
                                         <div className="hidden lg:block">
@@ -264,6 +281,20 @@ export default function Authenticated({ user, header, children }) {
                                                     </div>
                                                     <Dropdown.Link href={route('profile.edit')} className="flex items-center gap-2 px-4 py-2 hover:bg-white/5">
                                                         <UserCircle /> Profile
+                                                    </Dropdown.Link>
+                                                    <Dropdown.Link href={route('notifications.index')} className="flex items-center gap-2 px-4 py-2 hover:bg-white/5">
+                                                        <BellIcon /> Notifications
+                                                        {(props.unreadNotificationsCount > 0) && (
+                                                            <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded-full">
+                                                                {props.unreadNotificationsCount}
+                                                            </span>
+                                                        )}
+                                                    </Dropdown.Link>
+                                                    <Dropdown.Link href={route('settings.index')} className="flex items-center gap-2 px-4 py-2 hover:bg-white/5">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        </svg> Settings
                                                     </Dropdown.Link>
                                                     <Dropdown.Link href={route('storage.index')} className="flex items-center gap-2 px-4 py-2 hover:bg-white/5">
                                                         <HardDriveIcon /> My Storage
