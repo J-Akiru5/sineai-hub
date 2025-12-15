@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use App\Models\Script;
+use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
 
 class ScriptwriterController extends Controller
@@ -97,7 +98,7 @@ class ScriptwriterController extends Controller
         if (array_key_exists('project_id', $data)) {
             // Verify user owns the project if provided
             if ($data['project_id']) {
-                $project = \App\Models\Project::find($data['project_id']);
+                $project = Project::find($data['project_id']);
                 if (!$project || $project->user_id !== $user->id) {
                     return response()->json(['error' => 'You do not own this project'], 403);
                 }
@@ -244,7 +245,7 @@ class ScriptwriterController extends Controller
 
         // If project_id is provided, verify user owns it
         if ($projectId) {
-            $project = \App\Models\Project::find($projectId);
+            $project = Project::find($projectId);
             if (!$project || $project->user_id !== $user->id) {
                 return response()->json(['error' => 'You do not own this project'], 403);
             }
@@ -270,7 +271,7 @@ class ScriptwriterController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $projects = \App\Models\Project::where('user_id', $user->id)
+        $projects = Project::where('user_id', $user->id)
             ->select('id', 'title', 'thumbnail_url', 'created_at')
             ->orderBy('created_at', 'desc')
             ->get();
