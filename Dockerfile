@@ -72,7 +72,7 @@ RUN mkdir -p /var/www/public
 RUN rm -f /etc/nginx/conf.d/default.conf
 RUN cat > /etc/nginx/conf.d/default.conf <<'EOF'
 server {
-    listen 80;
+    listen 8000;
     server_name _;
     root /var/www/public;
 
@@ -112,7 +112,7 @@ EOF
 COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Expose HTTP port for the DigitalOcean App Platform
-EXPOSE 80
+EXPOSE 8000
 
 # Start supervisord which manages nginx and php-fpm
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
