@@ -5,6 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
+import { showSuccess, showError } from '@/Utils/swal';
 
 export default function UpdatePasswordForm({ className }) {
     const passwordInput = useRef();
@@ -21,16 +22,21 @@ export default function UpdatePasswordForm({ className }) {
 
         put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                showSuccess('Password Updated', 'Your password has been changed successfully.');
+            },
             onError: () => {
                 if (errors.password) {
                     reset('password', 'password_confirmation');
                     passwordInput.current.focus();
+                    showError('Invalid Password', 'Please check your new password requirements.');
                 }
 
                 if (errors.current_password) {
                     reset('current_password');
                     currentPasswordInput.current.focus();
+                    showError('Incorrect Password', 'Your current password is incorrect.');
                 }
             },
         });

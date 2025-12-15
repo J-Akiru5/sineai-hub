@@ -2,6 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables */
+@layer base {
+    :root {
+        /* Light theme colors */
+        --bg-primary: 255 255 255;
+        --bg-secondary: 241 245 249;
+        --bg-tertiary: 226 232 240;
+        --text-primary: 15 23 42;
+        --text-secondary: 71 85 105;
+        --text-tertiary: 100 116 139;
+        --border-color: 203 213 225;
+        --accent-primary: 245 158 11;
+        --accent-secondary: 217 119 6;
+    }
+
+    .dark {
+        /* Dark theme colors */
+        --bg-primary: 15 23 42;
+        --bg-secondary: 30 41 59;
+        --bg-tertiary: 51 65 85;
+        --text-primary: 248 250 252;
+        --text-secondary: 203 213 225;
+        --text-tertiary: 148 163 184;
+        --border-color: 51 65 85;
+        --accent-primary: 245 158 11;
+        --accent-secondary: 251 191 36;
+    }
+
+    /* Theme-aware body styling */
+    body {
+        @apply bg-slate-950 text-slate-100 transition-colors duration-200;
+    }
+
+    .light body {
+        @apply bg-slate-50 text-slate-900;
+    }
+}
+
+/* Theme-aware component utilities */
+@layer components {
+    .theme-card {
+        @apply bg-white/5 dark:bg-white/5 border border-white/10 dark:border-white/10;
+    }
+
+    .light .theme-card {
+        @apply bg-white border-slate-200;
+    }
+
+    .theme-input {
+        @apply bg-slate-800/50 border-white/10 text-amber-100 focus:border-amber-500 focus:ring-amber-500;
+    }
+
+    .light .theme-input {
+        @apply bg-white border-slate-300 text-slate-900 focus:border-amber-500 focus:ring-amber-500;
+    }
+
+    .theme-button-primary {
+        @apply bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700;
+    }
+
+    .theme-button-secondary {
+        @apply bg-slate-700/50 text-slate-300 hover:bg-slate-600/50;
+    }
+
+    .light .theme-button-secondary {
+        @apply bg-slate-100 text-slate-700 hover:bg-slate-200;
+    }
+
+    .theme-text-primary {
+        @apply text-slate-100;
+    }
+
+    .light .theme-text-primary {
+        @apply text-slate-900;
+    }
+
+    .theme-text-secondary {
+        @apply text-slate-400;
+    }
+
+    .light .theme-text-secondary {
+        @apply text-slate-600;
+    }
+
+    .theme-bg {
+        @apply bg-slate-950;
+    }
+
+    .light .theme-bg {
+        @apply bg-slate-50;
+    }
+
+    .theme-nav {
+        @apply bg-slate-900/70 border-white/10;
+    }
+
+    .light .theme-nav {
+        @apply bg-white/90 border-slate-200;
+    }
+}
+
 /* Scrollbar utilities (minimal stable set) */
 .no-visible-scrollbar {
   /* Hide scrollbar where supported (IE) */

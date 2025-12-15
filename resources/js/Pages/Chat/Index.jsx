@@ -5,26 +5,34 @@ import UserBadge, { UserBadgeCompact } from '@/Components/UserBadge';
 import { Head, useForm, router } from '@inertiajs/react';
 import supabase from '@/supabase';
 import { Transition, Popover } from '@headlessui/react';
+import { useTheme, THEMES } from '@/Contexts/ThemeContext';
+import { useLanguage } from '@/Contexts/LanguageContext';
 
 // MessageBubble component for rendering different message types
-function MessageBubble({ message, isMe, displayName, user, authUser }) {
+function MessageBubble({ message, isMe, displayName, user, authUser, isDark, t }) {
     const messageType = message.message_type || 'text';
     const attachmentData = message.attachment_data;
 
     // Announcement styling
     if (messageType === 'announcement') {
         return (
-            <div className="w-full px-4 py-3 rounded-xl border-2 border-amber-500 bg-amber-900/30 backdrop-blur-sm">
+            <div className={`w-full px-4 py-3 rounded-xl border-2 border-amber-500 backdrop-blur-sm ${
+                isDark ? 'bg-amber-900/30' : 'bg-amber-100/80'
+            }`}>
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="text-amber-400 text-lg">📢</span>
-                    <span className="text-xs font-bold uppercase tracking-wide text-amber-400">Announcement</span>
+                    <span className={`text-lg ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>📢</span>
+                    <span className={`text-xs font-bold uppercase tracking-wide ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                        {t('chat.announcement')}
+                    </span>
                 </div>
                 <div className="flex items-start gap-3">
                     <UserAvatar user={isMe ? authUser : user} size={8} />
                     <div className="flex-1">
-                        <div className="text-xs font-semibold text-amber-300">{displayName}</div>
-                        <div className="whitespace-pre-wrap text-sm leading-relaxed font-bold text-amber-100 mt-1">{message.body}</div>
-                        <div className="text-[11px] text-amber-400/70 mt-2">{message.created_at ? new Date(message.created_at).toLocaleString() : ''}</div>
+                        <div className={`text-xs font-semibold ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>{displayName}</div>
+                        <div className={`whitespace-pre-wrap text-sm leading-relaxed font-bold mt-1 ${isDark ? 'text-amber-100' : 'text-amber-900'}`}>{message.body}</div>
+                        <div className={`text-[11px] mt-2 ${isDark ? 'text-amber-400/70' : 'text-amber-600/70'}`}>
+                            {message.created_at ? new Date(message.created_at).toLocaleString() : ''}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -41,29 +49,37 @@ function MessageBubble({ message, isMe, displayName, user, authUser }) {
                     </div>
                 )}
                 <div className={`${isMe ? 'ml-auto' : 'mr-auto'} max-w-[78%]`}>
-                    <div className={`px-4 py-2 rounded-xl ${isMe ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}`}>
-                        <div className="text-xs font-semibold mb-1 text-amber-100">{displayName}</div>
+                    <div className={`px-4 py-2 rounded-xl ${
+                        isMe 
+                            ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' 
+                            : isDark ? 'bg-slate-800 text-slate-200 rounded-tl-none' : 'bg-slate-200 text-slate-800 rounded-tl-none'
+                    }`}>
+                        <div className={`text-xs font-semibold mb-1 ${isMe ? 'text-amber-100' : isDark ? 'text-amber-300' : 'text-amber-700'}`}>{displayName}</div>
                         {message.body && <div className="whitespace-pre-wrap text-sm leading-relaxed mb-2">{message.body}</div>}
                     </div>
                     {/* Script Card */}
-                    <div className="mt-2 bg-slate-800/80 border border-purple-500/30 rounded-lg p-3">
+                    <div className={`mt-2 border rounded-lg p-3 ${isDark ? 'bg-slate-800/80 border-purple-500/30' : 'bg-purple-50 border-purple-200'}`}>
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-purple-600/20 rounded-lg flex items-center justify-center">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-purple-600/20' : 'bg-purple-100'}`}>
                                 <span className="text-2xl">📄</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold text-purple-200 truncate">{attachmentData.title || 'Untitled Script'}</div>
-                                <div className="text-xs text-purple-400">Script</div>
+                                <div className={`text-sm font-semibold truncate ${isDark ? 'text-purple-200' : 'text-purple-800'}`}>
+                                    {attachmentData.title || t('chat.untitled_script')}
+                                </div>
+                                <div className={`text-xs ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>{t('chat.script')}</div>
                             </div>
                             <button
                                 onClick={() => router.visit(route('scriptwriter.show', attachmentData.id))}
                                 className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium rounded-lg transition-colors"
                             >
-                                Open in Studio
+                                {t('chat.open_in_studio')}
                             </button>
                         </div>
                     </div>
-                    <div className="text-[11px] text-amber-200/70 mt-1 text-right">{message.created_at ? new Date(message.created_at).toLocaleString() : ''}</div>
+                    <div className={`text-[11px] mt-1 text-right ${isDark ? 'text-amber-200/70' : 'text-amber-700/70'}`}>
+                        {message.created_at ? new Date(message.created_at).toLocaleString() : ''}
+                    </div>
                 </div>
                 {isMe && (
                     <div className="ml-3">
@@ -84,33 +100,41 @@ function MessageBubble({ message, isMe, displayName, user, authUser }) {
                     </div>
                 )}
                 <div className={`${isMe ? 'ml-auto' : 'mr-auto'} max-w-[78%]`}>
-                    <div className={`px-4 py-2 rounded-xl ${isMe ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}`}>
-                        <div className="text-xs font-semibold mb-1 text-amber-100">{displayName}</div>
+                    <div className={`px-4 py-2 rounded-xl ${
+                        isMe 
+                            ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' 
+                            : isDark ? 'bg-slate-800 text-slate-200 rounded-tl-none' : 'bg-slate-200 text-slate-800 rounded-tl-none'
+                    }`}>
+                        <div className={`text-xs font-semibold mb-1 ${isMe ? 'text-amber-100' : isDark ? 'text-amber-300' : 'text-amber-700'}`}>{displayName}</div>
                         {message.body && <div className="whitespace-pre-wrap text-sm leading-relaxed mb-2">{message.body}</div>}
                     </div>
                     {/* Project Card */}
-                    <div className="mt-2 bg-slate-800/80 border border-amber-500/30 rounded-lg p-3">
+                    <div className={`mt-2 border rounded-lg p-3 ${isDark ? 'bg-slate-800/80 border-amber-500/30' : 'bg-amber-50 border-amber-200'}`}>
                         <div className="flex items-center gap-3">
                             {attachmentData.thumbnail_url ? (
                                 <img src={attachmentData.thumbnail_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
                             ) : (
-                                <div className="w-12 h-12 bg-amber-600/20 rounded-lg flex items-center justify-center">
+                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isDark ? 'bg-amber-600/20' : 'bg-amber-100'}`}>
                                     <span className="text-2xl">🎬</span>
                                 </div>
                             )}
                             <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold text-amber-200 truncate">{attachmentData.title || 'Untitled Project'}</div>
-                                <div className="text-xs text-amber-400">Project</div>
+                                <div className={`text-sm font-semibold truncate ${isDark ? 'text-amber-200' : 'text-amber-800'}`}>
+                                    {attachmentData.title || t('chat.untitled_project')}
+                                </div>
+                                <div className={`text-xs ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>{t('chat.project')}</div>
                             </div>
                             <button
                                 onClick={() => router.visit(route('projects.show', attachmentData.id))}
                                 className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded-lg transition-colors"
                             >
-                                View Project
+                                {t('chat.view_project')}
                             </button>
                         </div>
                     </div>
-                    <div className="text-[11px] text-amber-200/70 mt-1 text-right">{message.created_at ? new Date(message.created_at).toLocaleString() : ''}</div>
+                    <div className={`text-[11px] mt-1 text-right ${isDark ? 'text-amber-200/70' : 'text-amber-700/70'}`}>
+                        {message.created_at ? new Date(message.created_at).toLocaleString() : ''}
+                    </div>
                 </div>
                 {isMe && (
                     <div className="ml-3">
@@ -129,10 +153,16 @@ function MessageBubble({ message, isMe, displayName, user, authUser }) {
                     <UserAvatar user={user} />
                 </div>
             )}
-            <div className={`${isMe ? 'ml-auto' : 'mr-auto'} max-w-[78%] px-4 py-2 rounded-xl ${isMe ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 rounded-tl-none'}`}>
-                <div className="text-xs font-semibold mb-1 text-amber-100">{displayName}</div>
+            <div className={`${isMe ? 'ml-auto' : 'mr-auto'} max-w-[78%] px-4 py-2 rounded-xl ${
+                isMe 
+                    ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white rounded-tr-none' 
+                    : isDark ? 'bg-slate-800 text-slate-200 rounded-tl-none' : 'bg-slate-200 text-slate-800 rounded-tl-none'
+            }`}>
+                <div className={`text-xs font-semibold mb-1 ${isMe ? 'text-amber-100' : isDark ? 'text-amber-300' : 'text-amber-700'}`}>{displayName}</div>
                 <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.body}</div>
-                <div className="text-[11px] text-amber-200 mt-2 text-right">{message.created_at ? new Date(message.created_at).toLocaleString() : ''}</div>
+                <div className={`text-[11px] mt-2 text-right ${isMe ? 'text-amber-200' : isDark ? 'text-amber-200/70' : 'text-slate-500'}`}>
+                    {message.created_at ? new Date(message.created_at).toLocaleString() : ''}
+                </div>
             </div>
             {isMe && (
                 <div className="ml-3">
@@ -145,6 +175,9 @@ function MessageBubble({ message, isMe, displayName, user, authUser }) {
 
 // Accept initial messages and users from the server (messages prop is aliased to initialMessages)
 export default function ChatIndex({ auth, channels = [], messages: initialMessages = [], users: initialUsers = {}, defaultChannelId = null, canAnnounce = false }) {
+    const { theme, isDark } = useTheme();
+    const { t } = useLanguage();
+    
     const [channelList, setChannelList] = useState(channels);
     const [activeChannel, setActiveChannel] = useState(defaultChannelId);
     const [showSidebar, setShowSidebar] = useState(true);
@@ -441,19 +474,32 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
     };
 
     return (
-        <AuthenticatedLayout user={auth.user} header={<h2 className="font-semibold text-xl text-amber-100 leading-tight">Community Hub</h2>}>
-            <Head title="Community Hub" />
+        <AuthenticatedLayout 
+            user={auth.user} 
+            header={
+                <h2 className={`font-semibold text-xl leading-tight ${isDark ? 'text-amber-100' : 'text-slate-900'}`}>
+                    {t('nav.community')}
+                </h2>
+            }
+        >
+            <Head title={t('nav.community')} />
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh]">
+                    <div className={`backdrop-blur-xl border overflow-hidden shadow-sm sm:rounded-lg flex h-[70vh] ${
+                        isDark ? 'bg-slate-900/40 border-white/10' : 'bg-white/60 border-slate-200'
+                    }`}>
                         {/* Discord-style Sidebar */}
-                        <aside className={`${showSidebar ? 'flex' : 'hidden'} md:flex flex-col w-72 min-w-[18rem] border-r border-white/10 overflow-y-auto bg-slate-900/80 backdrop-blur-md`}>
+                        <aside className={`${showSidebar ? 'flex' : 'hidden'} md:flex flex-col w-72 min-w-[18rem] border-r overflow-y-auto backdrop-blur-md ${
+                            isDark ? 'border-white/10 bg-slate-900/80' : 'border-slate-200 bg-slate-50/80'
+                        }`}>
                             {/* Server Header */}
-                            <div className="p-4 border-b border-white/10">
+                            <div className={`p-4 border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xl">🎬</span>
-                                    <span className="text-amber-100 font-bold text-lg">SineAI Community</span>
+                                    <span className={`font-bold text-lg ${isDark ? 'text-amber-100' : 'text-slate-900'}`}>
+                                        {t('chat.sineai_community')}
+                                    </span>
                                 </div>
                             </div>
 
@@ -462,7 +508,9 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                 {sortedCategories.map((category) => (
                                     <div key={category} className="mb-4">
                                         {/* Category Header */}
-                                        <div className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                        <div className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold uppercase tracking-wider ${
+                                            isDark ? 'text-slate-400' : 'text-slate-500'
+                                        }`}>
                                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                             </svg>
@@ -484,11 +532,11 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                                     }}
                                                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
                                                         c.id === activeChannel
-                                                            ? 'bg-white/10 text-white'
-                                                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                                                            ? isDark ? 'bg-white/10 text-white' : 'bg-amber-100 text-amber-900'
+                                                            : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                                                     }`}
                                                 >
-                                                    <span className="text-slate-500">#</span>
+                                                    <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>#</span>
                                                     <span className="truncate text-sm">{c.name}</span>
                                                 </button>
                                             ))}
@@ -498,40 +546,50 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                             </div>
 
                             {/* Online Users Section */}
-                            <div className="border-t border-white/10 p-3">
-                                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                                    Online — {onlineUsers.size}
+                            <div className={`border-t p-3 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                                <div className={`text-xs font-semibold uppercase tracking-wider mb-2 ${
+                                    isDark ? 'text-slate-400' : 'text-slate-500'
+                                }`}>
+                                    {t('chat.online')} — {onlineUsers.size}
                                 </div>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                     {displayedOnlineUsers.map((u) => (
                                         <div key={u.id} className="flex items-center gap-2 px-1 py-0.5">
                                             <div className="relative">
                                                 <UserAvatar user={u} size={6} />
-                                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                                                <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 rounded-full ${
+                                                    isDark ? 'border-slate-900' : 'border-slate-50'
+                                                }`}></span>
                                             </div>
-                                            <span className="text-sm text-slate-300 truncate flex-1">{u.name}</span>
+                                            <span className={`text-sm truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{u.name}</span>
                                             <UserBadgeCompact user={u} />
                                         </div>
                                     ))}
                                     {onlineUsers.size === 0 && (
-                                        <div className="text-xs text-slate-500 italic">No users online</div>
+                                        <div className={`text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                            {t('chat.no_users_online')}
+                                        </div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Current User Footer */}
-                            <div className="border-t border-white/10 p-3 bg-slate-900/50">
+                            <div className={`border-t p-3 ${isDark ? 'border-white/10 bg-slate-900/50' : 'border-slate-200 bg-slate-100/50'}`}>
                                 <div className="flex items-center gap-2">
                                     <div className="relative">
                                         <UserAvatar user={auth.user} size={8} />
-                                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                                        <span className={`absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 rounded-full ${
+                                            isDark ? 'border-slate-900' : 'border-slate-100'
+                                        }`}></span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-white truncate flex items-center gap-1.5">
+                                        <div className={`text-sm font-medium truncate flex items-center gap-1.5 ${
+                                            isDark ? 'text-white' : 'text-slate-900'
+                                        }`}>
                                             {auth.user?.name}
                                             <UserBadgeCompact user={auth.user} />
                                         </div>
-                                        <div className="text-xs text-green-400">Online</div>
+                                        <div className="text-xs text-green-500">{t('chat.status_online')}</div>
                                     </div>
                                 </div>
                             </div>
@@ -541,17 +599,28 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                         <div className={`${!showSidebar ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col`}> 
                             <div className="flex-1 flex flex-col overflow-hidden">
                                 {/* Channel Header */}
-                                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
-                                    <button onClick={() => { setActiveChannel(null); setShowSidebar(true); }} className="block md:hidden p-2 rounded-md text-amber-200 hover:bg-white/5">
+                                <div className={`px-4 py-3 border-b flex items-center gap-3 ${
+                                    isDark ? 'border-white/10' : 'border-slate-200'
+                                }`}>
+                                    <button 
+                                        onClick={() => { setActiveChannel(null); setShowSidebar(true); }} 
+                                        className={`block md:hidden p-2 rounded-md ${
+                                            isDark ? 'text-amber-200 hover:bg-white/5' : 'text-amber-700 hover:bg-slate-100'
+                                        }`}
+                                    >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
                                             <path fillRule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
                                         </svg>
                                     </button>
-                                    <span className="text-slate-500 text-xl">#</span>
+                                    <span className={`text-xl ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>#</span>
                                     <div>
-                                        <h2 className="text-lg font-semibold text-white">{channelList.find(c => c.id === activeChannel)?.name ?? 'Channel'}</h2>
+                                        <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                            {channelList.find(c => c.id === activeChannel)?.name ?? t('chat.channel')}
+                                        </h2>
                                         {channelList.find(c => c.id === activeChannel)?.description && (
-                                            <div className="text-xs text-slate-400">{channelList.find(c => c.id === activeChannel)?.description}</div>
+                                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                {channelList.find(c => c.id === activeChannel)?.description}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -559,16 +628,18 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                 {/* Messages Area */}
                                 <div className="flex-1 overflow-y-auto p-4" id="messages-container">
                                     {messages.length === 0 ? (
-                                        <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                        <div className={`h-full flex flex-col items-center justify-center ${
+                                            isDark ? 'text-slate-400' : 'text-slate-500'
+                                        }`}>
                                             <span className="text-4xl mb-2">💬</span>
-                                            <div>No messages yet in this channel.</div>
-                                            <div className="text-sm">Be the first to say something!</div>
+                                            <div>{t('chat.no_messages_yet')}</div>
+                                            <div className="text-sm">{t('chat.be_first_to_speak')}</div>
                                         </div>
                                     ) : (
                                         <div className={`flex flex-col space-y-3`}>
                                             {messages.map((m, i) => {
                                                 const isMe = String(m.user?.id ?? m.user_id) === String(auth.user?.id);
-                                                const displayName = isMe ? auth.user?.name : (m.user?.name ?? 'Unknown');
+                                                const displayName = isMe ? auth.user?.name : (m.user?.name ?? t('chat.unknown'));
                                                 return (
                                                     <MessageBubble
                                                         key={m.id ?? i}
@@ -577,6 +648,8 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                                         displayName={displayName}
                                                         user={m.user}
                                                         authUser={auth.user}
+                                                        isDark={isDark}
+                                                        t={t}
                                                     />
                                                 );
                                             })}
@@ -587,20 +660,22 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                             </div>
 
                             {/* Input Area */}
-                            <div className="p-4 border-t border-white/10">
+                            <div className={`p-4 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
                                 {/* Selected Attachment Preview */}
                                 {(selectedScript || selectedProject) && (
-                                    <div className="mb-2 flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2">
+                                    <div className={`mb-2 flex items-center gap-2 rounded-lg px-3 py-2 ${
+                                        isDark ? 'bg-slate-800/50' : 'bg-slate-100'
+                                    }`}>
                                         {selectedScript && (
                                             <>
                                                 <span className="text-purple-400">📄</span>
-                                                <span className="text-sm text-purple-200">{selectedScript.title}</span>
+                                                <span className={`text-sm ${isDark ? 'text-purple-200' : 'text-purple-700'}`}>{selectedScript.title}</span>
                                             </>
                                         )}
                                         {selectedProject && (
                                             <>
                                                 <span className="text-amber-400">🎬</span>
-                                                <span className="text-sm text-amber-200">{selectedProject.title}</span>
+                                                <span className={`text-sm ${isDark ? 'text-amber-200' : 'text-amber-700'}`}>{selectedProject.title}</span>
                                             </>
                                         )}
                                         <button
@@ -608,7 +683,7 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                                 setSelectedScript(null);
                                                 setSelectedProject(null);
                                             }}
-                                            className="ml-auto text-slate-400 hover:text-white"
+                                            className={`ml-auto ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
                                         >
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -619,13 +694,19 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
 
                                 {/* Announcement Mode Banner */}
                                 {isAnnouncementMode && (
-                                    <div className="mb-2 flex items-center gap-2 bg-amber-900/30 border border-amber-500/30 rounded-lg px-3 py-2">
-                                        <span className="text-amber-400">📢</span>
-                                        <span className="text-sm text-amber-200 font-medium">Announcement Mode</span>
-                                        <span className="text-xs text-amber-400/70">This message will be highlighted for everyone</span>
+                                    <div className={`mb-2 flex items-center gap-2 border rounded-lg px-3 py-2 ${
+                                        isDark ? 'bg-amber-900/30 border-amber-500/30' : 'bg-amber-100 border-amber-300'
+                                    }`}>
+                                        <span className={isDark ? 'text-amber-400' : 'text-amber-600'}>📢</span>
+                                        <span className={`text-sm font-medium ${isDark ? 'text-amber-200' : 'text-amber-800'}`}>
+                                            {t('chat.announcement_mode')}
+                                        </span>
+                                        <span className={`text-xs ${isDark ? 'text-amber-400/70' : 'text-amber-600/70'}`}>
+                                            {t('chat.announcement_highlighted')}
+                                        </span>
                                         <button
                                             onClick={() => setIsAnnouncementMode(false)}
-                                            className="ml-auto text-amber-400 hover:text-amber-200"
+                                            className={isDark ? 'ml-auto text-amber-400 hover:text-amber-200' : 'ml-auto text-amber-600 hover:text-amber-800'}
                                         >
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -642,7 +723,11 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                                 fetchUserScripts();
                                                 fetchUserProjects();
                                             }}
-                                            className="p-3 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"
+                                            className={`p-3 rounded-xl transition-colors ${
+                                                isDark 
+                                                    ? 'bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50' 
+                                                    : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200'
+                                            }`}
                                         >
                                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -657,36 +742,46 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                             leaveFrom="opacity-100 translate-y-0"
                                             leaveTo="opacity-0 translate-y-1"
                                         >
-                                            <Popover.Panel className="absolute bottom-full left-0 mb-2 w-56 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-50">
+                                            <Popover.Panel className={`absolute bottom-full left-0 mb-2 w-56 border rounded-lg shadow-xl z-50 ${
+                                                isDark ? 'bg-slate-800 border-white/10' : 'bg-white border-slate-200'
+                                            }`}>
                                                 {/* Share Script */}
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowScriptPicker(true)}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-700/50 rounded-t-lg transition-colors"
+                                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm rounded-t-lg transition-colors ${
+                                                        isDark ? 'text-slate-200 hover:bg-slate-700/50' : 'text-slate-700 hover:bg-slate-100'
+                                                    }`}
                                                 >
                                                     <span className="text-lg">📄</span>
-                                                    <span>Share Script</span>
+                                                    <span>{t('chat.share_script')}</span>
                                                 </button>
                                                 
                                                 {/* Share Project */}
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowProjectPicker(true)}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"
+                                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors ${
+                                                        isDark ? 'text-slate-200 hover:bg-slate-700/50' : 'text-slate-700 hover:bg-slate-100'
+                                                    }`}
                                                 >
                                                     <span className="text-lg">🎬</span>
-                                                    <span>Share Project</span>
+                                                    <span>{t('chat.share_project')}</span>
                                                 </button>
                                                 
                                                 {/* Upload File (placeholder) */}
                                                 <button
                                                     type="button"
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-slate-400 cursor-not-allowed rounded-b-lg"
+                                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm cursor-not-allowed rounded-b-lg ${
+                                                        isDark ? 'text-slate-400' : 'text-slate-400'
+                                                    }`}
                                                     disabled
                                                 >
                                                     <span className="text-lg">📎</span>
-                                                    <span>Upload File</span>
-                                                    <span className="ml-auto text-xs text-slate-500">Coming soon</span>
+                                                    <span>{t('chat.upload_file')}</span>
+                                                    <span className={`ml-auto text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                        {t('chat.coming_soon')}
+                                                    </span>
                                                 </button>
                                             </Popover.Panel>
                                         </Transition>
@@ -704,10 +799,16 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                                 if (!processing && (data.body?.trim() || selectedScript || selectedProject)) submit();
                                             }
                                         }}
-                                        className={`flex-1 resize-none rounded-xl bg-slate-800/30 text-amber-100 placeholder-amber-300/50 p-3 focus:outline-none focus:ring-2 ${
-                                            isAnnouncementMode ? 'focus:ring-amber-500/50 border border-amber-500/30' : 'focus:ring-amber-400/30'
+                                        className={`flex-1 resize-none rounded-xl p-3 focus:outline-none focus:ring-2 ${
+                                            isAnnouncementMode 
+                                                ? isDark 
+                                                    ? 'focus:ring-amber-500/50 border border-amber-500/30 bg-slate-800/30 text-amber-100 placeholder-amber-300/50' 
+                                                    : 'focus:ring-amber-500/50 border border-amber-300 bg-amber-50 text-amber-900 placeholder-amber-600/50'
+                                                : isDark 
+                                                    ? 'focus:ring-amber-400/30 bg-slate-800/30 text-amber-100 placeholder-amber-300/50' 
+                                                    : 'focus:ring-amber-400/30 bg-slate-100 text-slate-900 placeholder-slate-500 border border-slate-200'
                                         }`}
-                                        placeholder={isAnnouncementMode ? "Write an announcement..." : "Message #" + (channelList.find(c => c.id === activeChannel)?.name ?? 'channel')}
+                                        placeholder={isAnnouncementMode ? t('chat.write_announcement') : `${t('chat.message')} #${channelList.find(c => c.id === activeChannel)?.name ?? t('chat.channel')}`}
                                     />
 
                                     {/* Announcement Toggle (Officers/Admins only) */}
@@ -718,9 +819,11 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                             className={`p-3 rounded-xl transition-colors ${
                                                 isAnnouncementMode
                                                     ? 'bg-amber-600 text-white'
-                                                    : 'bg-slate-800/50 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50'
+                                                    : isDark 
+                                                        ? 'bg-slate-800/50 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50' 
+                                                        : 'bg-slate-100 text-slate-500 hover:text-amber-600 hover:bg-slate-200'
                                             }`}
-                                            title="Toggle Announcement Mode"
+                                            title={t('chat.toggle_announcement')}
                                         >
                                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
@@ -770,20 +873,24 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <div className="relative bg-slate-800 border border-white/10 rounded-xl shadow-xl max-w-md w-full p-6">
-                                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                            <div className={`relative border rounded-xl shadow-xl max-w-md w-full p-6 ${
+                                isDark ? 'bg-slate-800 border-white/10' : 'bg-white border-slate-200'
+                            }`}>
+                                <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                                    isDark ? 'text-white' : 'text-slate-900'
+                                }`}>
                                     <span>📄</span>
-                                    Select a Script to Share
+                                    {t('chat.select_script')}
                                 </h3>
                                 <div className="space-y-2 max-h-64 overflow-y-auto">
                                     {userScripts.length === 0 ? (
-                                        <div className="text-center py-8 text-slate-400">
-                                            <div className="mb-2">No scripts found</div>
+                                        <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            <div className="mb-2">{t('chat.no_scripts_found')}</div>
                                             <button
                                                 onClick={() => router.visit(route('scriptwriter.index'))}
-                                                className="text-amber-400 hover:text-amber-300 text-sm"
+                                                className="text-amber-500 hover:text-amber-400 text-sm"
                                             >
-                                                Create your first script →
+                                                {t('chat.create_first_script')} →
                                             </button>
                                         </div>
                                     ) : (
@@ -791,12 +898,16 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                             <button
                                                 key={script.id}
                                                 onClick={() => handleSelectScript(script)}
-                                                className="w-full flex items-center gap-3 px-4 py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left"
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                                                    isDark ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'
+                                                }`}
                                             >
                                                 <span className="text-purple-400 text-xl">📄</span>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-sm font-medium text-white truncate">{script.title || 'Untitled Script'}</div>
-                                                    <div className="text-xs text-slate-400">
+                                                    <div className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                                        {script.title || t('chat.untitled_script')}
+                                                    </div>
+                                                    <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                                         {script.updated_at ? new Date(script.updated_at).toLocaleDateString() : ''}
                                                     </div>
                                                 </div>
@@ -806,9 +917,11 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                 </div>
                                 <button
                                     onClick={() => setShowScriptPicker(false)}
-                                    className="mt-4 w-full py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                                    className={`mt-4 w-full py-2 rounded-lg transition-colors ${
+                                        isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'
+                                    }`}
                                 >
-                                    Cancel
+                                    {t('common.cancel')}
                                 </button>
                             </div>
                         </Transition.Child>
@@ -841,20 +954,24 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <div className="relative bg-slate-800 border border-white/10 rounded-xl shadow-xl max-w-md w-full p-6">
-                                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                            <div className={`relative border rounded-xl shadow-xl max-w-md w-full p-6 ${
+                                isDark ? 'bg-slate-800 border-white/10' : 'bg-white border-slate-200'
+                            }`}>
+                                <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                                    isDark ? 'text-white' : 'text-slate-900'
+                                }`}>
                                     <span>🎬</span>
-                                    Select a Project to Share
+                                    {t('chat.select_project')}
                                 </h3>
                                 <div className="space-y-2 max-h-64 overflow-y-auto">
                                     {userProjects.length === 0 ? (
-                                        <div className="text-center py-8 text-slate-400">
-                                            <div className="mb-2">No projects found</div>
+                                        <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            <div className="mb-2">{t('chat.no_projects_found')}</div>
                                             <button
                                                 onClick={() => router.visit(route('projects.create'))}
-                                                className="text-amber-400 hover:text-amber-300 text-sm"
+                                                className="text-amber-500 hover:text-amber-400 text-sm"
                                             >
-                                                Upload your first project →
+                                                {t('chat.upload_first_project')} →
                                             </button>
                                         </div>
                                     ) : (
@@ -862,18 +979,24 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                             <button
                                                 key={project.id}
                                                 onClick={() => handleSelectProject(project)}
-                                                className="w-full flex items-center gap-3 px-4 py-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left"
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                                                    isDark ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'
+                                                }`}
                                             >
                                                 {project.thumbnail_url ? (
                                                     <img src={project.thumbnail_url} alt="" className="w-12 h-9 rounded object-cover" />
                                                 ) : (
-                                                    <div className="w-12 h-9 bg-amber-600/20 rounded flex items-center justify-center">
+                                                    <div className={`w-12 h-9 rounded flex items-center justify-center ${
+                                                        isDark ? 'bg-amber-600/20' : 'bg-amber-100'
+                                                    }`}>
                                                         <span className="text-amber-400">🎬</span>
                                                     </div>
                                                 )}
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-sm font-medium text-white truncate">{project.title || 'Untitled Project'}</div>
-                                                    <div className="text-xs text-slate-400">
+                                                    <div className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                                        {project.title || t('chat.untitled_project')}
+                                                    </div>
+                                                    <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                                         {project.updated_at ? new Date(project.updated_at).toLocaleDateString() : ''}
                                                     </div>
                                                 </div>
@@ -883,9 +1006,11 @@ export default function ChatIndex({ auth, channels = [], messages: initialMessag
                                 </div>
                                 <button
                                     onClick={() => setShowProjectPicker(false)}
-                                    className="mt-4 w-full py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                                    className={`mt-4 w-full py-2 rounded-lg transition-colors ${
+                                        isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'
+                                    }`}
                                 >
-                                    Cancel
+                                    {t('common.cancel')}
                                 </button>
                             </div>
                         </Transition.Child>

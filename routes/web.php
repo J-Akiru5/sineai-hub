@@ -61,8 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Routes for our Projects feature
-    Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+    // Routes for our Projects feature (Projects Gallery removed - use Premiere)
     Route::get('/my-projects', [ProjectController::class, 'myProjects'])->name('projects.my');
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
@@ -98,6 +97,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/scriptwriter/assist', [ScriptwriterController::class, 'assist'])->name('scriptwriter.assist');
     // Script CRUD
     Route::post('/scriptwriter', [ScriptwriterController::class, 'store'])->name('scriptwriter.store');
+    // Script project linking - must be before {script} routes
+    Route::get('/scriptwriter/api/user-projects', [ScriptwriterController::class, 'getUserProjects'])->name('scriptwriter.userProjects');
+    Route::post('/scriptwriter/{script}/attach-project', [ScriptwriterController::class, 'attachProject'])->name('scriptwriter.attachProject');
     Route::get('/scriptwriter/{script}', [ScriptwriterController::class, 'show'])->name('scriptwriter.show');
     Route::put('/scriptwriter/{script}', [ScriptwriterController::class, 'update'])->name('scriptwriter.update');
     Route::delete('/scriptwriter/{script}', [ScriptwriterController::class, 'destroy'])->name('scriptwriter.destroy');

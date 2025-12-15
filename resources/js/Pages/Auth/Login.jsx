@@ -7,6 +7,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { EnvelopeIcon, LockClosedIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { useTheme } from '@/Contexts/ThemeContext';
+import { useLanguage } from '@/Contexts/LanguageContext';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -14,6 +16,9 @@ export default function Login({ status, canResetPassword }) {
         password: '',
         remember: '',
     });
+    
+    const { isDark } = useTheme();
+    const { t } = useLanguage();
 
     useEffect(() => {
         return () => {
@@ -33,12 +38,12 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title={t('auth.login')} />
 
             {/* Header */}
             <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-                <p className="text-slate-400 text-sm">Sign in to continue your creative journey</p>
+                <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Welcome Back</h1>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sign in to continue your creative journey</p>
             </div>
 
             {status && (
@@ -49,17 +54,21 @@ export default function Login({ status, canResetPassword }) {
 
             <form onSubmit={submit} className="space-y-5">
                 <div>
-                    <InputLabel htmlFor="email" value="Email" className="text-slate-300 font-medium mb-1.5" />
+                    <InputLabel htmlFor="email" value={t('auth.email')} className={`font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`} />
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <EnvelopeIcon className="h-5 w-5 text-slate-500" />
+                            <EnvelopeIcon className={`h-5 w-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                         </div>
                         <TextInput
                             id="email"
                             type="email"
                             name="email"
                             value={data.email}
-                            className="block w-full pl-10 bg-slate-950/50 border-white/10 text-white rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
+                            className={`block w-full pl-10 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all ${
+                                isDark 
+                                    ? 'bg-slate-950/50 border-white/10 text-white' 
+                                    : 'bg-slate-50 border-slate-200 text-slate-900'
+                            }`}
                             autoComplete="username"
                             isFocused={true}
                             placeholder="you@example.com"
@@ -70,17 +79,21 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="password" value="Password" className="text-slate-300 font-medium mb-1.5" />
+                    <InputLabel htmlFor="password" value={t('auth.password')} className={`font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`} />
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <LockClosedIcon className="h-5 w-5 text-slate-500" />
+                            <LockClosedIcon className={`h-5 w-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                         </div>
                         <TextInput
                             id="password"
                             type="password"
                             name="password"
                             value={data.password}
-                            className="block w-full pl-10 bg-slate-950/50 border-white/10 text-white rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
+                            className={`block w-full pl-10 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all ${
+                                isDark 
+                                    ? 'bg-slate-950/50 border-white/10 text-white' 
+                                    : 'bg-slate-50 border-slate-200 text-slate-900'
+                            }`}
                             autoComplete="current-password"
                             placeholder="••••••••"
                             onChange={handleOnChange}
@@ -92,15 +105,17 @@ export default function Login({ status, canResetPassword }) {
                 <div className="flex items-center justify-between">
                     <label className="flex items-center cursor-pointer group">
                         <Checkbox name="remember" value={data.remember} onChange={handleOnChange} />
-                        <span className="ml-2 text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Remember me</span>
+                        <span className={`ml-2 text-sm transition-colors ${isDark ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                            {t('auth.remember_me')}
+                        </span>
                     </label>
 
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
-                            className="text-sm text-slate-400 hover:text-amber-400 transition-colors"
+                            className={`text-sm transition-colors ${isDark ? 'text-slate-400 hover:text-amber-400' : 'text-slate-500 hover:text-amber-600'}`}
                         >
-                            Forgot password?
+                            {t('auth.forgot_password')}
                         </Link>
                     )}
                 </div>
@@ -122,7 +137,7 @@ export default function Login({ status, canResetPassword }) {
                         ) : (
                             <>
                                 <SparklesIcon className="h-5 w-5" />
-                                Sign In
+                                {t('auth.login')}
                             </>
                         )}
                     </span>
@@ -132,18 +147,22 @@ export default function Login({ status, canResetPassword }) {
 
                 <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-white/10"></div>
+                        <div className={`w-full border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                        <span className="px-4 bg-slate-900/70 text-slate-500">New to SineAI?</span>
+                        <span className={`px-4 ${isDark ? 'bg-slate-900/70 text-slate-500' : 'bg-white/70 text-slate-400'}`}>{t('auth.new_to_sineai')}</span>
                     </div>
                 </div>
 
                 <Link
                     href={route('register')}
-                    className="block w-full text-center py-3 px-6 border border-white/10 hover:border-amber-500/30 text-slate-300 hover:text-amber-400 font-medium rounded-xl transition-all duration-300 hover:bg-amber-500/5"
+                    className={`block w-full text-center py-3 px-6 border font-medium rounded-xl transition-all duration-300 ${
+                        isDark 
+                            ? 'border-white/10 hover:border-amber-500/30 text-slate-300 hover:text-amber-400 hover:bg-amber-500/5' 
+                            : 'border-slate-200 hover:border-amber-500/30 text-slate-600 hover:text-amber-600 hover:bg-amber-500/5'
+                    }`}
                 >
-                    Create an Account
+                    {t('auth.create_account')}
                 </Link>
             </form>
         </GuestLayout>

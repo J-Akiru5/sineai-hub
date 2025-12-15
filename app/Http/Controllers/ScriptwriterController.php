@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use App\Models\Script;
+use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
 
 class ScriptwriterController extends Controller
@@ -27,17 +28,30 @@ class ScriptwriterController extends Controller
     }
 
     /**
-     * Render the Scriptwriter page (Inertia).
+     * Auto-create a new script and redirect to the editor.
+     * This makes scriptwriter.index the "quick start" route.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $scripts = request()->user()
-            ? Script::where('user_id', request()->user()->id)->latest()->get()
-            : collect();
+        $user = $request->user();
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
 
-        return Inertia::render('Scriptwriter/Index', [
-            'scripts' => $scripts,
+        // Create default content for new scripts
+        $defaultContent = [
+            ['type' => 'scene-heading', 'content' => 'INT. UNTITLED - DAY'],
+            ['type' => 'action', 'content' => '']
+        ];
+
+        $script = Script::create([
+            'user_id' => $user->id,
+            'title' => 'Untitled Script',
+            'content' => $defaultContent,
         ]);
+
+        // Redirect to the editor with the newly created script
+        return redirect()->route('scriptwriter.show', $script);
     }
 
     /**
@@ -54,10 +68,16 @@ class ScriptwriterController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        // Create default content for new scripts
+        $defaultContent = [
+            ['type' => 'scene-heading', 'content' => 'INT. UNTITLED - DAY'],
+            ['type' => 'action', 'content' => '']
+        ];
+
         $script = Script::create([
             'user_id' => $user->id,
             'title' => $request->input('title', 'Untitled Script'),
-            'content' => $request->input('content', null),
+            'content' => $request->input('content', $defaultContent),
         ]);
 
         return response()->json(['script' => $script]);
@@ -76,6 +96,7 @@ class ScriptwriterController extends Controller
         $data = $request->validate([
             'title' => 'nullable|string|max:255',
             'content' => 'nullable',
+            'project_id' => 'nullable|exists:projects,id',
         ]);
 
         if (array_key_exists('title', $data)) {
@@ -84,10 +105,20 @@ class ScriptwriterController extends Controller
         if (array_key_exists('content', $data)) {
             $script->content = $data['content'];
         }
+        if (array_key_exists('project_id', $data)) {
+            // Verify user owns the project if provided
+            if ($data['project_id']) {
+                $project = Project::find($data['project_id']);
+                if (!$project || $project->user_id !== $user->id) {
+                    return response()->json(['error' => 'You do not own this project'], 403);
+                }
+            }
+            $script->project_id = $data['project_id'];
+        }
 
         $script->save();
 
-        return response()->json(['script' => $script]);
+        return response()->json(['script' => $script->load('project')]);
     }
 
     /**
@@ -121,7 +152,10 @@ class ScriptwriterController extends Controller
         }
 
         // Get all user's scripts with the requested one first
-        $scripts = Script::where('user_id', $user->id)->latest()->get();
+        $scripts = Script::where('user_id', $user->id)
+            ->with('project:id,title,thumbnail_url')
+            ->latest()
+            ->get();
         
         // Reorder so the active script is first
         $reordered = $scripts->sortByDesc(function ($s) use ($script) {
@@ -201,5 +235,57 @@ class ScriptwriterController extends Controller
             \Log::error('Scriptwriter assist exception: ' . $e->getMessage());
             return response()->json(['error' => 'Internal error.'], 500);
         }
+    }
+
+    /**
+     * Attach a script to a project.
+     */
+    public function attachProject(Request $request, Script $script)
+    {
+        $user = $request->user();
+        if (!$user || $script->user_id !== $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $data = $request->validate([
+            'project_id' => 'nullable|exists:projects,id',
+        ]);
+
+        $projectId = $data['project_id'];
+
+        // If project_id is provided, verify user owns it
+        if ($projectId) {
+            $project = Project::find($projectId);
+            if (!$project || $project->user_id !== $user->id) {
+                return response()->json(['error' => 'You do not own this project'], 403);
+            }
+        }
+
+        $script->project_id = $projectId;
+        $script->save();
+
+        return response()->json([
+            'success' => true,
+            'script' => $script->load('project'),
+            'message' => $projectId ? 'Script synced to project successfully' : 'Script unlinked from project'
+        ]);
+    }
+
+    /**
+     * Get user's projects for selection.
+     */
+    public function getUserProjects(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $projects = Project::where('user_id', $user->id)
+            ->select('id', 'title', 'thumbnail_url', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json(['projects' => $projects]);
     }
 }
