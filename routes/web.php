@@ -101,6 +101,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scriptwriter/{script}', [ScriptwriterController::class, 'show'])->name('scriptwriter.show');
     Route::put('/scriptwriter/{script}', [ScriptwriterController::class, 'update'])->name('scriptwriter.update');
     Route::delete('/scriptwriter/{script}', [ScriptwriterController::class, 'destroy'])->name('scriptwriter.destroy');
+    // Script project linking
+    Route::post('/scriptwriter/{script}/attach-project', [ScriptwriterController::class, 'attachProject'])->name('scriptwriter.attachProject');
+    Route::get('/scriptwriter/api/user-projects', [ScriptwriterController::class, 'getUserProjects'])->name('scriptwriter.userProjects');
 
     // Spark AI Integration for Scriptwriter
     Route::post('/spark/rewrite', [\App\Http\Controllers\SparkScriptController::class, 'rewrite'])->name('spark.rewrite');
