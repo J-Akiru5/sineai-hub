@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { Cloud, CloudOff, Check, RefreshCw, FileText, Sparkles, Type, MessageSquare, Film, Wand2, Zap, BookOpen } from 'lucide-react';
+import { Cloud, CloudOff, Check, RefreshCw, FileText, Sparkles, Type, MessageSquare, Film, Wand2, Zap, BookOpen, Link2, X } from 'lucide-react';
 
 // Utility to generate unique IDs
 let blockIdCounter = Date.now();
@@ -19,6 +19,12 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
     
     // Sync status state
     const [syncStatus, setSyncStatus] = useState('synced'); // 'synced', 'syncing', 'offline'
+
+    // Project linking state
+    const [showProjectModal, setShowProjectModal] = useState(false);
+    const [userProjects, setUserProjects] = useState([]);
+    const [loadingProjects, setLoadingProjects] = useState(false);
+    const [syncingProject, setSyncingProject] = useState(false);
 
     // Spark AI state
     const [isRewriting, setIsRewriting] = useState(false);
@@ -103,6 +109,26 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
         }
     };
 
+    // Save Title Function
+    const saveTitle = useCallback((newTitle) => {
+        const currentScript = activeScriptRef.current;
+        if (!currentScript || !currentScript.id) return;
+        
+        setSyncStatus('syncing');
+        axios.put(route('scriptwriter.update', currentScript.id), {
+            title: newTitle
+        }).then((response) => {
+            setSyncStatus('synced');
+            // Update the script in the list
+            setScripts(prev => prev.map(s => 
+                s.id === currentScript.id ? { ...s, title: newTitle } : s
+            ));
+        }).catch(err => {
+            console.error("Title save failed", err);
+            setSyncStatus('offline');
+        });
+    }, []);
+
     // Auto-Save Logic (Debounced)
     const handleAutoSave = useCallback(
         debounce((blocksData) => {
@@ -111,8 +137,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
             setIsSaving(true);
             setSyncStatus('syncing');
             axios.put(route('scriptwriter.update', currentScript.id), {
-                content: JSON.stringify(blocksData),
-                title: currentScript.title
+                content: JSON.stringify(blocksData)
             }).then(() => {
                 setIsSaving(false);
                 setSyncStatus('synced');
@@ -130,8 +155,7 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
         if (!currentScript || !currentScript.id || syncStatus === 'syncing') return;
         setSyncStatus('syncing');
         axios.put(route('scriptwriter.update', currentScript.id), {
-            content: JSON.stringify(blocks),
-            title: currentScript.title
+            content: JSON.stringify(blocks)
         }).then(() => {
             setSyncStatus('synced');
         }).catch(err => {
@@ -344,6 +368,71 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
         }
     };
 
+    // Project Syncing Functions
+    const fetchUserProjects = async () => {
+        setLoadingProjects(true);
+        try {
+            const response = await axios.get(route('scriptwriter.userProjects'));
+            setUserProjects(response.data.projects);
+        } catch (error) {
+            console.error('Failed to fetch projects:', error);
+        } finally {
+            setLoadingProjects(false);
+        }
+    };
+
+    const handleOpenProjectModal = () => {
+        setShowProjectModal(true);
+        fetchUserProjects();
+    };
+
+    const handleSyncToProject = async (projectId) => {
+        if (!activeScript || !activeScript.id) return;
+        
+        setSyncingProject(true);
+        try {
+            const response = await axios.post(route('scriptwriter.attachProject', activeScript.id), {
+                project_id: projectId
+            });
+            
+            // Update active script with project info
+            setActiveScript(response.data.script);
+            setScripts(prev => prev.map(s => 
+                s.id === activeScript.id ? response.data.script : s
+            ));
+            
+            setShowProjectModal(false);
+            setSyncStatus('synced');
+        } catch (error) {
+            console.error('Failed to sync to project:', error);
+            alert(error.response?.data?.error || 'Failed to sync to project');
+        } finally {
+            setSyncingProject(false);
+        }
+    };
+
+    const handleUnlinkProject = async () => {
+        if (!activeScript || !activeScript.id) return;
+        
+        setSyncingProject(true);
+        try {
+            const response = await axios.post(route('scriptwriter.attachProject', activeScript.id), {
+                project_id: null
+            });
+            
+            setActiveScript(response.data.script);
+            setScripts(prev => prev.map(s => 
+                s.id === activeScript.id ? response.data.script : s
+            ));
+            
+            setShowProjectModal(false);
+        } catch (error) {
+            console.error('Failed to unlink project:', error);
+        } finally {
+            setSyncingProject(false);
+        }
+    };
+
     // PDF Export: Trigger browser print
     const handleExportPDF = () => {
         window.print();
@@ -436,6 +525,14 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                         >
                             <FileText className="w-4 h-4" />
                             + New Script
+                        </button>
+                        <button
+                            onClick={handleOpenProjectModal}
+                            className="w-full py-2.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 font-semibold rounded-xl transition-all border border-purple-500/30 flex items-center justify-center gap-2"
+                            disabled={!activeScript}
+                        >
+                            <Link2 className="w-4 h-4" />
+                            Sync to Project
                         </button>
                         <button
                             onClick={handleExportPDF}
@@ -537,21 +634,36 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                     <div className="bg-white shadow-[0_25px_100px_-12px_rgba(0,0,0,0.8)] min-h-[11in] w-full max-w-[8.5in] p-6 md:p-12 font-mono text-zinc-900 rounded-lg print:shadow-none print:p-0 print:mt-0 print:w-full print:max-w-full print:rounded-none">
                         {/* Title bar inside paper */}
                         <div className="mb-6 pb-4 border-b border-zinc-200 flex items-center justify-between print:hidden">
-                            <input 
-                                value={activeScript?.title || ''}
-                                onChange={(e) => {
-                                    if (activeScript) {
-                                        setActiveScript({ ...activeScript, title: e.target.value });
-                                    }
-                                }}
-                                onBlur={() => {
-                                    if (activeScript && activeScript.id) {
-                                        handleAutoSave(blocks);
-                                    }
-                                }}
-                                className="bg-transparent border-none text-xl font-bold text-zinc-900 focus:ring-0 placeholder-zinc-400 w-full font-sans"
-                                placeholder="Untitled Script"
-                            />
+                            <div className="flex-1 flex flex-col gap-2">
+                                <input 
+                                    value={activeScript?.title || ''}
+                                    onChange={(e) => {
+                                        if (activeScript) {
+                                            setActiveScript({ ...activeScript, title: e.target.value });
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        if (activeScript && activeScript.id) {
+                                            saveTitle(e.target.value);
+                                        }
+                                    }}
+                                    className="bg-transparent border-none text-xl font-bold text-zinc-900 focus:ring-0 placeholder-zinc-400 w-full font-sans"
+                                    placeholder="Untitled Script"
+                                />
+                                {activeScript?.project && (
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                        <Link2 className="w-4 h-4" />
+                                        <span>Synced to: <span className="font-semibold">{activeScript.project.title}</span></span>
+                                        <button
+                                            onClick={handleUnlinkProject}
+                                            className="text-red-600 hover:text-red-800 ml-2"
+                                            title="Unlink from project"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                             {/* Cloud Sync Button */}
                             <button
                                 onClick={handleManualSync}
@@ -771,6 +883,100 @@ export default function Scriptwriter({ auth, scripts: initialScripts = [] }) {
                 </div>
 
             </div>
+
+            {/* Project Selector Modal */}
+            {showProjectModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl border border-white/10">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                    <Link2 className="w-5 h-5 text-purple-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Sync to Project</h3>
+                                    <p className="text-sm text-slate-400">Link this script to one of your projects</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowProjectModal(false)}
+                                className="text-slate-400 hover:text-white transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+                            {loadingProjects ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <RefreshCw className="w-8 h-8 text-purple-400 animate-spin" />
+                                </div>
+                            ) : userProjects.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Film className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                                    <p className="text-slate-400 mb-2">No projects found</p>
+                                    <p className="text-sm text-slate-500">Create a project first to sync your script</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-3">
+                                    {activeScript?.project_id && (
+                                        <button
+                                            onClick={handleUnlinkProject}
+                                            disabled={syncingProject}
+                                            className="p-4 rounded-xl border-2 border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all text-left"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <X className="w-5 h-5 text-red-400" />
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-red-400">Unlink from Current Project</p>
+                                                    <p className="text-sm text-slate-400">Make this script standalone</p>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    )}
+                                    {userProjects.map((project) => (
+                                        <button
+                                            key={project.id}
+                                            onClick={() => handleSyncToProject(project.id)}
+                                            disabled={syncingProject || activeScript?.project_id === project.id}
+                                            className={`p-4 rounded-xl border transition-all text-left ${
+                                                activeScript?.project_id === project.id
+                                                    ? 'border-purple-500 bg-purple-500/20'
+                                                    : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-purple-500/50'
+                                            } ${syncingProject ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                {project.thumbnail_url ? (
+                                                    <img
+                                                        src={project.thumbnail_url}
+                                                        alt={project.title}
+                                                        className="w-16 h-16 object-cover rounded-lg"
+                                                    />
+                                                ) : (
+                                                    <div className="w-16 h-16 bg-slate-700 rounded-lg flex items-center justify-center">
+                                                        <Film className="w-6 h-6 text-slate-400" />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-white">{project.title}</p>
+                                                    <p className="text-sm text-slate-400">
+                                                        Created {new Date(project.created_at).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                                {activeScript?.project_id === project.id && (
+                                                    <Check className="w-5 h-5 text-purple-400" />
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
