@@ -208,7 +208,7 @@ class ScriptwriterController extends Controller
         ];
 
         try {
-            $apiKey = env('GEMINI_API_KEY');
+            $apiKey = config('services.gemini.key');
             if (!$apiKey) {
                 return response()->json(['error' => 'AI API key not configured.'], 500);
             }

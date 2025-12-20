@@ -32,10 +32,6 @@ Route::get('/health', function () {
     return response()->json(['status' => 'healthy', 'timestamp' => now()->toIso8601String()]);
 });
 
-Route::get('/phpinfo', function () {
-    return phpinfo();
-});
-
 // Scriptwriter page (Inertia) - accessible to authenticated users
 // Some frontend code references `scriptwriter.index` so provide a real page.
 // The page itself lives at `resources/js/Pages/Scriptwriter/Index.jsx`.

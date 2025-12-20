@@ -40,7 +40,7 @@ class SparkScriptController extends Controller
         $userPrompt = "{$instruction}\n\nBlock Type: {$type}\nOriginal Content: {$content}\n\nReturn only the rewritten content:";
 
         try {
-            $apiKey = env('GEMINI_API_KEY');
+            $apiKey = config('services.gemini.key');
             if (!$apiKey) {
                 return response()->json(['error' => 'AI API key not configured.'], 500);
             }
@@ -102,7 +102,7 @@ class SparkScriptController extends Controller
         $userPrompt .= "\n\nReturn your response as a JSON array of blocks. Example format:\n[{\"type\":\"scene-heading\",\"content\":\"INT. COFFEE SHOP - DAY\"},{\"type\":\"action\",\"content\":\"The room buzzes with activity.\"}]";
 
         try {
-            $apiKey = env('GEMINI_API_KEY');
+            $apiKey = config('services.gemini.key');
             if (!$apiKey) {
                 return response()->json(['error' => 'AI API key not configured.'], 500);
             }

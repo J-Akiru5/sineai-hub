@@ -43,7 +43,7 @@ class AiAssistantController extends Controller
         // If this is a brand new conversation, synchronously generate a short title now
         if ($isNewConversation) {
             try {
-                $apiKey = env('GEMINI_API_KEY');
+                $apiKey = config('services.gemini.key');
                 if ($apiKey) {
                     // Use the same model family as the main chat endpoint
                     $titleEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
@@ -78,7 +78,7 @@ class AiAssistantController extends Controller
         }
 
         // 2. API Key Setup (unchanged)
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.key');
         if (!$apiKey) {
             return response()->json(['error' => 'AI API key is not configured.'], 500);
         }
@@ -163,7 +163,7 @@ class AiAssistantController extends Controller
         $fullPrompt = $systemPrompt . "\n\nUser Question: " . $request->input('prompt');
 
         try {
-            $apiKey = env('GEMINI_API_KEY');
+            $apiKey = config('services.gemini.key');
             if (!$apiKey) {
                 return response()->json(['response' => "AI API key not configured."], 500);
             }
